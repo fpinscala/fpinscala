@@ -16,7 +16,7 @@ object Master {
   val line = takeWhile(_ != '\n').map(_.get) << nl
   val blank = line.filter(_.trim.isEmpty, msg("expected blankline")).attempt
   val blanks = blank.many
-  val nonblank = line.filter(!_.trim.isEmpty, msg("expected non-blank line")).map(s => if (s.trim == ".") "" else s)
+  val nonblank = line.filter(!_.trim.isEmpty, msg("expected non-blank line")).map(s => if (s.trim == ".") "" else s).attempt
   val nonblanks = nonblank.many1.map(_.mkString("\n"))
   val tline = line.map(_.trim)
 
@@ -39,7 +39,7 @@ object Master {
   def section(keyword: String, trim: Boolean = false): Parser[String] = 
     (spaces >> token(keyword)).attempt >> 
     word("#[") >> (if (trim) takeWhile(_.isWhitespace) else spaces >> blanks) >> 
-    takeThrough("]#").map(_.get) << 
+    takeThrough("]#").map(txt => trimBlanks(txt.get)) << 
     blanks scope (msg(keyword)) 
 
   def namedSection[A](keyword: String, trim: Boolean = false)(f: String => Parser[A]): Parser[A] = 
@@ -59,6 +59,12 @@ object Master {
       case p ++ h ++ a ++ e => Question(q,p,h,a,e) }
     }
 
+  /** Trim leading and trailing blank lines. */
+  def trimBlanks(s: String): String = { 
+    val p = ((spaces >> nl >> spaces).many >> takeWhile(_ => true))
+    p(p(s).get.get.reverse).get.get.reverse
+  }
+
   val suite: Parser[Suite] = 
     section("header").optional ++
     question.many1 ++
@@ -67,7 +73,7 @@ object Master {
   } scope (msg("suite")) commit
 
   val example: Parser[Example] = 
-    namedSection("example") { l => takeUntil("]#") map (txt => Example(l,txt.get)) }
+    namedSection("example") { l => takeUntil("]#") map (txt => Example(l,trimBlanks(txt.get))) }
 
   val examples: Parser[Examples] = 
     section("header").optional ++
@@ -140,10 +146,10 @@ object Master {
     write(packageDecl("exercises") + exercises, srcBaseDir + "/exercises/" + label + ".scala")
     write(packageDecl("answers") + answers, srcBaseDir + "/answers/" + label + ".scala")
     exercisesByName.foreach { case (name,e) => 
-      write(e, includesBaseDir + "/includes/exercises/" + name + ".scala") 
+      write(e, includesBaseDir + "/includes/exercises/" + label + "." + name + ".scala") 
     }
     examplesByName.foreach { case (name,e) => 
-      write(e, includesBaseDir + "/includes/examples/" + name + ".scala") 
+      write(e, includesBaseDir + "/includes/examples/" + label + "." + name + ".scala") 
     }
   }
 

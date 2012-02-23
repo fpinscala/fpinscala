@@ -11,5 +11,4 @@ Try pattern matching on `this`.
 
 This can be implemented using pattern matching on `this`. It can also be 
       written using only `map` and `getOrElse`. 
-     
   

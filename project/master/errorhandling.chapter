@@ -14,7 +14,7 @@ trait Option[+A] {
 ]#
 
   question map #[
-    prompt #[
+    prompt #[ 
   def map[B](f: A => B): Option[B] = ]#
 
     hint #[ Try pattern matching on `this`. ]#
