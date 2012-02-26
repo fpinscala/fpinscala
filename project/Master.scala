@@ -14,11 +14,10 @@ object Master {
   val spaces = takeWhile(c => c == ' ' || c == '\t') >> unit(()) 
   val nl = single('\n')
   val line = takeWhile(_ != '\n').map(_.get) << nl
-  val blank = line.filter(_.trim.isEmpty, msg("expected blankline")).attempt
+  val blank = line.filter(_.trim.isEmpty, msg("expected blankline"))
   val blanks = blank.many
-  val nonblank = line.filter(!_.trim.isEmpty, msg("expected non-blank line")).map(s => if (s.trim == ".") "" else s).attempt
+  val nonblank = line.filter(!_.trim.isEmpty, msg("expected non-blank line")).map(s => if (s.trim == ".") "" else s)
   val nonblanks = nonblank.many1.map(_.mkString("\n"))
-  val tline = line.map(_.trim)
 
   def token[A](p: Parser[A]) = (p << spaces)
   implicit def toParser(s: String) = token(word(s) | fail(msg("expected: '" + s + "'")) >> unit(()))
@@ -37,13 +36,13 @@ object Master {
   // reads until the given string is a prefix of the remaining input, or until EOF
   // if this never occurs
   def section(keyword: String, trim: Boolean = false): Parser[String] = 
-    (spaces >> token(keyword)).attempt >> 
+    spaces >> token(keyword) >>! 
     word("#[") >> (if (trim) takeWhile(_.isWhitespace) else spaces >> blanks) >> 
     takeThrough("]#").map(txt => trimBlanks(txt.get)) << 
-    blanks scope (msg(keyword)) 
+    blanks scope (msg(keyword))  
 
   def namedSection[A](keyword: String, trim: Boolean = false)(f: String => Parser[A]): Parser[A] = 
-    (spaces >> token(keyword)).attempt >> 
+    spaces >> token(keyword) >>! 
     takeUntil("#[").map(_.get.trim).
     filter(!_.isEmpty, msg("expected nonempty section name")).
     flatMap(s => word("#[") >> (if (trim) takeWhile(_.isWhitespace) else spaces >> blanks) >> f(s) << 
@@ -53,7 +52,7 @@ object Master {
   val question: Parser[Question] = 
     namedSection("question") { q => 
       section("prompt").optional ++
-      section("hint", true).attempt.many ++  
+      section("hint", true).many ++  
       section("answer") ++
       section("explanation", true).optional map { 
       case p ++ h ++ a ++ e => Question(q,p,h,a,e) }
@@ -65,12 +64,13 @@ object Master {
     p(p(s).get.get.reverse).get.get.reverse
   }
 
+
   val suite: Parser[Suite] = 
     section("header").optional ++
     question.many1 ++
     section("footer").optional map {
     case h ++ a ++ e => Suite(h,a,e)
-  } scope (msg("suite")) commit
+  } scope (msg("suite")) 
 
   val example: Parser[Example] = 
     namedSection("example") { l => takeUntil("]#") map (txt => Example(l,trimBlanks(txt.get))) }
@@ -92,12 +92,13 @@ object Master {
       suite.many1 map { case es ++ s => Chapter(t,es,s) }
     }
 
-  def include(baseDir: String): Parser[Chapter] = spaces >> "include" >> tline map (
-    f => chapter.scope(msg(baseDir+"/"+f))(readFile(baseDir+"/"+f))) mapStatus (
-    _.flatMap(_.status))
+  def include(baseDir: String): Parser[Chapter] = 
+    (spaces >> "include") >> takeWhile(!_.isWhitespace) map ( 
+    f => chapter.scope(msg("file: " + baseDir+"/"+f))(readFile(baseDir+"/"+f))) mapStatus (
+    _.flatMap(_.status)) scope (msg("include")) 
 
   def part(baseDir: String): Parser[List[Chapter]] = 
-    namedSection("part") { l => include(baseDir).many1 } 
+    namedSection("part") { l => include(baseDir).delimit1(anyOf(" \t\r\n").many) << blanks } 
 
   def book(baseDir: String): Parser[Book] = 
     namedSection("book") { l => part(baseDir).many1.map(cs => Book(cs.flatten)) }
@@ -192,7 +193,7 @@ object Master {
   }
 
   def run(file: String, srcBaseDir: String, includesBaseDir: String): Unit = {
-    val b = book(new java.io.File(file).getParent).scope(msg(file))(readFile(file)).get
+    val b = book(new java.io.File(file).getParent).scope(msg("file: " + file))(readFile(file)).get
     write(srcBaseDir, includesBaseDir, b)
   }
   
