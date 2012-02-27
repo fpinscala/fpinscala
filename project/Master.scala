@@ -81,7 +81,6 @@ object Master {
     section("footer").optional map {
     case h ++ a ++ e => {
       val r = Examples(h,a,e)
-      println(r)
       r
     }
   }
@@ -110,8 +109,13 @@ object Master {
     new File(srcBaseDir + "/exercises").mkdirs
     new File(srcBaseDir + "/answers").mkdirs
     new File(srcBaseDir + "/examples").mkdirs
-    new File(includesBaseDir + "/includes/examples").mkdirs
-    new File(includesBaseDir + "/includes/exercises").mkdirs
+    val bookRoot = { 
+      val p = System.getProperty("bookRoot")
+      if (p eq null) includesBaseDir + "/includes/"
+      else p + "/includes/"
+    }
+    new File(bookRoot + "/examples").mkdirs
+    new File(bookRoot + "/exercises").mkdirs
     emitHints(includesBaseDir, book) 
     emitBook(srcBaseDir, includesBaseDir, book) 
   }
@@ -146,11 +150,16 @@ object Master {
     write(packageDecl("examples") + examples, srcBaseDir + "/examples/" + label + ".scala")
     write(packageDecl("exercises") + exercises, srcBaseDir + "/exercises/" + label + ".scala")
     write(packageDecl("answers") + answers, srcBaseDir + "/answers/" + label + ".scala")
+    val bookRoot = { 
+      val p = System.getProperty("bookRoot")
+      if (p eq null) includesBaseDir + "/includes"
+      else p + "/includes"
+    }
     exercisesByName.foreach { case (name,e) => 
-      write(e, includesBaseDir + "/includes/exercises/" + label + "." + name + ".scala") 
+      write(e, bookRoot + "/exercises/" + label + "." + name + ".scala") 
     }
     examplesByName.foreach { case (name,e) => 
-      write(e, includesBaseDir + "/includes/examples/" + label + "." + name + ".scala") 
+      write(e, bookRoot + "/examples/" + label + "." + name + ".scala") 
     }
   }
 
@@ -203,4 +212,5 @@ object Master {
     else run(args(0), args(1), args(2))
   } 
 }
+
 
