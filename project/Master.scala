@@ -121,19 +121,30 @@ object Master {
   }
 
   def formatSuite(s: Suite, f: Question => String): String =
-    s.header.map(_ + "\n").getOrElse("") + 
-    s.questions.map(f).mkString("\n") + "\n" + 
+    s.header.map(_ + "\n\n").getOrElse("") + 
+    s.questions.map(f).mkString("\n\n") + "\n" + 
     s.footer.map(_ + "\n").getOrElse("")
 
   def leadingWhitespace(s: String) = s.takeWhile(_.isWhitespace)
 
   // returns (label, examples, exercises, answers, exercises by name, examples by name)  
   def formatChapter(chapter: Chapter): (String, String, String, String, List[(String,String)], List[(String,String)]) = {
+
+    def needsClosing(q: Question) = 
+      q.prompt.getOrElse("").trim.endsWith("{")
+
     def formatExercise(q: Question): String = 
-      q.prompt.map(p => p + "\n"+leadingWhitespace(p)+"  sys.error(\"todo\")").
-      getOrElse("")
+      q.prompt.map(p => 
+        takeUntil("{")(p).get + 
+          "\n"+leadingWhitespace(p)+"  sys.error(\"todo\")").
+        getOrElse("")
+
     def formatAnswer(q: Question): String =
-      q.prompt.map(_ + "\n").getOrElse("") + q.answer
+      q.prompt.map(p => 
+        p + "\n" + q.answer + 
+        (if (needsClosing(q)) "\n"+leadingWhitespace(p) + "}" else "")).
+        getOrElse(q.answer)
+
     (chapter.label, 
       chapter.examples.header.getOrElse("") + 
         chapter.examples.get.map(_.content).mkString("\n") + 
@@ -173,6 +184,7 @@ object Master {
       }
     val hintsByQuestion: List[List[String]] = 
       hints.flatMap { case (n,ch) => ch.map { case (hs, ex) => formatHints(n,ex,hs) }}
+    println (hintsByQuestion.mkString("\n----\n"))
     val maxLevel = hintsByQuestion.map(_.length).max 
     val hintsByLevel = 
       (0 until maxLevel) map (i => hintsByQuestion.filter(_.length > i).map(_(i)))

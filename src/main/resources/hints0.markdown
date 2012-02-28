@@ -12,3 +12,9 @@ Try pattern matching on `this`.
 This can be implemented using pattern matching on `this`. It can also be 
       written using only `map` and `getOrElse`. 
   
+
+
+### 2.2 ###
+
+Use recursion. What is the result if `n <= 0`? If `n > 0`?  
+  

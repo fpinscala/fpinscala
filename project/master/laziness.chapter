@@ -1,5 +1,5 @@
 chapter laziness #[
-
+  
   example stream #[
 trait Stream[A] {
   def uncons: Option[(A, Stream[A])]
@@ -21,19 +21,76 @@ object Stream {
   ]#
 
   header #[
+
+// hide Scala's existing Stream type
+import scala.{Stream => _} 
+
+object Stream {
+  def empty[A]: Stream[A] = 
+    new Stream[A] {
+      def uncons = None
+    }
+  def cons[A](hd: => A, tl: => Stream[A]): Stream[A] = 
+    new Stream[A] {
+      lazy val uncons = Some((hd, tl)) 
+    }
+  def apply[A](as: A*): Stream[A] =
+    if (as.isEmpty) empty
+    else cons(as.head, apply(as.tail: _*))
+}
+
 trait Stream[A] {
   def uncons: Option[(A, Stream[A])]
   ]#
 
   question toList #[
     prompt #[
-  def toList: List[A] = ]# 
-
+  def toList: List[A] = { ]# 
     answer #[
-      // note - not tail recursive
-      uncons.map { case (h,t) => h :: t.toList } getOrElse List()
+    @annotation.tailrec
+    def go(acc: List[A], cur: Stream[A]): List[A] = 
+      cur uncons match { 
+        case Some((h,t)) => go(h :: acc, t)
+        case _ => acc.reverse
+      }
+    go(List(), this)
+    ]#
+
+    explanation #[
+The natural recursive solution is nicer-looking but uses unbounded stack space. The following code will stack overflow for a large `Stream`:
+
+~~~ scala
+uncons map { case (h,t) => h :: t.toList } getOrElse List()
+~~~
     ]#
       
+  ]#
+
+  question take #[
+    prompt #[
+  def take(n: Int): Stream[A] = ]#
+    hint #[ Use recursion. What is the result if `n <= 0`? If `n > 0`? ]#
+    answer #[
+    if (n <= 0) Stream()
+    else uncons.map { 
+      case (h,t) => Stream.cons(h, t.take(n-1)) }.
+      getOrElse (Stream.empty)
+    ]#
+    explanation #[ 
+Note the recursion here is _guarded_ - it occurs in a non-strict position, as the second argument to `cons`. This means the recusion happens lazily, as the `Stream` is inspected. Can you see why this code works without stack overflows even for a large or infinite `Stream`? Try tracing through the execution.  
+    ]#
+  ]#
+
+  question takeWhile #[
+    prompt #[
+  def takeWhile(f: A => Boolean): Stream[A] = ]#
+    answer #[
+    uncons.map { 
+      case (h,t) => 
+        if (f(h)) Stream.cons(h,t.takeWhile(f)) 
+        else Stream.empty[A] }.
+      getOrElse (Stream.empty)
+    ]#
   ]#
 
   footer #[ 
