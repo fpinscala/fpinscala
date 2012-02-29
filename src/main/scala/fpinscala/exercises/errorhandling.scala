@@ -10,6 +10,8 @@ trait Option[+A] {
 
   def flatMap[B](f: A => Option[B]): Option[B] = 
     sys.error("todo")
+
+
 } 
 case object None extends Option[Nothing]
 case class Some[+A](get: A) extends Option[A]

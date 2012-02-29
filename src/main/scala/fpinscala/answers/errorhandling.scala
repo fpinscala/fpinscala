@@ -16,6 +16,11 @@ trait Option[+A] {
 
   def flatMap[B](f: A => Option[B]): Option[B] = 
     this map f getOrElse None
+
+  def isDefined: Boolean = this match {
+    case None => false
+    case _ => true
+  }
 } 
 case object None extends Option[Nothing]
 case class Some[+A](get: A) extends Option[A]

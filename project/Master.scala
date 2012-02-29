@@ -77,7 +77,7 @@ object Master {
 
   val examples: Parser[Examples] = 
     section("header").optional ++
-    example.many ++
+    example.many1 ++
     section("footer").optional map {
     case h ++ a ++ e => {
       val r = Examples(h,a,e)
@@ -146,8 +146,8 @@ object Master {
         getOrElse(q.answer)
 
     (chapter.label, 
-      chapter.examples.header.getOrElse("") + 
-        chapter.examples.get.map(_.content).mkString("\n") + 
+      chapter.examples.header.getOrElse("") + "\n\n" + 
+        chapter.examples.get.map(_.content).mkString("\n\n") + "\n\n" + 
         chapter.examples.footer.getOrElse(""),
       chapter.suites.map(formatSuite(_, formatExercise)).mkString("\n"),
       chapter.suites.map(formatSuite(_, formatAnswer)).mkString("\n"),
@@ -184,7 +184,6 @@ object Master {
       }
     val hintsByQuestion: List[List[String]] = 
       hints.flatMap { case (n,ch) => ch.map { case (hs, ex) => formatHints(n,ex,hs) }}
-    println (hintsByQuestion.mkString("\n----\n"))
     val maxLevel = hintsByQuestion.map(_.length).max 
     val hintsByLevel = 
       (0 until maxLevel) map (i => hintsByQuestion.filter(_.length > i).map(_(i)))

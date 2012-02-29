@@ -77,6 +77,15 @@ trait Option[+A] {
     ]#
   ]#
 
+  question isDefined #[
+    answer #[
+  def isDefined: Boolean = this match {
+    case None => false
+    case _ => true
+  }
+    ]#
+  ]#
+
   footer #[
 } 
 case object None extends Option[Nothing]
