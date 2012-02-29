@@ -19,6 +19,9 @@ object Stream {
     if (as.isEmpty) empty
     else cons(as.head, apply(as.tail: _*))
 
+  lazy val ones: Stream[Int] = 
+    sys.error("todo")
+
   def constant[A](a: A): Stream[A] = 
     sys.error("todo")
 
@@ -71,7 +74,16 @@ trait Stream[A] {
   def map2[B](f: A => B): Stream[B] = 
     sys.error("todo")
 
-  // (re)write `map`, `take`, `takeWhile`, `zip`, `zipAll`
+  def take2(n: Int): Stream[A] = 
+    sys.error("todo")
+
+  def takeWhile3(f: A => Boolean): Stream[A] = 
+    sys.error("todo")
+
+  def zip[B](s2: Stream[B]): Stream[(A,B)] = 
+    sys.error("todo")
+
+  def zipAll[B](s2: Stream[B]): Stream[(Option[A],Option[B])] = 
     sys.error("todo")
 
   def startsWith(s: Stream[A]): Boolean = 
@@ -83,5 +95,6 @@ trait Stream[A] {
   def scanRight[B](z: => B)(f: (A, => B) => B): Stream[B] = 
     sys.error("todo")
 
-
+  def hasSubsequence(s: Stream[A]): Boolean = 
+    sys.error("todo")
 }

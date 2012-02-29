@@ -29,11 +29,6 @@ object Stream {
 }
   ]#
 
-  example ones #[
-object StreamExamples {
-  lazy val ones: Stream[Int] = Stream.cons(1, ones)
-} ]#
-
   header #[
 
 // hide Scala's existing Stream type
@@ -56,6 +51,13 @@ object Stream {
     else cons(as.head, apply(as.tail: _*))
   ]#
 
+  question ones #[
+    prompt #[
+  lazy val ones: Stream[Int] = ]#
+    answer #[
+    cons(1, ones) ]#
+  ]#
+   
   question constant #[
     prompt #[
   def constant[A](a: A): Stream[A] = ]# 
@@ -204,40 +206,52 @@ Note the recursion here is _guarded_ - it occurs in a non-strict position, as th
     foldRight(Stream.empty[B])((h,t) => Stream.cons(f(h), t)) ]#
   ]#
 
-  question map #[
+  question unfold-map #[
     prompt #[
   def map2[B](f: A => B): Stream[B] = ]#
     answer #[
-    foldRight(Stream.empty[B])((h,t) => Stream.cons(f(h), t)) ]#
+    Stream.unfold(this)(_.uncons map { case (h,t) => (f(h), t) }) ]#
+    explanation #[
+Notice that this implementation is not recursive - the recursive pattern is encapsulated in the `unfold`. 
+    ]#
   ]#
 
-  question unfoldBased #[
+  question unfold-take #[
     prompt #[
-  // (re)write `map`, `take`, `takeWhile`, `zip`, `zipAll`
-    ]#
+  def take2(n: Int): Stream[A] = ]#
     answer #[
-  def map3[B](f: A => B): Stream[B] = 
-    Stream.unfold(this)(_.uncons map { case (h,t) => (f(h), t) })
-
-  def take2(n: Int): Stream[A] = 
     Stream.unfold((this,n)) { case (s,i) => 
       if (i <= 0) None
       else s.uncons map { case (h,t) => (h,(t,n-1)) }
-    }
+    } ]#
+  ]#
 
-  def takeWhile3(f: A => Boolean): Stream[A] = 
+  question unfold-takeWhile #[
+    prompt #[
+  def takeWhile3(f: A => Boolean): Stream[A] = ]#
+    answer #[
     Stream.unfold(this)(_.uncons flatMap { case (h,t) =>  
       if (f(h)) Some((h,t))
       else None
     })
+    ]#
+  ]#
 
-  def zip[B](s2: Stream[B]): Stream[(A,B)] = 
+  question zip #[
+    prompt #[
+  def zip[B](s2: Stream[B]): Stream[(A,B)] = ]#
+    answer #[
     Stream.unfold((this,s2)) { case (a,b) => for {
       as <- a.uncons; val (ha,ta) = as
       bs <- b.uncons; val (hb,tb) = bs
     } yield ((ha,hb), (ta,tb)) }
+    ]#
+  ]#
 
-  def zipAll[B](s2: Stream[B]): Stream[(Option[A],Option[B])] = 
+  question zipAll #[
+    prompt #[
+  def zipAll[B](s2: Stream[B]): Stream[(Option[A],Option[B])] = ]#
+    answer #[
     Stream.unfold((this,s2)) { case (a,b) => 
       (a.uncons, b.uncons) match {
         case (None, None) => None
@@ -247,13 +261,7 @@ Note the recursion here is _guarded_ - it occurs in a non-strict position, as th
         case (_, Some((h,t))) => Some(((None,Some(h)), (a,t))) 
       }
     }
-
-  ]#
-
-    explanation #[
-Notice none of these implementations are recursive - the recursive pattern is encapsulated in the `unfold`. 
     ]#
-
   ]#
 
   question startsWith #[ 
@@ -288,8 +296,9 @@ Notice none of these implementations are recursive - the recursive pattern is en
   ]#
 
   question hasSubsequence #[
+    prompt #[
+  def hasSubsequence(s: Stream[A]): Boolean = ]#
     answer #[
-  def hasSubsequence(s: Stream[A]): Boolean = 
     tails exists (_ startsWith s)
     ]#
   ]#

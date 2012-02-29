@@ -24,7 +24,3 @@ object Stream {
     else cons(as.head, apply(as.tail: _*))
 }
 
-object StreamExamples {
-  lazy val ones: Stream[Int] = Stream.cons(1, ones)
-} 
-

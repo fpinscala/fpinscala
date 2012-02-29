@@ -19,6 +19,9 @@ object Stream {
     if (as.isEmpty) empty
     else cons(as.head, apply(as.tail: _*))
 
+  lazy val ones: Stream[Int] = 
+    cons(1, ones) 
+
   def constant[A](a: A): Stream[A] = 
     Stream.cons(a, constant(a)) 
 
@@ -93,17 +96,13 @@ trait Stream[A] {
     foldRight(Stream.empty[B])((h,t) => Stream.cons(f(h), t)) 
 
   def map2[B](f: A => B): Stream[B] = 
-    foldRight(Stream.empty[B])((h,t) => Stream.cons(f(h), t)) 
-
-  // (re)write `map`, `take`, `takeWhile`, `zip`, `zipAll`
-  def map3[B](f: A => B): Stream[B] = 
-    Stream.unfold(this)(_.uncons map { case (h,t) => (f(h), t) })
+    Stream.unfold(this)(_.uncons map { case (h,t) => (f(h), t) }) 
 
   def take2(n: Int): Stream[A] = 
     Stream.unfold((this,n)) { case (s,i) => 
       if (i <= 0) None
       else s.uncons map { case (h,t) => (h,(t,n-1)) }
-    }
+    } 
 
   def takeWhile3(f: A => Boolean): Stream[A] = 
     Stream.unfold(this)(_.uncons flatMap { case (h,t) =>  

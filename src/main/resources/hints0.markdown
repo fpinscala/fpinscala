@@ -14,7 +14,7 @@ This can be implemented using pattern matching on `this`. It can also be
   
 
 
-### 2.6 ###
+### 2.7 ###
 
 Use recursion. What is the result if `n <= 0`? If `n > 0`?  
   

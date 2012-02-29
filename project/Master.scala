@@ -116,6 +116,7 @@ object Master {
     }
     new File(bookRoot + "/examples").mkdirs
     new File(bookRoot + "/exercises").mkdirs
+    new File(bookRoot + "/answers").mkdirs
     emitHints(includesBaseDir, book) 
     emitBook(srcBaseDir, includesBaseDir, book) 
   }
@@ -128,7 +129,7 @@ object Master {
   def leadingWhitespace(s: String) = s.takeWhile(_.isWhitespace)
 
   // returns (label, examples, exercises, answers, exercises by name, examples by name)  
-  def formatChapter(chapter: Chapter): (String, String, String, String, List[(String,String)], List[(String,String)]) = {
+  def formatChapter(chapter: Chapter): (String, String, String, String, List[(String,String)], List[(String,String)], List[(String,String)]) = {
 
     def needsClosing(q: Question) = 
       q.prompt.getOrElse("").trim.endsWith("{")
@@ -152,12 +153,13 @@ object Master {
       chapter.suites.map(formatSuite(_, formatExercise)).mkString("\n"),
       chapter.suites.map(formatSuite(_, formatAnswer)).mkString("\n"),
       chapter.suites.flatMap(s => s.questions.map(q => (q.label, formatExercise(q)))),
+      chapter.suites.flatMap(s => s.questions.map(q => (q.label, formatAnswer(q)))),
       chapter.examples.get.map(s => (s.label,s.content)))
   }
 
   def emitChapter(srcBaseDir: String, includesBaseDir: String, chapter: Chapter): Unit = {
     def packageDecl(sub: String) = "package fpinscala." + sub + "\n\n"
-    val (label, examples, exercises, answers, exercisesByName, examplesByName) = formatChapter(chapter)
+    val (label, examples, exercises, answers, exercisesByName, answersByName, examplesByName) = formatChapter(chapter)
     write(packageDecl("examples") + examples, srcBaseDir + "/examples/" + label + ".scala")
     write(packageDecl("exercises") + exercises, srcBaseDir + "/exercises/" + label + ".scala")
     write(packageDecl("answers") + answers, srcBaseDir + "/answers/" + label + ".scala")
@@ -166,11 +168,21 @@ object Master {
       if (p eq null) includesBaseDir + "/includes"
       else p + "/includes"
     }
+    def programListing(s: String): String = 
+      """<programlisting xml:space="preserve">%s</programlisting>""".   
+      format(scala.xml.Utility.escape(s))
+
     exercisesByName.foreach { case (name,e) => 
-      write(e, bookRoot + "/exercises/" + label + "." + name + ".scala") 
+      write(e, 
+      bookRoot + "/exercises/" + label + "." + name) 
+    }
+    answersByName.foreach { case (name,e) => 
+      write(e, 
+      bookRoot + "/answers/" + label + "." + name) 
     }
     examplesByName.foreach { case (name,e) => 
-      write(e, bookRoot + "/examples/" + label + "." + name + ".scala") 
+      write(e, 
+      bookRoot + "/examples/" + label + "." + name) 
     }
   }
 
