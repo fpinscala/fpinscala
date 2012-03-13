@@ -29,7 +29,7 @@ object Stream {
     Stream.cons(i, from(i+1)) 
 
   def fibs: Stream[Int] = { 
-    def go(lag2: Int, lag1: Int): Stream[Int] = 
+    def go(lag1: Int, lag2: Int): Stream[Int] =
       Stream.cons(lag1, go(lag2, lag1+lag2))
     go(0, 1) 
   }
