@@ -1,0 +1,1 @@
+Try `unfold` with `this` as the starting state. You may want to handle emitting the empty `Stream` at the end as a special case.

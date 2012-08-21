@@ -1,0 +1,1 @@
+val even = divisibleBy(2)

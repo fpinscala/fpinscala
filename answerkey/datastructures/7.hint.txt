@@ -1,0 +1,1 @@
+The first step is `1 + foldRight(Cons(2, Cons(3, Nil)), 0)(_ + _)`

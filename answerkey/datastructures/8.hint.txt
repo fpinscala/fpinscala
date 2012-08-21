@@ -1,0 +1,1 @@
+Look at the program trace from the previous exercise. Based on the trace, is it possible the function supplied could choose to terminate the recursion early?

@@ -1,0 +1,1 @@
+The `traverse` function can be written with explicit recursion or use `foldRight` to do the recursion for you. Implementing `sequence` using `traverse` may be more trivial than you think.

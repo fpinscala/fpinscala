@@ -1,0 +1,1 @@
+The trick is to lift a partially applied `f`.

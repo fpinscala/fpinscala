@@ -1,0 +1,1 @@
+def length2[A](l: List[A]): Int = foldLeft(l, 0)((acc,h) => acc + 1)

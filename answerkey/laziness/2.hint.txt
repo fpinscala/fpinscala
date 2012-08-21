@@ -1,0 +1,1 @@
+Many `Stream` functions can start by pattern matching on the result of `uncons` and considering what to do in each of the two cases.

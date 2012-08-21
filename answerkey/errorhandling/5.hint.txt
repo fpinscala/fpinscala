@@ -1,0 +1,1 @@
+Break the list out using pattern-matching where there will be a recursive call to `sequence` in the cons case. Alternatively, use the `foldRight` method to take care of the recursion for you.

@@ -1,0 +1,1 @@
+The implementation will be very similar in structure to a function we've implemented previously, for `Option`.

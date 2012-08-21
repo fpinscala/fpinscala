@@ -1,0 +1,1 @@
+It is possible to do both directions. For your `foldLeft` in terms of `foldRight`, you must build up, using `foldRight`, some value that you can use to achieve the effect of `foldLeft`. (It won't be the `B` of the return type necessarily)

@@ -1,0 +1,1 @@
+def reverse[A](list: List[A]): List[A] = foldLeft(list, List[A]())((acc,h) => Cons(h,acc))

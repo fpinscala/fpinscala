@@ -1,0 +1,1 @@
+The signature of `traverse` is `def traverse[E,A,B](es: List[A])(f: A => Either[E, B]): Either[E, List[B]]`, and the signature of `sequence` is `def sequence[E,A](es: List[Either[E, A]]): Either[E, List[A]]`. In your implementation, you can pattern-match the list and use explicit recursion or use `foldRight` to perform the recursion for you.

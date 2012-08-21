@@ -1,0 +1,1 @@
+Try to avoid using explicit recursion. Use `zipAll` and `takeWhile`.
