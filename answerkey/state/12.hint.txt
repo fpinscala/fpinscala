@@ -1,0 +1,1 @@
+`getState` should both pass on the state and return it as a value. `setState` should ignore the state coming in from any prior statements.

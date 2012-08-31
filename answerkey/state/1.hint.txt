@@ -1,0 +1,1 @@
+`Int.MinValue` needs special handling. We could map it to an arbitrary positive integer, but that would make that integer twice as likely as any of the others. Maybe there's a way to avoid `Int.MinValue` altogether.

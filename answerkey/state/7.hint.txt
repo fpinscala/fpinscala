@@ -1,0 +1,1 @@
+Start by accepting an RNG. Notice you have a choice in which RNG to pass to which function, and in what order. Think about what you expect the behavior to be, and whether your implementation meets that expectation.

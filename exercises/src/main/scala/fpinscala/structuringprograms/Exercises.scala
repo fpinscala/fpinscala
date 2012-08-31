@@ -30,9 +30,9 @@ object Exercises {
   def fib(n: Int): Int = sys.error("todo")
 
   def sqrt(n: Double): Double = {
-    def f(x: Double) = (x * x) - n // 
-    iterateWhile(2.0)(x => x - f(x) / (2 * x), // 
-                      x => f(x).abs > 1e-14) // 
+    def f(x: Double) = (x * x) - n // We want to find the `x` such that `x` squared minus `n` equals `0`.
+    iterateWhile(2.0)(x => x - f(x) / (2 * x), // Starting with a guess of `2.0`, iteratively improve the guess.
+                      x => f(x).abs > 1e-14) // `1e-14` is a way of writing `10` to the `-14`th power, a rather small number. When the difference between the guess and the answer is smaller than this, the guess is "good enough".
   }
   
   def iterateWhile[A](a: A)(f: A => A, p: Pred[A]): A = sys.error("todo")

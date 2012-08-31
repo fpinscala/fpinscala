@@ -1,0 +1,1 @@
+You need to recursively iterate over the list. Remember that you can use `foldLeft` or `foldRight` instead of writing a recursive definition. You can also reuse the `map2` function you just wrote. As a test case for your implementation, we should expect `sequence(List(unit(1), unit(2), unit(3)))(r)._1` to return `List(1, 2, 3)`.
