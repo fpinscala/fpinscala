@@ -1,0 +1,4 @@
+No, there is no correct `Either` monoid. You should make an attempt at it to convince yourself it's not possible to write it so that it satisfies the laws.
+
+What if `Either[A, B]` had one additional data constructor, where it doesn't have either an `A` or `B`, but _both_? Could you do it then?
+

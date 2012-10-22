@@ -1,0 +1,2 @@
+Use the endofunction monoid. Don't worry if the implementation is not very efficient.
+

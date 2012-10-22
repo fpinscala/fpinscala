@@ -1,0 +1,1 @@
+Think about what a partial answer looks like. If we have only seen some of the elements of a sequence, we need to know if what we have seen so far is ordered. For every new element we see, if the sequence is in fact ordered, it should not fall inside the range of elements seen already.

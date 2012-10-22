@@ -1,0 +1,2 @@
+You can `map` and then `concatenate`, but that will go over the list twice. Use a single fold instead.
+

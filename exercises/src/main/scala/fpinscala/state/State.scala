@@ -6,18 +6,18 @@ trait RNG {
 }
 
 object RNG {
-    def simple(seed: Long): RNG = new RNG {
-      def nextInt = {
-        val seed2 = (seed*0x5DEECE66DL + 0xBL) & // `&` is bitwise AND
-                    ((1L << 48) - 1) // `<<` is left binary shift
-        ((seed2 >>> 16).asInstanceOf[Int], // `>>>` is right binary shift with zero fill
-         simple(seed2))
-      }
+  def simple(seed: Long): RNG = new RNG {
+    def nextInt = {
+      val seed2 = (seed*0x5DEECE66DL + 0xBL) & // `&` is bitwise AND
+                  ((1L << 48) - 1) // `<<` is left binary shift
+      ((seed2 >>> 16).asInstanceOf[Int], // `>>>` is right binary shift with zero fill
+       simple(seed2))
     }
+  }
 
   type Rand[+A] = RNG => (A, RNG)
 
-  val nextInt: Rand[Int] = _.nextInt
+  val int: Rand[Int] = _.nextInt
 
   def unit[A](a: A): Rand[A] =
     rng => (a, rng)
@@ -30,7 +30,7 @@ object RNG {
 
   def positiveInt(rng: RNG): (Int, RNG) = sys.error("todo")
 
-  def nextDouble(rng: RNG): (Double, RNG) = sys.error("todo")
+  def double(rng: RNG): (Double, RNG) = sys.error("todo")
 
   def intDouble(rng: RNG): ((Int,Double), RNG) = sys.error("todo")
 

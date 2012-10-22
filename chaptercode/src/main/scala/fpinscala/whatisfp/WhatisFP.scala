@@ -10,11 +10,11 @@ def maxScore(p1: Player, p2: Player): Player = // A pure function that takes two
 
 def winner(p1: Player, p2: Player): Unit =
   declareWinner(maxScore(p1, p2))
-val players = List(Player("Bob", 7), // Constructs a list of players
-                   Player("Sue", 8),
+val players = List(Player("Sue", 7), // Constructs a list of players
+                   Player("Bob", 8),
                    Player("Joe", 4))
 
-val highScore = players.reduceLeft(maxScore) // Reduces the list to just the player with the highest score.
+val winner = players.reduceLeft(maxScore) // Reduces the list to just the player with the highest score.
 
-declareWinner(highScore) // Prints the name of the winner to the console.
+declareWinner(winner) // Prints the name of the winner to the console.
 }

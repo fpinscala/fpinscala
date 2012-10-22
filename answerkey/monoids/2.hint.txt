@@ -1,0 +1,2 @@
+Because we are abstract in the type parameter `A`, we are very limited in the number of possible implementations. But there's more than one implementation that meets the monoid laws.
+

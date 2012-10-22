@@ -1,0 +1,1 @@
+In combining two `Part`s, you need to add the word counts together. But you also need to count the word that forms between them (by the left part's `rStub` and the right part's `lStub`), if any.

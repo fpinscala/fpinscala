@@ -1,0 +1,1 @@
+You may want `string` to report the immediate cause of failure (whichever character did not match), as well as the overall string being parsed.

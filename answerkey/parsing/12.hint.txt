@@ -1,0 +1,1 @@
+Here are two options: we could return the most recent error in the `or` chain, or we could return whichever error occurred after getting furthest into the input string.

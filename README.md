@@ -34,4 +34,4 @@ All code in this repository is [MIT-licensed](http://opensource.org/licenses/mit
 
 Have fun, and good luck!
 
-- Paul, Runar, Tony
+--Paul and Rúnar

@@ -1,0 +1,1 @@
+`seq` is analogous to multiplication and `kor` is analogous to addition.

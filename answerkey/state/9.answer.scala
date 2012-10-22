@@ -5,7 +5,7 @@ def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] =
   }
 
 def _positiveInt: Rand[Int] = {
-  flatMap(nextInt) { i =>
+  flatMap(int) { i =>
     if (i != Int.MinValue) unit(i.abs) else _positiveInt
   }
 }

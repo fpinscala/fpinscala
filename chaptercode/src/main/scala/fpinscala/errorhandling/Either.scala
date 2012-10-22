@@ -17,6 +17,6 @@ object Either {
     try {
       Right(x / y)
     } catch {
-      case e:Exception => Left(e)
+      case e: Exception => Left(e)
     }
 }

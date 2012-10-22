@@ -1,0 +1,1 @@
+You will need to generate three values of type `A` for testing associativity. Write a new `Gen` combinator for this if necessary. 

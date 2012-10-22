@@ -19,8 +19,8 @@ def flatMap_1[B](f: A => Option[B]): Option[B] = this match {
   case Some(a) => f(a)
 }
 
-def orElse[B>:A](ob: Option[B]): Option[B] = 
-  Some(this) getOrElse ob
+def orElse[B>:A](ob: => Option[B]): Option[B] = 
+  this map (Some(_)) getOrElse ob
 
 /*
 Again, we can implement this with explicit pattern matching. 
@@ -38,4 +38,4 @@ def filter(f: A => Boolean): Option[A] = this match {
 This can also be defined in terms of `flatMap`.
 */
 def filter_1(f: A => Boolean): Option[A] =
-  flatMap(a => if (f(a)) None else Some(a))
+  flatMap(a => if (f(a)) Some(a) else None)

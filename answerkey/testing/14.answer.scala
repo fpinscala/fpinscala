@@ -1,0 +1,1 @@
+We are going to refine our representation of `SGen`. Keep reading and see the completed answers file for implementations of various `SGen` convenience functions.

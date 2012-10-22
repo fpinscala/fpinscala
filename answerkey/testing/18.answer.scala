@@ -1,0 +1,1 @@
+The scala standard library `max` throws an error when passed the empty list. Keep reading for more discussion.

@@ -13,5 +13,6 @@ def filter_2[A](l: List[A])(f: A => Boolean): List[A] = {
     case Nil => ()
     case Cons(h,t) => if (f(h)) buf += h; go(t)
   }
+  go(l)
   List(buf.toList: _*) // converting from the standard Scala list to the list we've defined here
 }

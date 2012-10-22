@@ -38,22 +38,22 @@ object List { // `List` companion object
       case Cons(h,t) => Cons(h, append(t, a2))
     }
 
-  def foldRight[A,B](list: List[A], z: B)(f: (A, B) => B): B = // Utility functions
-    list match {
+  def foldRight[A,B](l: List[A], z: B)(f: (A, B) => B): B = // Utility functions
+    l match {
       case Nil => z
       case Cons(x, xs) => f(x, foldRight(xs, z)(f))
     }
   
-  def sum2(ints: List[Int]) = 
-    foldRight(ints, 0.0)(_ + _)
+  def sum2(l: List[Int]) = 
+    foldRight(l, 0.0)(_ + _)
   
-  def product2(ints: List[Double]) = 
-    foldRight(ints, 1.0)(_ * _)
+  def product2(l: List[Double]) = 
+    foldRight(l, 1.0)(_ * _)
 
 
   def tail[A](l: List[A]): List[A] = sys.error("todo")
 
-  def drop[A](l: List[A])(n: Int): List[A] = sys.error("todo")
+  def drop[A](l: List[A], n: Int): List[A] = sys.error("todo")
 
   def dropWhile[A](l: List[A])(f: A => Boolean): List[A] = sys.error("todo")
 
@@ -63,7 +63,7 @@ object List { // `List` companion object
 
   def length[A](l: List[A]): Int = sys.error("todo")
 
-  def foldLeft[A,B](list: List[A], z: B)(f: (B, A) => B): B = sys.error("todo")
+  def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B = sys.error("todo")
 
-  def map[A,B](list: List[A])(f: A => B): List[B] = sys.error("todo")
+  def map[A,B](l: List[A])(f: A => B): List[B] = sys.error("todo")
 }

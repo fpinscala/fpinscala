@@ -15,6 +15,6 @@ object Candy {
       case (Turn, Machine(false, candy, coin)) =>
         Machine(true, candy - 1, coin)
     })))
-    s <- getState
+    s <- get
   } yield s.coins
 }

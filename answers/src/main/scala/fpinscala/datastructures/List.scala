@@ -38,17 +38,17 @@ object List { // `List` companion object
       case Cons(h,t) => Cons(h, append(t, a2))
     }
 
-  def foldRight[A,B](list: List[A], z: B)(f: (A, B) => B): B = // Utility functions
-    list match {
+  def foldRight[A,B](l: List[A], z: B)(f: (A, B) => B): B = // Utility functions
+    l match {
       case Nil => z
       case Cons(x, xs) => f(x, foldRight(xs, z)(f))
     }
   
-  def sum2(ints: List[Int]) = 
-    foldRight(ints, 0.0)(_ + _)
+  def sum2(l: List[Int]) = 
+    foldRight(l, 0.0)(_ + _)
   
-  def product2(ints: List[Double]) = 
-    foldRight(ints, 1.0)(_ * _)
+  def product2(l: List[Double]) = 
+    foldRight(l, 1.0)(_ * _)
 
 
   /* 
@@ -69,11 +69,11 @@ object List { // `List` companion object
   /* 
   Again, it is somewhat subjective whether to throw an exception when asked to drop more elements than the list contains. The usual default for `drop` is not to throw an exception, since it is typically used in cases where this is not indicative of a programming error. If you pay attention to how you use `drop`, it is often in cases where the length of the input list is unknown, and the number of elements to be dropped is being computed from something else. If `drop` threw an exception, we'd have to first compute or check the length and only drop up to that many elements.  
   */
-  def drop[A](l: List[A])(n: Int): List[A] = 
+  def drop[A](l: List[A], n: Int): List[A] = 
     if (n <= 0) l
     else l match {
       case Nil => Nil
-      case Cons(_,t) => drop(t)(n-1) 
+      case Cons(_,t) => drop(t, n-1) 
     }
 
   /* 
@@ -86,9 +86,7 @@ object List { // `List` companion object
     }
 
   /*
-  If a function body consists solely of a match expression, we'll often put the 
-  match on the same line as the function signature, rather than introducing another
-  level of nesting.
+  If a function body consists solely of a match expression, we'll often put the match on the same line as the function signature, rather than introducing another level of nesting.
   */
   def setHead[A](l: List[A])(h: A): List[A] = l match {
     case Nil => sys.error("setHead on empty list")
@@ -96,7 +94,9 @@ object List { // `List` companion object
   }
 
   /*
-  Notice we are copying the entire list up until the last element. Besides being inefficient, the natural recursive solution will stack overflow for large lists (can you see why?). With strict lists, it's more typical to use a temporary, mutable buffer internal to the function. So long as the buffer is allocated internal to the function, the mutation is not observable and RT is preserved.
+  Notice we are copying the entire list up until the last element. Besides being inefficient, the natural recursive solution will use a stack frame for each element of the list, which can lead to stack overflows for large lists (can you see why?). With lists, it's common to use a temporary, mutable buffer internal to the function (with lazy lists or streams which we discuss in chapter 5, we don't normally do this). So long as the buffer is allocated internal to the function, the mutation is not observable and RT is preserved.
+  
+  Another common convention is to accumulate the output list in reverse order, then reverse it at the end, which does not require even local mutation. We will write a reverse function later in this chapter.
   */
   def init[A](l: List[A]): List[A] = 
     l match { 
@@ -107,6 +107,7 @@ object List { // `List` companion object
   def init2[A](l: List[A]): List[A] = {
     import collection.mutable.ListBuffer
     val buf = new ListBuffer[A]
+    @annotation.tailrec
     def go(cur: List[A]): List[A] = cur match {
       case Nil => sys.error("init of empty list")
       case Cons(_,Nil) => List(buf.toList: _*)
@@ -127,11 +128,11 @@ object List { // `List` companion object
   */
 
   /* 
-  No, this is not possible! The reason is that _before_ we ever call our function, `f`, we evaluate its argument, which in the case of `foldRight` means traversing the list all the way to the end. We need _non-strict_ evaluation to support early termination---we discuss this in a later chapter.  
+  No, this is not possible! The reason is that _before_ we ever call our function, `f`, we evaluate its argument, which in the case of `foldRight` means traversing the list all the way to the end. We need _non-strict_ evaluation to support early termination---we discuss this in chapter 5.
   */
 
   /* 
-  We get back the original list! Why is that? One way of thinking about what `foldRight` "does" is it replaces the `Nil` constructor of the list with the `z` argument, and it replaces the `Cons` constructor with the given function, `f`. If we just supply `Nil` for `z` and `Cons` for `f`, then we get back the input list. 
+  We get back the original list! Why is that? As we mentioned earlier, one way of thinking about what `foldRight` "does" is it replaces the `Nil` constructor of the list with the `z` argument, and it replaces the `Cons` constructor with the given function, `f`. If we just supply `Nil` for `z` and `Cons` for `f`, then we get back the input list. 
   
   foldRight(Cons(1, Cons(2, Cons(3, Nil))), Nil:List[Int])(Cons(_,_))
   Cons(1, foldRight(Cons(2, Cons(3, Nil)), Nil:List[Int])(Cons(_,_)))
@@ -145,8 +146,6 @@ object List { // `List` companion object
 
   /* 
   It's common practice to annotate functions you expect to be tail-recursive with the `tailrec` annotation. If the function is not tail-recursive, it will yield a compile error, rather than silently compiling the code and resulting in greater stack space usage at runtime. 
-  
-  Aside: we usually use one-letter variable names when everything there is to say about a value is implied by its type. Since functions are usually quite short in FP, many functional programmers feel this makes the code easier to read, since it makes the structure of the code easier to see. 
   */
   @annotation.tailrec
   def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B = l match { 
@@ -154,9 +153,12 @@ object List { // `List` companion object
     case Cons(h,t) => foldLeft(t, f(z,h))(f)
   }
 
+  def sum3(l: List[Int]) = foldLeft(l, 0)(_ + _)
+  def product3(l: List[Double]) = foldLeft(l, 1.0)(_ * _)
+  
   def length2[A](l: List[A]): Int = foldLeft(l, 0)((acc,h) => acc + 1)
 
-  def reverse[A](list: List[A]): List[A] = foldLeft(list, List[A]())((acc,h) => Cons(h,acc))
+  def reverse[A](l: List[A]): List[A] = foldLeft(l, List[A]())((acc,h) => Cons(h,acc))
 
   /*
   The implementation of `foldRight` in terms of `reverse` and `foldLeft` is a common trick for avoiding stack overflows when implementing a strict `foldRight` function as we've done in this chapter. (We will revisit this in a later chapter, when we discuss laziness).
@@ -207,6 +209,7 @@ object List { // `List` companion object
       case Nil => ()
       case Cons(h,t) => buf += f(h); go(t)
     }
+    go(l)
     List(buf.toList: _*) // converting from the standard Scala list to the list we've defined here
   }
 
@@ -225,6 +228,7 @@ object List { // `List` companion object
       case Nil => ()
       case Cons(h,t) => if (f(h)) buf += h; go(t)
     }
+    go(l)
     List(buf.toList: _*) // converting from the standard Scala list to the list we've defined here
   }
 
@@ -267,6 +271,7 @@ object List { // `List` companion object
     case _ => false
   }
   def hasSubsequence[A](l: List[A], sub: List[A]): Boolean = {
+    @annotation.tailrec
     def go[A](l: List[A]): Boolean = l match {
       case Nil => false
       case Cons(h,t) if startsWith(l, sub) => true

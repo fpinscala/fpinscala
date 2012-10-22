@@ -1,0 +1,1 @@
+You can write default implementations on the `Foldable` trait an then `override` them as necessary.

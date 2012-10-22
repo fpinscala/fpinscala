@@ -15,4 +15,4 @@ def sequence[A](fs: List[Rand[A]]): Rand[List[A]] =
 // polymorphic in that type.
 
 def _ints(count: Int): Rand[List[Int]] =
-  sequence(List.fill(count)(nextInt))
+  sequence(List.fill(count)(int))

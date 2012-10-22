@@ -1,0 +1,4 @@
+You can use `s.toIndexedSeq` to turn a `String` into an `IndexedSeq[Char]`. Then you can use `foldMap`. Think about what a `Part` or `Stub` for a given character should look like.
+
+A `Stub` should never contain any whitespace.
+

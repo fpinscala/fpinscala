@@ -1,0 +1,1 @@
+When thinking of properties a function should satisfy, it often helps to consider inputs that have some structure that is easy to describe. A list where all the elements are the same is one simple structure.

@@ -1,0 +1,1 @@
+Yes, it is possible. You can write it using `List.fill(n)(g)` to produce a `List[Gen[A]]` of the desired length, and then converting this to a `Gen[List[A]]`.

@@ -1,0 +1,1 @@
+Again we are very limited in the number of ways we can combine values with `op` since it should compose functions of type `A => A` for _any_ choice of `A`. And again there is more than one possible implementation. There is only one possible `zero` though.
