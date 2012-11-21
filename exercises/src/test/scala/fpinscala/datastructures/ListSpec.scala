@@ -119,20 +119,51 @@ object ListSpec extends Specification {
     }
   }
 
-  "List of double" should { // ex 18
+  "List of double [1,2]" should { // ex 18
     "be turned in a list of string" in {
-      val l: List[String] = doubleToString(Cons(1d, Cons(2d, Nil)))
+      val l: List[String] = doubleToString(List(1d, 2d))
       val compiled = true
 
       compiled aka "compilation of `l`" must beTrue
     }
   }
 
-  "List" should { // ex 19
+  """List ["first", "word"]""" should { // ex 19
     "have its elements modified while keeping structure using `map`" in {
-      map(Cons("first", Cons("word", Nil))) { s =>
-        s.length
-      } aka "list of string lengths" mustEqual List(5, 4)
+      fpinscala.datastructures.List.
+        map(Cons("first", Cons("word", Nil))) { _.length }.
+        aka("list of string lengths") mustEqual List(5, 4)
+    }
+  }
+
+  "List [0,0,1,0,2,0,0,3] filter" should { // ex 20
+    "be filtered to [1,2,3]" in {
+      filter(List(0, 0, 1, 0, 2, 0, 0, 3)) { _ > 0 }.
+        aka("filtered list") mustEqual List(1, 2, 3)
+    }
+  }
+
+  "List of string" should {
+    "be flat-mapped to list of list of characters" in {
+      fpinscala.datastructures.List.
+        flatMap(List("first", "word")) { s ⇒ List(s.toArray: _*) }.
+        aka("new list") mustEqual List('f', 'i', 'r', 's', 't',
+          'w', 'o', 'r', 'd')
+    }
+  }
+
+  "Lists [1,2,3] and [4,5,6]" should {
+    "be added pairwisely" in {
+      addPairwise(List(1, 2, 3), List(4, 5, 6)).
+        aka("new list") mustEqual List(5, 7, 9)
+    }
+  }
+
+  """Lists ["one","the"] and ["is","first"]""" should {
+    """be zipped togather as ["one is", "the first"]""" in {
+      zipWith(List("one", "the"), List("is", "first")) {
+        (a, b) ⇒ a + " " + b
+      } aka ("zipped list") mustEqual List("one is", "the first")
     }
   }
 
