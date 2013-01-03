@@ -1,4 +1,4 @@
-package fpinscala.structuringprograms
+package fpinscala.gettingstarted
 
 case class Box(height: Double, width: Double)
 

@@ -1,4 +1,4 @@
-package fpinscala.structuringprograms
+package fpinscala.gettingstarted
 
 object MyModule { 
   def abs(n: Int): Int =
