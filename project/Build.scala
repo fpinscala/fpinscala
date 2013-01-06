@@ -3,7 +3,7 @@ import Keys._
 
 object FPInScalaBuild extends Build {
   val opts = Project.defaultSettings ++ Seq(
-    scalaVersion := "2.10.0-RC3", 
+    scalaVersion := "2.10.0", 
     scalacOptions += "-optimize")
 
   lazy val root = 
