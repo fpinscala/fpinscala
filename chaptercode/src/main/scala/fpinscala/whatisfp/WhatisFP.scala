@@ -14,7 +14,7 @@ val players = List(Player("Sue", 7), // Constructs a list of players
                    Player("Bob", 8),
                    Player("Joe", 4))
 
-val winner = players.reduceLeft(winner) // Reduces the list to just the player with the highest score.
+val p = players.reduceLeft(winner) // Reduces the list to just the player with the highest score.
 
-printWinner(winner) // Prints the name of the winner to the console.
+printWinner(p) // Prints the name of the winner to the console.
 }
