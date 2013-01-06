@@ -107,6 +107,9 @@ object Reference extends Parsers[Parser] {
   def label[A](msg: String)(p: Parser[A]): Parser[A] = 
     s => p(s).mapError(_.label(msg))
 
+  def fail[A](msg: String): Parser[A] = 
+    s => Failure(s.loc.toError(msg), true) 
+
   def attempt[A](p: Parser[A]): Parser[A] = 
     s => p(s).uncommit
 
