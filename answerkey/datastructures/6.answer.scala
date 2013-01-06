@@ -3,8 +3,8 @@ Notice we are copying the entire list up until the last element. Besides being i
 
 Another common convention is to accumulate the output list in reverse order, then reverse it at the end, which does not require even local mutation. We will write a reverse function later in this chapter.
 */
-def init[A](l: List[A]): List[A] =
-  l match {
+def init[A](l: List[A]): List[A] = 
+  l match { 
     case Nil => sys.error("init of empty list")
     case Cons(_,Nil) => Nil
     case Cons(h,t) => Cons(h,init(t))
