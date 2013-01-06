@@ -132,7 +132,7 @@ object IO1 {
   def variable(e: Env) = 
     P.regex("[a-z]+[0-9]*".r).token.flatMap(lookup(e))
   def times(e: Env): Parser[Double] = 
-    (P.double | variable(e).attempt) opL ("*" as ((_ * _)))  
+    (P.double | attempt(variable(e))) opL ("*" as ((_ * _)))  
   def parseExpr(e: Env): Parser[Double] = 
     P.root { times(e) opL ("+" as ((x:Double,y:Double) => x+y)) }
   
