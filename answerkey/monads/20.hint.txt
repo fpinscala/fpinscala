@@ -1,0 +1,1 @@
+What would you expect `getState` to return right after you call `setState`?

@@ -1,0 +1,1 @@
+This monad is very similar to the `State` monad, except that it's "read-only". You can "get" but not "set" the `R` value that `flatMap` carries along.

@@ -1,0 +1,1 @@
+These implementations should be very similar to implementations from previous chapters, only with more general types, and using the combinators on the `Monad` trait. Make use of `unit` and `map2`.

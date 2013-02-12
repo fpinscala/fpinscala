@@ -8,21 +8,21 @@ object FPInScalaBuild extends Build {
     libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.1.0"
   )
 
-  lazy val root = 
-    Project(id = "fpinscala", 
-            base = file("."), 
+  lazy val root =
+    Project(id = "fpinscala",
+            base = file("."),
             settings = opts) aggregate (chapterCode, exercises, answers)
-  lazy val chapterCode = 
-    Project(id = "chapter-code", 
-            base = file("chaptercode"), 
+  lazy val chapterCode =
+    Project(id = "chapter-code",
+            base = file("chaptercode"),
             settings = opts)
-  lazy val exercises = 
-    Project(id = "exercises", 
-            base = file("exercises"), 
-            settings = opts) 
-  lazy val answers = 
-    Project(id = "answers", 
-            base = file("answers"), 
+  lazy val exercises =
+    Project(id = "exercises",
+            base = file("exercises"),
+            settings = opts)
+  lazy val answers =
+    Project(id = "answers",
+            base = file("answers"),
             settings = opts)
 }
-                        
+

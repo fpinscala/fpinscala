@@ -1,0 +1,1 @@
+Expand out both sides of the equation, substituting an actual `Option` for `x`. You need to consider both the case where `x` matches `None` and where `x` matches `Some(v)`. If both sides of the equation expand out to the same expression in both cases, then you have proven this law.

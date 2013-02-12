@@ -1,0 +1,1 @@
+You can start by pattern matching on the argument. Note that you may not need the full power of monads here.

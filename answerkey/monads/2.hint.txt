@@ -1,0 +1,1 @@
+Since `State` is a binary type constructor, we need to partially apply it with the `S` type argument. Thus, it is not just one monad, but an entire family of monads, one for each type `S`. You need to devise a way of capturing the type `S` in a type-level scope and providing a partially applied `State` type in that scope.

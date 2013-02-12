@@ -1,0 +1,1 @@
+This law is an equation. To prove it, expand both sides of the equation by replacing `flatMap` with its definition. It should expand into a pattern match on the `Option` value. Since there are only two cases for `Option`, you can simply check the equation for both cases.

@@ -1,0 +1,1 @@
+def join[A](mma: M[M[A]]): M[A] = flatMap(mma)(ma => ma)

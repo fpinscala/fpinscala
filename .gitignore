@@ -5,3 +5,4 @@ target
 project/boot
 .history
 project.vim
+*.old

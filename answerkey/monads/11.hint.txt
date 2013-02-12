@@ -1,0 +1,6 @@
+You want to show that these two are equivalent:
+
+flatMap(flatMap(x)(f))(g) == flatMap(x)(a => flatMap(f(a))(g))
+compose(compose(f, g), h) == compose(f, compose(g, h))
+
+Rewrite one in terms of the other.
