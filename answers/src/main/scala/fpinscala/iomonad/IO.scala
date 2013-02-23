@@ -283,91 +283,10 @@ object IO2 {
                             /* 
 
   To illustrate the idea for how to fix this, we first introduce a
-  data type, `Trampoline`:
-                             */
-  
-  trait Trampoline[+A] { def run: A = Trampoline.run(this) }
-  case class Done[+A](get: A) extends Trampoline[A]
-  case class More[+A](force: () => Trampoline[A]) extends Trampoline[A]
-  case class Bind[A,+B](force: () => Trampoline[A], 
-                        f: A => Trampoline[B]) extends Trampoline[B]
- 
-                            /* 
-
-  Exercise 5: Implement a tail-recursive `run` function for evaluating
-  a `Trampoline[A]` to an `A`.
-  
-  Exercise 6: Implement `Monad[Trampoline]`. 
+  data type, `Trampoline`. See `Trampoline.scala` in this directory
+  for its definition and exercises 5, 6, and 7.
 
                              */
-
-  // companion object itself is the Monad instance
-  object Trampoline extends Monad[Trampoline] {
-    @annotation.tailrec
-    def run[A](t: Trampoline[A]): A = t match {
-      case Done(a) => a
-      case More(k) => run(k())
-      case Bind(force, f) => run(force() flatMap f)
-    }
-
-    def unit[A](a: => A) = Done(a)
-    def flatMap[A,B](a: Trampoline[A])(f: A => Trampoline[B]): Trampoline[B] = 
-      a match { 
-        case Done(forced) => f(forced)
-        case More(force) => Bind(force, f)
-        case Bind(force,g) => More(() => Bind(force, g andThen (_ flatMap f)))
-      }
-    def more[A](a: => Trampoline[A]): Trampoline[A] = 
-      More(() => a)
-    def delay[A](a: => A): Trampoline[A] = 
-      More(() => Done(a))
-  }
-                            /* 
-
-  Exercise 7: Show that `flatMap` always returns after doing a constant
-  amount of work, and that `run` will always call itself after at most
-  a single call to `force()`.
- 
-  First, we show that `flatMap` always does a constant amount of
-  work before returning. Just by inspecting each of the cases, we
-  can see that `flatMap` always returns 'immediately': 
-    
-    Bind(() => a, f) returns immediately, it is just packaging
-      the arguments in a constructor
-    Bind(force, f) returns immediately, for the same reason
-    More(() => Bind(force, g andThen (_ flatMap f))) returns
-      immediately. The `g andThen (_ flatMap f)` creates a new 
-      function that could be problematic when called, but 
-      composing the functions returns immediately.
-
-  The next observation is that we never build up a chain of function
-  compositions. Look at the third case: 
-
-    case Bind(force,g) => More(() => Bind(force, g andThen (_ flatMap f)))
-
-  Since this wraps its result in a `More`, if we call `flatMap` again,
-  this will just become:
-
-    Bind(() => Bind(force, g andThen (_ flatMap f)), f2)
-  
-  The same pattern continues if we flatMap again. Since we never 
-  construct a function composition like f1 andThen f2 ... andThen fN, we
-  don't have to worry about stack overflows when calling the function in 
-  a Bind constructor.
-
-  Next, notice that we never call force() anywhere in the implementation 
-  of flatMap. The one place we construct a new thunk, it is a thunk that
-  returns a Bind 'immediately', without forcing any other thunk:
-
-     case Bind(force,g) => More(() => Bind(force, g andThen (_ flatMap f)))
-
-  Since we never construct a thunk that forces another thunk, and any 
-  thunk we do construct uses constant stack space to produce its result,
-  we can be assured that calling `force()` in the `run` function will use
-  a constant amount of stack space before returning. 
-
-                             */
-  
 }
 
 object IO3 {
@@ -465,115 +384,8 @@ object IO3 {
 
   We are going to implement a nonblocking version of `run`, that returns 
   a `Future[A]`. First, we introduce a new, trampolined version of 
-  `Future` (see constructors in companion object of `Future`):
-                             */
-  trait Future[+A] {
-    
-                            /* 
-
-  Exercise 11: Implement `Monad[Future]`. We will need it to implement
-  our nonblocking `IO` interpreter. Also implement `runAsync`, for an 
-  asynchronous evaluator for `Future`, and `run`, the synchronous 
-  evaluator.
-                             */
-
-    import Future._ // constructors and helper functions, see below
-
-    def flatMap[B](f: A => Future[B]): Future[B] = this match {
-      case Now(a) => More(() => f(a))
-      case Later(listen) => BindLater(listen, f)
-      case More(force) => BindMore(force, f)
-      case BindLater(listen,g) => More(() =>
-        BindLater(listen)(x => g(x) flatMap f))
-      case BindMore(force,g) => More(() =>
-        BindMore(force)(x => g(x) flatMap f))
-    }
-    def map[B](f: A => B): Future[B] =
-      this flatMap (a => Now(f(a)))
-   
-    final def runAsync(onFinish: A => Unit): Future[Unit] = this.start match {
-      case Now(a) => now(onFinish(a))
-      case Later(r) => now(r(onFinish))
-      case BindLater(r, f) =>
-        val latch = new java.util.concurrent.CountDownLatch(1)
-        @volatile var result: Option[Any] = None
-        r { x => result = Some(x); latch.countDown }
-        more { latch.await; f(result.get).runAsync(onFinish) }
-      case _ => sys.error("Impossible!")
-    }
-   
-    @annotation.tailrec
-    final def start: Future[A] = this match {
-      case More(force) => force().start
-      case BindMore(force,f) => (force() flatMap f).start
-      case _ => this // Now, Later, BindLater
-    }
-   
-    // synchronous evaluator
-    def run: A = this.start match {
-      case Now(a) => a
-      case f => {
-        val latch = new java.util.concurrent.CountDownLatch(1)
-        @volatile var result: Option[A] = None
-        f.runAsync { a => result = Some(a); latch.countDown }.run
-        latch.await
-        result.get
-      }
-    }
-  }
- 
-  object Future extends Monad[Future] {
-    // define constructors inside companion object
-    case class Now[+A](get: A) extends Future[A]
-    case class More[+A](force: () => Future[A]) extends Future[A]
-    case class BindMore[A,+B](force: () => Future[A],
-                              f: A => Future[B]) extends Future[B]
-   
-    case class Later[+A](listen: (A => Unit) => Unit) extends Future[A]
-    case class BindLater[A,+B](listen: (A => Unit) => Unit,
-                               f: A => Future[B]) extends Future[B]
-   
-    // curried versions for type inference
-    def BindLater[A,B](listen: (A => Unit) => Unit)(
-                       f: A => Future[B]): Future[B] =
-      BindLater(listen, f)
-   
-    def BindMore[A,B](force: () => Future[A])(
-                      f: A => Future[B]): Future[B] =
-      BindMore(force, f)
-   
-    // hide java.util.concurrent.Future, import everything else
-    import java.util.concurrent.{Future => _, _}
-    
-    def unit[A](a: => A) = now(a)
-    def flatMap[A,B](a: Future[A])(f: A => Future[B]): Future[B] = a flatMap f
-    def more[A](a: => Future[A]): Future[A] = More(() => a)
-    def delay[A](a: => A): Future[A] = More(() => Now(a))
-    def now[A](a: A): Future[A] = Now(a)
-    def fork[A](a: => Future[A]): Future[A] = apply(a) flatMap (a => a)
-   
-    // Create a Later from a nonstrict value,
-    // backed by a shared thread pool (declared below)
-    def apply[A](a: => A): Future[A] = {
-      @volatile var result: Option[A] = None
-      val latch = new CountDownLatch(1)
-      val task = pool.submit { new Callable[Unit] {
-        def call = { result = Some(a); latch.countDown }
-      }}
-      more { Later { cb => latch.await; cb(result.get) } }
-    }
-    // Daemon threads will not prevent the JVM from exiting, if they are
-    // the only threads left running (see java.lang.Thread API docs for
-    // details)
-    val daemonize = new ThreadFactory { def newThread(r: Runnable) = {
-      val t = new Thread(r)
-      t.setDaemon(true)
-      t
-    }}
-    val pool = Executors.newCachedThreadPool(daemonize)
-  }
- 
-                            /* 
+  `Future`. See `Future.scala` in this package for the definition and
+  exercise 11. 
 
   With `Future`, our existing `Monad`-parameterized `run` function
   can use nonblocking I/O - we just need to be able to produce a 
@@ -591,7 +403,7 @@ object IO3 {
   }
   
   /* 
-   * Exercise 12 Implement `run`, translating from `F` to `G` 
+   * Exercise 12: Implement `run`, translating from `F` to `G` 
    * as part of the interpretation.
    */
   def run[F[_],G[_],A](T: Trans[F,G])(G: Monad[G])(io: IO[F,A]): G[A] = 
@@ -604,39 +416,8 @@ object IO3 {
       case BindMore(k,f) => run(T)(G)(k() flatMap f) 
       case More(k) => run(T)(G)(k())
     }
-                            /* 
 
-  Exercise 13: We can also use an API that supports nonblocking operations
-  directly. Left as an exercise; the general idea is to use the
-  I/O API to construct a Later directly, rather that using Future.apply,
-  which delegates to a thread pool.
-
-                             */
-
-                             /*
-  // todo - check that this code actually works with Java 7
-  import java.nio._
-  import java.nio.channels._
-
-  def read(file: AsynchronousFileChannel, 
-           fromPosition: Long, 
-           nBytes: Int): Future[Either[Throwable, Array[Byte]]] = {
-    val buf = ByteBuffer.allocate(nBytes)
-    Future.Later { (cb: Array[Byte] => Unit) => 
-      file.read(buf, fromPosition, (), new CompletionHandler[Int, Unit] {
-        def completed(bytesRead: Int, ignore: Unit) = {
-          val arr = new Array[Byte](bytesRead)
-          buf.slice.get(arr, 0, bytesRead)
-          cb(Right(arr))
-        }
-        def failed(err: Throwable, ignore: Unit) = 
-          cb(Left(err))
-      })
-    }
-  }
-                               */
-     
-  
+  /* See `Future.scala` for Exercise 13. */
 }
 
 object FactorialApp extends App {

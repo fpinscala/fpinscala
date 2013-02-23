@@ -56,8 +56,8 @@ object Task extends Monad[Task] {
 
   def delay[A](a: => A): Task[A] = more(now(a))
   def fork[A](a: => A): Task[A] = Task(Future(Try(a)).start)
-  def async[A](register: (Either[Throwable,A] => Unit) => Unit): Task[A] = 
-    Task(Future.Later(register))
+//  def async[A](register: (Either[Throwable,A] => Unit) => Unit): Task[A] = 
+//   Task(Future.Later(register))
 
   def Try[A](a: => A): Either[Throwable,A] = 
     try Right(a) catch { case e: Exception => Left(e) }
