@@ -705,12 +705,11 @@ object GeneralizedStreamTransducers {
         else recv(emit.head) match {
           case Await(_, recv2, fb2, c2) => 
             feed(emit.tail, tail, recv2, fb2, c2)
-          case p => 
-            emitAll(emit.tail, tail) |> p
+          case p => emitAll(emit.tail, tail) |> p
         }
       p2 match {
         case Halt() => this.kill ++ Halt()
-        case Emit(h, t) => Emit(h, this |> t)
+        case Emit(h, t) => emitAll(h, this |> t)
         case Await(req,recv,fb,c) => this match {
           case Emit(h,t) => feed(h, t, recv, fb, c)
           case Halt() => Halt() |> fb
@@ -742,6 +741,8 @@ object GeneralizedStreamTransducers {
 
     def take(n: Int): Process[F,O] = 
       this |> Process.take(n)
+
+    def once: Process[F,O] = take(1)
 
     /* 
      * Use a `Tee` to interleave or combine the outputs of `this` and
@@ -847,12 +848,11 @@ object GeneralizedStreamTransducers {
 
     case class Halt[F[_],O]() extends Process[F,O]
 
-    @annotation.tailrec
     def emitAll[F[_],O](
         head: Seq[O], 
         tail: Process[F,O] = Halt[F,O]()): Process[F,O] = 
       tail match {
-        case Emit(h2,t) => emitAll(head ++ h2, t)
+        case Emit(h2,t) => Emit(head ++ h2, t)
         case _ => Emit(head, tail)
       }
     def emit[F[_],O](
@@ -965,9 +965,8 @@ object GeneralizedStreamTransducers {
     def lift[I,O](f: I => O): Process1[I,O] = 
       await1[I,O]((i:I) => emit(f(i))) repeat
     
-    //iamhere must not be advancing what is passed to the filter
     def filter[I](f: I => Boolean): Process1[I,I] =
-      await1[I,I](i => if (f(i)) emit(i, filter(f)) else filter(f))
+      await1[I,I](i => if (f(i)) emit(i) else halt1) repeat
 
     // we can define take, takeWhile, and so on as before
 
@@ -1155,7 +1154,7 @@ object GeneralizedStreamTransducers {
      */
 
     val convertAll: Process[IO,Unit] = (for {
-      out <- fileW("celsius.txt").take(1)
+      out <- fileW("celsius.txt").once
       file <- lines("fahrenheits.txt") 
       _ <- lines(file).
            map(line => fahrenheitToCelsius(line.toDouble)).
