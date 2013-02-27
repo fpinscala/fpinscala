@@ -705,11 +705,12 @@ object GeneralizedStreamTransducers {
         else recv(emit.head) match {
           case Await(_, recv2, fb2, c2) => 
             feed(emit.tail, tail, recv2, fb2, c2)
-          case p => Emit(emit, tail) |> p
+          case p => 
+            emitAll(emit.tail, tail) |> p
         }
       p2 match {
         case Halt() => this.kill ++ Halt()
-        case Emit(h,t) => emitAll(h, this |> t)
+        case Emit(h, t) => Emit(h, this |> t)
         case Await(req,recv,fb,c) => this match {
           case Emit(h,t) => feed(h, t, recv, fb, c)
           case Halt() => Halt() |> fb
@@ -739,6 +740,9 @@ object GeneralizedStreamTransducers {
     def filter(f: O => Boolean): Process[F,O] = 
       this |> Process.filter(f)
 
+    def take(n: Int): Process[F,O] = 
+      this |> Process.take(n)
+
     /* 
      * Use a `Tee` to interleave or combine the outputs of `this` and
      * `p2`. This can be used for zipping, interleaving, and so forth.
@@ -764,7 +768,7 @@ object GeneralizedStreamTransducers {
             case Left(_) => feedL(emit.tail, tail, other, recv2, fb2, c2)
             case _ => (Emit(emit.tail, tail) tee other)(t2)
           }
-          case p => (Emit(emit, tail) tee other)(p)
+          case p => (Emit(emit.tail, tail) tee other)(p)
         }
       @annotation.tailrec
       def feedR(emit: Seq[O2], tail: Process[F,O2], 
@@ -778,7 +782,7 @@ object GeneralizedStreamTransducers {
             case Right(_) => feedR(emit.tail, tail, other, recv2, fb2, c2)
             case _ => (other tee Emit(emit.tail, tail))(t2)
           }
-          case p => (other tee Emit(emit, tail))(p)
+          case p => (other tee Emit(emit.tail, tail))(p)
         }
       t match {
         case Halt() => this.kill ++ p2.kill ++ Halt() 
@@ -840,14 +844,15 @@ object GeneralizedStreamTransducers {
     case class Emit[F[_],O](
       head: Seq[O], 
       tail: Process[F,O]) extends Process[F,O]
-  
+
     case class Halt[F[_],O]() extends Process[F,O]
 
+    @annotation.tailrec
     def emitAll[F[_],O](
         head: Seq[O], 
         tail: Process[F,O] = Halt[F,O]()): Process[F,O] = 
       tail match {
-        case Emit(h2,t) => Emit(head ++ h2, t)
+        case Emit(h2,t) => emitAll(head ++ h2, t)
         case _ => Emit(head, tail)
       }
     def emit[F[_],O](
@@ -959,11 +964,16 @@ object GeneralizedStreamTransducers {
 
     def lift[I,O](f: I => O): Process1[I,O] = 
       await1[I,O]((i:I) => emit(f(i))) repeat
-
+    
+    //iamhere must not be advancing what is passed to the filter
     def filter[I](f: I => Boolean): Process1[I,I] =
-      await1[I,I](i => if (f(i)) emit(i) else halt1) repeat
+      await1[I,I](i => if (f(i)) emit(i, filter(f)) else filter(f))
 
     // we can define take, takeWhile, and so on as before
+
+    def take[I](n: Int): Process1[I,I] = 
+      if (n <= 0) halt1
+      else await1[I,I](i => emit(i, take(n-1)))
 
                             /*                       
   
@@ -1145,7 +1155,7 @@ object GeneralizedStreamTransducers {
      */
 
     val convertAll: Process[IO,Unit] = (for {
-      out <- fileW("celsius.txt")
+      out <- fileW("celsius.txt").take(1)
       file <- lines("fahrenheits.txt") 
       _ <- lines(file).
            map(line => fahrenheitToCelsius(line.toDouble)).
@@ -1234,5 +1244,12 @@ object GeneralizedStreamTransducers {
     }
     
   }
-  // lines("tempfiles.txt") flatMap lines
+}
+
+object ProcessTest extends App {
+  import GeneralizedStreamTransducers._
+  import Process.{IO, lines}
+
+  println { Process.collect(Process.converter) }
+  println { Process.collect(Process.convertAll) }
 }
