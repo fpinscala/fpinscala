@@ -1,1 +1,0 @@
-`lift` returns a function. You must start your definition by taking an argument.

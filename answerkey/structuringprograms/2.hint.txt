@@ -1,1 +1,0 @@
-You need to return a literal function. Start by writing the left-hand side of this function, then an arrow, then the body of the function.

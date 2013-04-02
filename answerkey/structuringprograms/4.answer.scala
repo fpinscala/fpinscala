@@ -1,1 +1,0 @@
-def divisibleBy(k: Int): Pred[Int] = _ % k == 0
