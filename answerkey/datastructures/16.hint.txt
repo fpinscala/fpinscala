@@ -1,1 +1,1 @@
-Use `foldRight`.
+Try using `foldRight`. You should not need to resort to an explicitly recursive function.

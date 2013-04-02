@@ -1,8 +1,18 @@
-/* 
-This function is usually called `zipWith`. The discussion about stack usage from the explanation of `map` also applies here. By putting the `f` in the second argument list, Scala can infer its type from the previous argument list. 
+/*
+There's nothing particularly bad about this implementation, except that it's somewhat monolithic and easy to get wrong. (Without pattern matching and pattern guards, the implementation would be even more finnicky.) Where possible, we prefer to assemble functions like this using combinations of other functions. It makes the code more obviously correct and easier to read and understand. Notice that in this implementation we need special purpose logic to break out of our loops early. In Chapter 5 we'll discuss ways of composing functions like this from simpler components, without giving up the efficiency of having the resulting functions work in one pass over the data.
 */
-def zipWith[A,B,C](a: List[A], b: List[B])(f: (A,B) => C): List[C] = (a,b) match {
-  case (Nil, _) => Nil
-  case (_, Nil) => Nil
-  case (Cons(h1,t1), Cons(h2,t2)) => Cons(f(h1,h2), zipWith(t1,t2)(f))
+def startsWith[A](l: List[A], prefix: List[A]): Boolean = (l,prefix) match {
+  case (_,Nil) => true
+  case (Nil,_) => false
+  case (Cons(h,t),Cons(h2,t2)) if h == h2 => startsWith(t, t2)
+  case _ => false
+}
+def hasSubsequence[A](l: List[A], sub: List[A]): Boolean = {
+  @annotation.tailrec
+  def go[A](l: List[A]): Boolean = l match {
+    case Nil => false
+    case Cons(h,t) if startsWith(l, sub) => true
+    case Cons(h,t) => go(t)  
+  }
+  go(l)
 }

@@ -1,10 +1,3 @@
 /* 
-Notice that we traverse all the way to the end of the list (pushing frames onto the call stack as we go) before we can begin collapsing it.
-
-foldRight(Cons(1, Cons(2, Cons(3, Nil))), 0)(_ + _)
-1 + foldRight(Cons(2, Cons(3, Nil)), 0)(_ + _)
-1 + (2 + foldRight(Cons(3, Nil), 0)(_ + _))
-1 + (2 + (3 + (foldRight(Nil, 0)(_ + _))))
-1 + (2 + (3 + (0)))
-6
+No, this is not possible! The reason is that _before_ we ever call our function, `f`, we evaluate its argument, which in the case of `foldRight` means traversing the list all the way to the end. We need _non-strict_ evaluation to support early termination---we discuss this in chapter 5.
 */

@@ -1,0 +1,1 @@
+Implement `apply` in terms of `flatMap`. Start with each applicative law in turn, then substitute equals for equals and apply the monad laws until you get an equation that is obviously true.

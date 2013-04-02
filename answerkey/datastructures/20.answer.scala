@@ -1,18 +1,5 @@
 /* 
-The discussion about `map` also applies here.
+This could also be implemented directly using `foldRight`.
 */
-def filter[A](l: List[A])(f: A => Boolean): List[A] = 
-  foldRight(l, Nil:List[A])((h,t) => if (f(h)) Cons(h,t) else t)
-
-def filter_1[A](l: List[A])(f: A => Boolean): List[A] = 
-  foldRightViaFoldLeft(l, Nil:List[A])((h,t) => if (f(h)) Cons(h,t) else t)
-
-def filter_2[A](l: List[A])(f: A => Boolean): List[A] = {
-  val buf = new collection.mutable.ListBuffer[A]
-  def go(l: List[A]): Unit = l match {
-    case Nil => ()
-    case Cons(h,t) => if (f(h)) buf += h; go(t)
-  }
-  go(l)
-  List(buf.toList: _*) // converting from the standard Scala list to the list we've defined here
-}
+def flatMap[A,B](l: List[A])(f: A => List[B]): List[B] = 
+  concat(map(l)(f))

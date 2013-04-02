@@ -1,0 +1,3 @@
+The definition of `apply` is very short. The only things you can do are `map2`, `apply`, and `unit` from the `F` and `G` applicatives. Follow the types.
+
+You may want to skip proving the laws as you may find it very difficult without an interactive proof assistant like Coq or Agda. If you do decide to take on the challenge, this is the kind of problem that might take someone several days or even a few weeks to think about.

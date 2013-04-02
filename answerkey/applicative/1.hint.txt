@@ -1,0 +1,1 @@
+We have already seen how `apply` and `map2` are connected. In terms of `map2`, `apply` is very similar to `map`. And to implement `map2` in terms of `apply` you must use Currying (or partial application). Follow the types!

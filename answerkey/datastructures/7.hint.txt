@@ -1,1 +1,1 @@
-The first step is `1 + foldRight(Cons(2, Cons(3, Nil)), 0)(_ + _)`
+Look at the program trace from the previous example. Based on the trace, is it possible the function supplied could choose to terminate the recursion early?

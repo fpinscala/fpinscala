@@ -1,1 +1,1 @@
-Again, try using `foldRight`!
+You should be able to use a combination of existing functions.

@@ -1,0 +1,1 @@
+You can write `flatMap` using pattern matching.
