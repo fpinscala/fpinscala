@@ -84,7 +84,7 @@ trait Stream[+A] {
   def takeViaUnfold(n: Int): Stream[A] = 
     unfold((this,n)) { 
       case (s,n) if n > 0 => 
-        s.uncons.map { case (h,t) => (h, (t,n)) }
+        s.uncons.map { case (h,t) => (h, (t,n-1)) }
       case _ => None
     }
   
@@ -118,11 +118,10 @@ trait Stream[+A] {
     val a = this map (Some(_)) append (constant(None)) 
     val b = s2 map (Some(_)) append (constant(None)) 
     unfold((a, b)) {
-      case (s1,s2) if s1.isEmpty && s2.isEmpty => None
       case (s1,s2) => {
         val (h1,t1) = s1.uncons.get 
         val (h2,t2) = s2.uncons.get
-        Some((f(h1,h2), (t1,t2)))
+        if(h1.isEmpty && h2.isEmpty) None else Some((f(h1,h2), (t1,t2)))
       }
     }
   }
