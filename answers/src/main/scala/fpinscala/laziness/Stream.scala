@@ -84,7 +84,7 @@ trait Stream[+A] {
   def takeViaUnfold(n: Int): Stream[A] = 
     unfold((this,n)) { 
       case (s,n) if n > 0 => 
-        s.uncons.map { case (h,t) => (h, (t,n)) }
+        s.uncons.map { case (h,t) => (h, (t,n-1)) }
       case _ => None
     }
   
