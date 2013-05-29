@@ -1,0 +1,1 @@
+You are going to return a function literal of the type `B => C`. Start by writing `(b: B) => ???`.

@@ -111,6 +111,12 @@ trait Monad[M[_]] extends Applicative[M] {
   override def apply[A,B](mf: M[A => B])(ma: M[A]): M[B] =
     flatMap(mf)(f => map(ma)(a => f(a)))
 
+  override def map[A,B](m: M[A])(f: A => B): M[B] =
+    flatMap(m)(a => unit(f(a)))
+
+  override def map2[A,B,C](ma: M[A], mb: M[B])(f: (A, B) => C): M[C] =
+    flatMap(ma)(a => map(mb)(b => f(a, b)))
+
   def compose[A,B,C](f: A => M[B], g: B => M[C]): A => M[C] =
     a => flatMap(f(a))(g)
 
@@ -185,7 +191,7 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] { self =>
   def mapAccum[S,A,B](fa: F[A], s: S)(f: (A, S) => (B, S)): (F[B], S) =
     traverseS(fa)((a: A) => (for {
       s1 <- get[S]
-      (b, s2) = f(a, s)
+      (b, s2) = f(a, s1)
       _  <- set(s2)
     } yield b)).run(s)
 

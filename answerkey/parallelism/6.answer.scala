@@ -1,8 +1,5 @@
-/* 
-This implementation does not preserve timeouts, and you can probably see how it would be rather finnicky to do this correctly. This is an argument in favor of definining combinators like `parMap` in terms of simpler combinators.
-*/
-def parMap[A,B](l: List[A])(f: A => B): Par[List[B]] =
-  es => {
-    val fs: List[Future[B]] = l map (a => asyncF(f)(a)(es)) 
-    UnitFuture(fs.map(_.get))
-  }
+def parFilter[A](l: List[A])(f: A => Boolean): Par[List[A]] = {
+  val pars: List[Par[List[A]]] = 
+    l map (asyncF((a: A) => if (f(a)) List(a) else List())) 
+  map(sequence(pars))(_.flatten) // convenience method on `List` for concatenating a list of lists
+}

@@ -1,0 +1,1 @@
+You will definitely need a helper method like we did with `factorial`. But think about what information you need at each iteration. You might need two values, one for each of the two numbers you need to calculate the next number. And you know the first two numbers already.
