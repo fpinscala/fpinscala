@@ -3,7 +3,9 @@ import Keys._
 
 object FPInScalaBuild extends Build {
   val opts = Project.defaultSettings ++ Seq(
-    scalaVersion := "2.10.2"
+    scalaVersion := "2.10.2",
+    scalacOptions ++= Seq("-feature", "-language:higherKinds",
+      "-language:postfixOps", "-language:implicitConversions")
   )
 
   lazy val root =
