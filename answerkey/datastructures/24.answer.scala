@@ -1,6 +1,6 @@
 /*
 There's nothing particularly bad about this implementation, except that it's somewhat monolithic and easy to get
-wrong. (Without pattern matching and pattern guards, the implementation would be even more finnicky.) Where
+wrong. (Without pattern matching and pattern guards, the implementation would be even more finicky.) Where
 possible, we prefer to assemble functions like this using combinations of other functions. It makes the code
 more obviously correct and easier to read and understand. Notice that in this implementation we need special
 purpose logic to break out of our loops early. In Chapter 5 we'll discuss ways of composing functions like this
