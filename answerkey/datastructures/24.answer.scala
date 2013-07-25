@@ -7,12 +7,9 @@ def startsWith[A](l: List[A], prefix: List[A]): Boolean = (l,prefix) match {
   case (Cons(h,t),Cons(h2,t2)) if h == h2 => startsWith(t, t2)
   case _ => false
 }
-def hasSubsequence[A](l: List[A], sub: List[A]): Boolean = {
-  @annotation.tailrec
-  def go[A](l: List[A]): Boolean = l match {
-    case Nil => false
-    case Cons(h,t) if startsWith(l, sub) => true
-    case Cons(h,t) => go(t)  
-  }
-  go(l)
+@annotation.tailrec
+def hasSubsequence[A](l: List[A], sub: List[A]): Boolean = l match {
+  case Nil => false
+  case Cons(h,t) if startsWith(l, sub) => true
+  case Cons(h,t) => hasSubsequence(t, sub)  
 }
