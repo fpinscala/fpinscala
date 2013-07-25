@@ -3,7 +3,6 @@ There's nothing particularly bad about this implementation, except that it's som
 */
 def startsWith[A](l: List[A], prefix: List[A]): Boolean = (l,prefix) match {
   case (_,Nil) => true
-  case (Nil,_) => false
   case (Cons(h,t),Cons(h2,t2)) if h == h2 => startsWith(t, t2)
   case _ => false
 }
