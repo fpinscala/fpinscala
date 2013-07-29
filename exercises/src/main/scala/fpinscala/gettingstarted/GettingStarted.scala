@@ -48,7 +48,7 @@ object MyModule {
   // accept a _function_ as a parameter
   def formatResult(name: String, n: Int, f: Int => Int) = { 
     val msg = "The %s of %d is %d." 
-    msg.format(n, f(n))
+    msg.format(name, n, f(n))
   }
 }
 
