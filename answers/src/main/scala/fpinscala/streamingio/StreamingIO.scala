@@ -149,7 +149,7 @@ object SimpleStreamTransducers {
         if (emit isEmpty) tail |> Await(f, fb) 
         else f(emit.head) match {
           case Await(f2, fb2) => feed(emit.tail, tail, f2, fb2)
-          case p => Emit(emit, tail) |> p
+          case p => Emit(emit.tail, tail) |> p
         }
       p2 match {
         case Halt() => Halt()
@@ -157,7 +157,7 @@ object SimpleStreamTransducers {
         case Await(f,fb) => this match {
           case Emit(h,t) => feed(h, t, f, fb)
           case Halt() => Halt() |> fb
-          case Await(g,gb) => Await((i: I) => g(i) |> p2, gb |> fb)
+          case Await(g,gb) => Await((i: I) => g(i) |> p2, gb |> p2)
         }
       }
     }
