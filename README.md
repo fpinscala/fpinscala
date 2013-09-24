@@ -30,6 +30,12 @@ to get a Scala REPL with access to your exercises, and
 
 To get a menu of possible main methods to execute. 
 
+To use this project in Eclipse type:
+
+    > eclipse
+
+and then import as an existing project into Eclipse.
+
 All code in this repository is [MIT-licensed](http://opensource.org/licenses/mit-license.php). See the LICENSE file for details. 
 
 Have fun, and good luck!

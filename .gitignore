@@ -6,3 +6,8 @@ project/boot
 .history
 project.vim
 *.old
+
+# Eclipse files
+.cache
+.classpath
+.project
