@@ -1,1 +1,1 @@
-def join[A](mma: M[M[A]]): M[A] = flatMap(mma)(ma => ma)
+def join[A](mma: F[F[A]]): F[A] = flatMap(mma)(ma => ma)

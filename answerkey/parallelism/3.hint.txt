@@ -1,1 +1,1 @@
--
+In order to respect timeouts, we would need a new `Future` implementation that records the amount of time spent evaluating one future, then subtracts that time from the available time allocated for evaluating the other future.

@@ -1,1 +1,1 @@
--
+You can use a sized generator.

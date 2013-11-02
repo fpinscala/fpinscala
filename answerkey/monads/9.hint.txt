@@ -1,1 +1,1 @@
--
+Look at the signature of `compose`. What happens if `A` is `Unit`?

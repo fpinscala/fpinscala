@@ -15,3 +15,11 @@ f(v).flatMap(g)               == (a => f(a).flatMap(g))(v)
 f(v).flatMap(g)               == f(v).flatMap(g)
 
 Q.E.D.
+
+Proving equivalence of the two `genOrder` implementations
+is more challenging. We need to show equivalence of the
+two ways of ways of threading the state actions to generate
+random values. We omit the proof here, but a basic idea
+is that both groupings generate the same sequence of `RNG`
+values and use each `RNG` to produce the same portion of
+the overall result.

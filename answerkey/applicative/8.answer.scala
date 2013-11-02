@@ -1,6 +1,8 @@
-You want to try writing `flatMap` in terms of `Monad[M]` and `Monad[N]`.
-
-def flatMap[A,B](mna: M[N[A]])(f: A => M[N[B]]): M[N[B]] =
-  self.flatMap(na => N.flatMap(na)(a => ???))
-
-Here all you have is `f`, which returns an `M[N[B]]`. For it to have the appropriate type to return from the argument to `N.flatMap`, you would need to be able to "swap" the `M` and `N` types. In other words, you would need a _distributive law_. Such an operation is not part of the `Monad` interface.
+def product[G[_]](G: Applicative[G]): Applicative[({type f[x] = (F[x], G[x])})#f] = {
+  val self = this
+  new Applicative[({type f[x] = (F[x], G[x])})#f] {
+    def unit[A](a: => A) = (self.unit(a), G.unit(a))
+    override def apply[A,B](fs: (F[A => B], G[A => B]))(p: (F[A], G[A])) =
+      (self.apply(fs._1)(p._1), G.apply(fs._2)(p._2))
+  }
+}

@@ -1,2 +1,2 @@
-def flatMap[A,B](ma: M[A])(f: A => M[B]) =
+def flatMap[A,B](ma: F[A])(f: A => F[B]) =
   join(map(ma)(f))

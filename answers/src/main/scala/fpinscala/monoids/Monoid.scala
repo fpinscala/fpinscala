@@ -1,5 +1,8 @@
 package fpinscala.monoids
 
+import fpinscala.parallelism.Nonblocking._
+import fpinscala.parallelism.Nonblocking.Par.toParOps // infix syntax for `Par.map`, `Par.flatMap`, etc
+
 trait Monoid[A] {
   def op(a1: A, a2: A): A
   def zero: A
@@ -132,6 +135,20 @@ object Monoid {
     // The empty sequence is ordered, and each element by itself is ordered.
     foldMapV(ints, mon)(i => Some((i, i, true))).map(_._3).getOrElse(true)
   }
+
+  // This ability to 'lift' a monoid any monoid to operate within
+  // some context (here `Par`) is something we'll discuss more in 
+  // chapters 11 & 12
+  def par[A](m: Monoid[A]): Monoid[Par[A]] = new Monoid[Par[A]] {
+    def zero = Par.unit(m.zero)  
+    def op(a: Par[A], b: Par[A]) = a.map2(b)(m.op)
+  }
+
+  // we perform the mapping and the reducing both in parallel
+  def parFoldMap[A,B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] = 
+    Par.parMap(v)(f).flatMap { bs => 
+      foldMapV(bs, par(m))(b => Par.async(b)) 
+    }
 
   sealed trait WC
   case class Stub(chars: String) extends WC

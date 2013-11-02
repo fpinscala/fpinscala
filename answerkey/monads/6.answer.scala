@@ -1,12 +1,16 @@
-// It turns out that `cofactor` can be implemented with just `map`.
-// We did not need the full power of monads in this case. It's important
-// to note that we are just playing here, and sometimes when playing we
-// discover something unexpected. This method rightly belongs on `Functor`.
-// What it does: It takes _one_ value, either of type M[A] or M[B] and returns
-// that same value except with the value(s) inside wrapped in Left or Right
-// according to whether the argument was Left or Right. I.e. it moves a Left
-// or Right constructor from the outside to the inside of an M.
-def cofactor[A,B](e: Either[F[A], F[B]]): F[Either[A, B]] = e match {
-  case Left(ma) => map(ma)(Left(_))
-  case Right(mb) => map(mb)(Right(_))
-}
+def filterM[A](ms: List[A])(f: A => F[Boolean]): F[List[A]] = 
+  ms match {
+    case Nil => unit(Nil)
+    case h :: t => flatMap(f(h))(b => 
+      if (!b) filterM(t)
+      else map(filterM(t))(h :: _)
+  }
+/*
+For `Par`, this filters a list, applying the functions in
+parallel; for `Option`, this filters a list, but allows
+the filtering function to fail and abort the filter
+computation; for `Gen`, this produces a generator for 
+subsets of the input list, where the function `f` picks a 
+'weight' for each element (in the form of a
+`Gen[Boolean]`)
+*/

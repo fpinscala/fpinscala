@@ -1,1 +1,1 @@
-Again, see `parsing/instances/Reference.scala` for a fully worked implementation.
+See a fully worked implementation in `instances/Sliceable.scala` in the answers.

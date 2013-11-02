@@ -1,17 +1,6 @@
-val listTraverse = new Traverse[List] {
-  override def traverse[M[_],A,B](as: List[A])(f: A => M[B])(implicit M: Applicative[M]): M[List[B]] =
-    as.foldRight(M.unit(List[B]()))((a, fbs) => M.map2(f(a), fbs)(_ :: _))
-}
+You want to try writing `flatMap` in terms of `Monad[F]` and `Monad[N]`.
 
-val optionTraverse = new Traverse[Option] {
-  override def traverse[M[_],A,B](oa: Option[A])(f: A => M[B])(implicit M: Applicative[M]): M[Option[B]] =
-    oa match {
-      case Some(a) => M.map(f(a))(Some(_))
-      case None    => M.unit(None)
-    }
-}
+def flatMap[A,B](mna: F[N[A]])(f: A => F[N[B]]): F[N[B]] =
+  self.flatMap(na => N.flatMap(na)(a => ???))
 
-val treeTraverse = new Traverse[Tree] {
-  override def traverse[M[_],A,B](ta: Tree[A])(f: A => M[B])(implicit M: Applicative[M]): M[Tree[B]] =
-    M.map2(f(ta.head), listTraverse.traverse(ta.tail)(a => traverse(a)(f)))(Tree(_, _))
-}
+Here all you have is `f`, which returns an `F[G[B]]`. For it to have the appropriate type to return from the argument to `G.flatMap`, you would need to be able to "swap" the `F` and `G` types. In other words, you would need a _distributive law_. Such an operation is not part of the `Monad` interface.

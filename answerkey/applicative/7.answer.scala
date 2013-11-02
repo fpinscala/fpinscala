@@ -1,62 +1,40 @@
-// Here we simply use `map2` to lift `apply` and `unit` themselves from one Applicative into the other.
-def compose[G[_]](G: Applicative[G]): Applicative[({type f[x] = F[G[x]]})#f] = {
-  val self = this
-  new Applicative[({type f[x] = F[G[x]]})#f] {
-    def unit[A](a: => A) = self.unit(G.unit(a))
-    def apply[A,B](fgf: F[G[A => B]])(fga: F[G[A]]) =
-      self.map2(fgf, fga)(G.apply(_)(_))
-  }
-}
+We will just work through left and right identity, but the basic idea for all these proofs is to substitute the definition of all functions, then use the monad laws to make simplifications to the applicative identities. 
 
-// If `self` and `G` both satisfy the laws, then so does the composite.
-// The full solution can be found at
-// https://github.com/runarorama/sannanir/blob/master/Applicative.v
-// 
-// -- Identity is simple: 
-// apply(unit(x => x))(v) == v
-// -- Expand definitions of `apply` and `unit`:
-// F.map2(F.unit(G.unit(x => x)), v)(G.apply(_)(_)) == v
-// -- Definition of map2:
-// F.apply(F.map(F.unit(G.unit(x => x)))(G.apply))(v) == v
-// -- Homomorphism for F:
-// F.apply(F.unit(y => G.apply(G.unit(x => x))(y)))(v) == v
-// -- Assume identity law for G:
-// F.apply(F.unit(y => y))(v) == v
-// -- Assume identity law for F:
-// v == v
-//
-// -- Homomorphism is even simpler:
-// apply(unit(f))(unit(x)) = unit(f(x))
-// -- expand definitions of `apply` and `unit`, then `map2` and `map`:
-// apply(apply(unit(apply))(unit(unit(f))))(unit(unit(x))) = unit(unit(f(x)))
-// -- repeatedly rewrite using homomorphism law for F and G.
-// unit(unit(f(x))) == unit(unit(f(x)))
-//
-// -- Interchange takes much longer, so we will show only the steps:
-//    0. Expand definitions of `apply` and `unit`, then `map2` and `map`:
-//    1. Rewrite using homomorphism law.
-//    2. Rewrite using interchange law on both sides, in opposite directions.
-//    3. Rewrite using composition law.
-//    4. Rewrite using homomorphism law again.
-//    5. Rewrite using interchange law.
-//    6. Rewrite using homomorphism law.
-//    7. Expand the definition of function composition.
-//
-// The proof for the composition law is the longest since it's the
-// law with the most content.
-// Here's a strategy for finding a proof:
-//    * Expand definitions of `apply`, `unit`, `map2`, and `map`.
-//    * Repeat the following as often as possible:
-//      * Simplify with homomorphism if possible.
-//      * If homomorphism does not apply, rewrite using the composition law
-//        to introduce terms that can be eliminated with homomorphism.
-//    * Now all variables should be "on the outside".
-//    * Rewrite once using the interchange law.
-//    * Rewrite once using the composition law and simplify with homomorphism.
-//    * Expand the definition of `compose`.
-//    * This should allow you to collapse `compose` again a different way.
-//    * Now rewrite with composition and simplify with homomorphism.
-//    * Rewriting with composition one last time, you should end up with
-//      a function on both sides of the equals sign.
-//    * Assuming the "axiom of extensionality" (that functions are equal if they
-//      return equal values for equal inputs), these two functions are identical.
+Let's start with left and right identity:
+
+    map2(unit(()), fa)((_,a) => a) == fa // Left identity
+    map2(fa, unit(()))((a,_) => a) == fa // Right identity
+
+We'll do left identity first. We expand definition of `map2`:
+
+    def map2[A,B,C](fa: F[A], fb: F[B])(f: (A,B) => C): F[C]
+      flatMap(fa)(a => map(fb)(b => f(a,b)))
+
+    flatMap(unit())(u => map(fa)(a => a)) == fa
+
+We just substituted `unit(())` and `(_,a) => a` in for `f`. `map(fa)(a => a)` is just `fa` by the functor laws, giving us:
+
+    flatMap(unit())(u => fa) == fa
+
+Recall that `flatMap` can be rewritten using `compose`, by using `Unit` as the argument to the first function.
+
+    compose(unit, u => fa)(()) == fa
+
+And by the monad laws:
+
+    compose(unit, f) == f
+
+Therefore, `compose(unit, u => fa)` simplifies to `u => fa`. And `u` is just `Unit` here, and is ignored, so this is equivalent to `fa`:
+
+    (u => fa)(()) == fa
+    fa == fa
+
+Right identity is symmetric, we just end up using the other identity for `compose`, that `compose(f, unit) == f`.  
+
+    flatMap(fa)(a => map(unit(()))(u => a)) == fa
+    flatMap(fa)(a => unit(a)) == fa  // via functor laws
+    compose(u => fa, unit)(()) == fa  
+    (u => fa)(()) == fa
+    fa == fa
+
+Associativity and naturality are left as an exercise.

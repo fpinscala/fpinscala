@@ -1,11 +1,11 @@
-def traverse[E,A,B](es: List[A])(f: A => Either[E, B]): Either[E, List[B]] = 
-  es match {
-    case Nil => Right(Nil)
-    case h::t => (f(h) map2 traverse(t)(f))(_ :: _)
-  }
+/*
+There are a number of variations on `Option` and `Either`. If we want to accumulate multiple errors, a simple approach is a new data type that lets us keep a list of errors in the data constructor that represents failures:
 
-def traverse_1[E,A,B](es: List[A])(f: A => Either[E, B]): Either[E, List[B]] = 
-  es.foldRight[Either[E,List[B]]](Right(Nil))((a, b) => f(a).map2(b)(_ :: _))
+trait Partial[+A,+B]
+case class Errors[+A](get: Seq[A]) extends Partial[A,Nothing]
+case class Success[+B](get: B) extends Partial[Nothing,B]
 
-def sequence[E,A](es: List[Either[E,A]]): Either[E,List[A]] = 
-  traverse(es)(x => x)
+This type is called `Validation` in the Scalaz library. You can implement `map`, `map2`, `sequence`, and so on for this type in such a way that errors are accumulated when possible (`flatMap` is not able to accumulate errors--can you see why?). This idea can even be generalized further - we don't need to accumulate failing values into a list, we can accumulate values using any user-supplied binary function. 
+
+It's also possible to use `Either[List[E],_]` directly to accumulate errors, using different implementations of helper functions like `map2` and `sequence`.
+*/

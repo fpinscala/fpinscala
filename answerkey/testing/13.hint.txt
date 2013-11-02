@@ -1,1 +1,1 @@
--
+You will need to add to the representation of `Gen`. For example, `Gen[Int]` should be capable of generating random integers as well as generating a stream of all the integers from `Int.MinValue` to `Int.MaxValue`. You may want to have the behavior depend on how many test cases were requested.

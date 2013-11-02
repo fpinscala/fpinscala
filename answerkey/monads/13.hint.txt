@@ -1,1 +1,1 @@
-Follow the types here. Remember that `A` can be _any type at all_, including the type `M[B]` for some type `B`.
+Join is sometimes called "flatten", and `flatMap` "maps and then flattens".

@@ -1,1 +1,1 @@
--
+You know the array is not sorted as soon as you encounter two adjacent elements for which `gt` returns false.

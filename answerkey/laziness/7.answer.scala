@@ -1,3 +1,6 @@
-def constant[A](a: A): Stream[A] = new Stream[A] {
-  def uncons = Some((a, this))
+// This is more efficient than `cons(a, constant(a))` since it's just
+// one object referencing itself.
+def constant[A](a: A): Stream[A] = new Cons[A] {
+  val head = a
+  lazy val tail = this
 }

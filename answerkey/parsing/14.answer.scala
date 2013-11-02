@@ -1,1 +1,1 @@
-Keep reading for a discussion
+Again, see `parsing/instances/Reference.scala` for a fully worked implementation.

@@ -6,7 +6,6 @@ import fpinscala.parallelism._
 import fpinscala.parallelism.Par.Par
 import Gen._
 import Prop._
-import Status._
 import java.util.concurrent.{Executors,ExecutorService}
 
 /*
@@ -19,14 +18,6 @@ trait Prop {
 
 object Prop {
   def forAll[A](gen: Gen[A])(f: A => Boolean): Prop = ???
-}
-
-trait Status {
-
-}
-
-object Status {
-
 }
 
 object Gen {

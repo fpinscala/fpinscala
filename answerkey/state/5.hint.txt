@@ -1,1 +1,1 @@
-Make use of `positiveInt` and `Int.MaxValue`.
+This is an application of `map` over `positiveInt` or `nextInt`.

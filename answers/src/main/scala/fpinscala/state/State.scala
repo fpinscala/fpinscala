@@ -6,23 +6,22 @@ trait RNG {
 }
 
 object RNG {
-  def simple(seed: Long): RNG = new RNG {
-    def nextInt = {
-      val seed2 = (seed*0x5DEECE66DL + 0xBL) & // `&` is bitwise AND
-                  ((1L << 48) - 1) // `<<` is left binary shift
-      ((seed2 >>> 16).asInstanceOf[Int], // `>>>` is right binary shift with zero fill
-       simple(seed2))
+  case class Simple(seed: Long) extends RNG {
+    def nextInt: (Int, RNG) = {
+      val newSeed = (seed * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL // `&` is bitwise AND. We use the current seed to generate a new seed.
+      val nextRNG = Simple(newSeed) // The next state, which is an `RNG` instance created from the new seed.
+      val n = (newSeed >>> 16).toInt // `>>>` is right binary shift with zero fill. The value `n` is our new pseudo-random integer.
+      (n, nextRNG) // The return value is a tuple containing both a pseudo-random integer and the next `RNG` state.
     }
   }
 
-  // `Int.MinValue` is a corner case that needs special handling
-  // since its absolute value doesn't fit in an `Int`.
-  // We could just select `Int.MaxValue` or `0` as a replacement
-  // but that would skew the generator. One solution is to simply
-  // retry recursively until we get a different number.
+  // We need to be quite careful not to skew the generator.
+  // Since `Int.Minvalue` is 1 smaller than `-(Int.MaxValue)`,
+  // it suffices to increment the negative numbers by 1 and make them positive.
+  // This maps Int.MinValue to Int.MaxValue and -1 to 0.
   def positiveInt(rng: RNG): (Int, RNG) = {
     val (i, r) = rng.nextInt
-    if (i == Int.MinValue) positiveInt(r) else (i.abs, r)
+    (if (i < 0) -(i + 1) else i, r)
   }
 
   // We generate a positive integer and divide it by one higher than the
@@ -92,9 +91,6 @@ object RNG {
       (f(a), rng2)
     }
 
-  def positiveMax(n: Int): Rand[Int] =
-    map(positiveInt)(_ / (Int.MaxValue / n))
-
   val _double: Rand[Double] =
     map(positiveInt)(_ / (Int.MaxValue.toDouble + 1))
 
@@ -112,10 +108,10 @@ object RNG {
       val (b, r2) = rb(r1)
       (f(a, b), r2)
     }
-  
+
   def both[A,B](ra: Rand[A], rb: Rand[B]): Rand[(A,B)] =
     map2(ra, rb)((_, _))
-  
+
   val randIntDouble: Rand[(Int, Double)] =
     both(int, double)
   
@@ -144,12 +140,13 @@ object RNG {
   def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] =
     rng => {
       val (a, r1) = f(rng)
-      g(a)(r1)
+      g(a)(r1) // We pass the new state along
     }
   
-  def _positiveInt: Rand[Int] = {
-    flatMap(int) { i =>
-      if (i != Int.MinValue) unit(i.abs) else _positiveInt
+  def positiveLessThan(n: Int): Rand[Int] = {
+    flatMap(positiveInt) { i =>
+      val mod = i % n
+      if (i + (n-1) - mod > 0) unit(mod) else positiveLessThan(n)
     }
   }
 
@@ -180,7 +177,7 @@ case object Turn extends Input
 case class Machine(locked: Boolean, candies: Int, coins: Int)
 
 object Candy {
-  def simulateMachine(inputs: List[Input]): State[Machine, Int] = for {
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = for {
     _ <- sequence(inputs.map(i => modify((s: Machine) => (i, s) match {
       case (_, Machine(_, 0, _)) => s
       case (Coin, Machine(false, _, _)) => s
@@ -191,7 +188,7 @@ object Candy {
         Machine(true, candy - 1, coin)
     })))
     s <- get
-  } yield s.coins
+  } yield (s.coins, s.candies)
 }
 
 object State {
@@ -233,9 +230,7 @@ object State {
     _ <- set(f(s)) // Sets the new state to `f` applied to `s`.
   } yield ()
 
-  def get[S]: State[S, S] =
-    State(s => (s, s))
-  
-  def set[S](s: S): State[S, Unit] =
-    State(_ => ((), s))
+  def get[S]: State[S, S] = State(s => (s, s))
+
+  def set[S](s: S): State[S, Unit] = State(_ => ((), s))
 }

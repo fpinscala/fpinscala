@@ -1,1 +1,1 @@
--
+You can add an attribute `otherFailures: List[ParseError]` on `ParseError` itself. This will be a list of parse errors that occurred in other branches of the parser.

@@ -1,1 +1,1 @@
-Join is sometimes called "flatten", and `flatMap` "maps and then flattens".
+Rewrite the monad laws stated in terms of `flatMap` by substituting your implementation of `join`.

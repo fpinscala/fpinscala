@@ -1,3 +1,4 @@
-def from(n: Int): Stream[Int] = new Stream[Int] {
-  def uncons = Some((n, from(n+1)))
+def from(n: Int): Stream[Int] = new Cons[Int] {
+  val head = n
+  lazy val tail = from(n+1)
 }

@@ -141,26 +141,34 @@ object SimpleStreamTransducers {
      * Exercise 1: Implement `|>`. Let the types guide your implementation.
      */
     def |>[O2](p2: Process[O,O2]): Process[I,O2] = {
-      // if this is emitting values and p2 is consuming values,
-      // we feed p2 in a loop to avoid using stack space
-      @annotation.tailrec
-      def feed(emit: Seq[O], tail: Process[I,O], 
-               f: O => Process[O,O2], fb: Process[O,O2]): Process[I,O2] = 
-        if (emit isEmpty) tail |> Await(f, fb) 
-        else f(emit.head) match {
-          case Await(f2, fb2) => feed(emit.tail, tail, f2, fb2)
-          case p => Emit(emit, tail) |> p
-        }
       p2 match {
         case Halt() => Halt()
         case Emit(h,t) => Emit(h, this |> t)
         case Await(f,fb) => this match {
-          case Emit(h,t) => feed(h, t, f, fb)
+          case Emit(h,t) => t |> p2.feed(h) 
           case Halt() => Halt() |> fb
           case Await(g,gb) => Await((i: I) => g(i) |> p2, gb |> fb)
         }
       }
     }
+
+    /* 
+     * Feed `in` to this `Process`. Uses a tail recursive loop as long
+     * as `this` is in the `Await` state.
+     */
+    def feed(in: Seq[I]): Process[I,O] = {
+      @annotation.tailrec
+      def go(in: Seq[I], cur: Process[I,O]): Process[I,O] = 
+        cur match {
+          case Halt() => Halt()
+          case Await(recv,fb) => 
+            if (in.nonEmpty) go(in.tail, recv(in.head))
+            else cur
+          case Emit(h, t) => Emit(h, t.feed(in)) 
+        } 
+      go(in, this)
+    }
+
     
     /* 
      * See `Process.lift` for a typical repeating `Process`
@@ -226,8 +234,6 @@ object SimpleStreamTransducers {
 
   object Process {
 
-    import fpinscala.iomonad.{Trampoline => T}
-
     case class Emit[I,O](
         head: Seq[O], 
         tail: Process[I,O] = Halt[I,O]()) 
@@ -242,7 +248,7 @@ object SimpleStreamTransducers {
 
     def emit[I,O](head: O, 
                    tail: Process[I,O] = Halt[I,O]()): Process[I,O] = 
-      emitAll(Stream(head), tail)
+      emitAll(Vector(head), tail)
 
     def emitAll[I,O](head: Seq[O], 
                      tail: Process[I,O] = Halt[I,O]()): Process[I,O] = 
@@ -366,7 +372,6 @@ object SimpleStreamTransducers {
      * `count`?
      *
      * Yes, it is `zip`, which feeds the same input to two processes. 
-     * We use a helper function, `zipResidual`, defined in `These.scala`.
      */
     def zip[A,B,C](p1: Process[A,B], p2: Process[A,C]): Process[A,(B,C)] =
       (p1, p2) match {
@@ -374,7 +379,8 @@ object SimpleStreamTransducers {
         // taking care to handle case where the two processes are 
         // emitting different numbers of values
         case (Emit(bs, t1), Emit(cs, t2)) => 
-          val (z, rema, remb) = These.zipResidual(bs, cs)
+          // we zip together `bs` and `cs`, and get the leftover from each side
+          val (z, rema, remb) = (bs.zip(cs), bs.drop(cs.length), cs.drop(bs.length))
           Emit(z, zip(
             if (rema.isEmpty) t1 else Emit(rema, t1),
             if (remb.isEmpty) t2 else Emit(remb, t2) 
@@ -478,7 +484,7 @@ object SimpleStreamTransducers {
 
         // Evaluate `a`, and run `cleanup` if this throws an exception
         def tryOr[A](a: => A)(cleanup: IO[Unit]) = 
-          try a catch { case e: Exception => cleanup.run; throw e }
+          try a catch { case e: Throwable => cleanup.run; throw e }
 
         @annotation.tailrec
         def go(acc: IndexedSeq[O],
@@ -488,13 +494,10 @@ object SimpleStreamTransducers {
           p match {
             case Halt() => release.run; acc 
             case Emit(h, t) => 
-              // We `tryOr(acc ++ h)` since `h` may be a 
-              // non-strict `Seq` like `Stream` which forces some 
-              // computations that can fail.
-              go(tryOr(acc ++ h)(release), step, t, release)
+              go(acc ++ h, step, t, release)
             case Await(recv, fb) => tryOr(step.run)(release) match {
               case None => go(acc, IO(None), fb, release) 
-              case Some(i) => go(acc, step, recv(i), release)
+              case Some(i) => go(acc, step, tryOr(recv(i))(release), release)
             }
           }
         acquire map (res => 
@@ -615,7 +618,19 @@ object GeneralizedStreamTransducers {
     case class Await[F[_],A,O](
       req: F[A], recv: A => Process[F,O],
       fallback: Process[F,O],
-      finalizer: Process[F,O]) extends Process[F,O]
+      cleanup: Process[F,O]) extends Process[F,O]
+    case class Halt[F[_],O](err: Throwable) extends Process[F,O]
+    case class Emit[F[_],O](head: Seq[O], tail: Process[F,O]) extends Process[F,O]
+  
+  The `Await` constructor now includes a `cleanup` process, which will be
+  consulted if the `Await` fails with an error.
+
+  The `Halt` constructor now has a _reason_ for termination, which may be
+  either normal termination, the special exception `End`, or some other 
+  error.
+
+  We'll use the improved `Await` and `Halt` cases together to ensure 
+  that all resources get released, even in the event of exceptions.
 
                              */
   
@@ -630,34 +645,55 @@ object GeneralizedStreamTransducers {
     def map[O2](f: O => O2): Process[F,O2] = this match {
       case Await(req,recv,fb,c) => 
         Await(req, recv andThen (_ map f), fb map f, c map f) 
-      case Emit(h, t) => Emit(h map f, t map f)
-      case Halt() => Halt()
+      case Emit(h, t) => Try { Emit(h map f, t map f) }
+      case Halt(err) => Halt(err)
     }
 
     def ++(p: => Process[F,O]): Process[F,O] = this match {
-      case Halt() => p
+      case Halt(End) => Try(p) // we only consult `p` on normal termination
+      case Halt(err) => Halt(err) // otherwise, we keep the current error
       case Emit(h, t) => emitAll(h, t ++ p)
       case Await(req,recv,fb,c) => 
         Await(req, recv andThen (_ ++ p), fb ++ p, c)
     }
 
+    /*
+     * Like `++`, but _always_ runs `p`, even if `this` halts with an error.
+     */
+    def onComplete(p: => Process[F,O]): Process[F,O] = this match {
+      case Halt(End) => Try(p)
+      case Halt(err) => Try(p) ++ Halt(err) // we always run p, but preserve any errors that occurred
+      case Emit(h, t) => emitAll(h, t onComplete p)
+      case Await(req,recv,fb,c) => 
+        Await(req, recv andThen (_ onComplete p), fb onComplete p, c onComplete p)
+    }
+
+    /* 
+     * Anywhere we _call_ `f`, we catch exceptions and convert them to `Halt`.
+     * See the helper function `Try` defined below.  
+     */
     def flatMap[O2](f: O => Process[F,O2]): Process[F,O2] =
       this match {
-        case Halt() => Halt()
-        case Emit(o, t) => 
+        case Halt(err) => Halt(err)
+        case Emit(Seq(o), t) => Try(f(o)) ++ t.flatMap(f) // optimization
+        case Emit(o, t) =>
           if (o.isEmpty) t.flatMap(f)
-          else f(o.head) ++ emitAll(o.tail, t).flatMap(f)
+          else Try { f(o.head) } ++ emitAll(o.tail, t).flatMap(f)
         case Await(req,recv,fb,c) => 
           Await(req, recv andThen (_ flatMap f), fb flatMap f, c flatMap f)
       }
 
     def repeat: Process[F,O] = {
       def go(p: Process[F,O]): Process[F,O] = p match {
-        case Halt() => go(this)
+        case Halt(End) => go(this)
+        case Halt(err) => Halt(err)
         case Await(req,recv,fb,c) => Await(req, recv andThen go, fb, c)
         case Emit(h, t) => emitAll(h, go(t))
       }
-      go(this)
+      this match { 
+        case Halt(e) => this
+        case _ => go(this)
+      }
     }
 
     /* 
@@ -666,18 +702,21 @@ object GeneralizedStreamTransducers {
      * in the companion object below, this is not tail recursive and
      * responsibility for stack safety is placed on the `Monad`
      * instance.
+     * 
+     * This uses the helper function `TryOr`, defined below.
      */
     def collect(implicit F: Monad[F], P: Partial[F]): F[IndexedSeq[O]] = {
       def go(cur: Process[F,O], acc: IndexedSeq[O]): F[IndexedSeq[O]] = 
         cur match {
           case Emit(h,t) => go(t, acc ++ h) 
-          case Halt() => F.unit(acc)
+          case Halt(End) => F.unit(acc)
+          case Halt(err) => P.fail(err) 
           case Await(req,recv,fb,c) => 
              F.flatMap (P.attempt(req)) {
                case Left(End) => go(fb, acc)
                case Left(err) => 
                  go(c ++ await[F,Nothing,O](P.fail(err))(), acc)
-               case Right(o) => go(recv(o), acc)
+               case Right(o) => go(TryAwait(recv(o))(fb,c), acc) // We catch and handle any exceptions in `recv`.
              }
         }
       go(this, IndexedSeq())
@@ -687,32 +726,22 @@ object GeneralizedStreamTransducers {
      * We define `Process1` as a type alias - see the companion object
      * for `Process` below. Using that, we can then define `|>` once
      * more. The definition is extremely similar to our previous 
-     * definition. 
+     * definition. We again use the helper function, `feed`, to take
+     * care of the case where `this` is emitting values while `p2`
+     * is awaiting these values.
      * 
      * The one subtlety is we make sure that if `p2` halts, we
      * `kill` this process, giving it a chance to run any cleanup
      * actions (like closing file handles, etc). 
      */
     def |>[O2](p2: Process1[O,O2]): Process[F,O2] = {
-      // if this is emitting values and p2 is consuming values,
-      // we feed p2 in a loop to avoid using stack space
-      @annotation.tailrec
-      def feed(emit: Seq[O], tail: Process[F,O], 
-               recv: O => Process1[O,O2], 
-               fb: Process1[O,O2],
-               cleanup: Process1[O,O2]): Process[F,O2] = 
-        if (emit isEmpty) tail |> await1(recv, fb) 
-        else recv(emit.head) match {
-          case Await(_, recv2, fb2, c2) => 
-            feed(emit.tail, tail, recv2, fb2, c2)
-          case p => emitAll(emit.tail, tail) |> p
-        }
       p2 match {
-        case Halt() => this.kill ++ Halt()
+        case Halt(e) => this.kill ++ Halt(e)
         case Emit(h, t) => emitAll(h, this |> t)
         case Await(req,recv,fb,c) => this match {
-          case Emit(h,t) => feed(h, t, recv, fb, c)
-          case Halt() => Halt() |> fb
+          case Emit(h,t) => t |> feed(h)(p2)
+          case Halt(End) => Halt(End) |> fb
+          case Halt(err) => Halt(err) |> c
           case Await(req0,recv0,fb0,c0) => 
             await(req0)(i => recv0(i) |> p2, 
                         fb0 |> fb,
@@ -724,12 +753,12 @@ object GeneralizedStreamTransducers {
     @annotation.tailrec
     final def kill[O2]: Process[F,O2] = this match {
       case Await(req,recv,fb,c) => c.drain 
-      case Halt() => Halt()
+      case Halt(e) => Halt(e)
       case Emit(h, t) => t.kill
     }
 
     final def drain[O2]: Process[F,O2] = this match {
-      case Halt() => Halt()
+      case Halt(e) => Halt(e)
       case Emit(h, t) => t.drain
       case Await(req,recv,fb,c) => Await(
         req, recv andThen (_.drain), 
@@ -757,48 +786,20 @@ object GeneralizedStreamTransducers {
      * it is awaiting input.
      */ 
     def tee[O2,O3](p2: Process[F,O2])(t: Tee[O,O2,O3]): Process[F,O3] = {
-      @annotation.tailrec
-      def feedL(emit: Seq[O], tail: Process[F,O], 
-                other: Process[F,O2],
-                recv: O => Tee[O,O2,O3], 
-                fb: Tee[O,O2,O3],
-                c: Tee[O,O2,O3]): Process[F,O3] = 
-        if (emit isEmpty) (tail tee other)(await(L[O,O2])(recv, fb, c))
-        else recv(emit.head) match {
-          case t2@Await(e, recv2, fb2, c2) => e.get match {
-            case Left(_) => feedL(emit.tail, tail, other, recv2, fb2, c2)
-            case _ => (Emit(emit.tail, tail) tee other)(t2)
-          }
-          case p => (Emit(emit.tail, tail) tee other)(p)
-        }
-      @annotation.tailrec
-      def feedR(emit: Seq[O2], tail: Process[F,O2], 
-                other: Process[F,O],
-                recv: O2 => Tee[O,O2,O3], 
-                fb: Tee[O,O2,O3],
-                c: Tee[O,O2,O3]): Process[F,O3] = 
-        if (emit isEmpty) (other tee tail)(await(R[O,O2])(recv, fb, c))
-        else recv(emit.head) match {
-          case t2@Await(e, recv2, fb2, c2) => e.get match {
-            case Right(_) => feedR(emit.tail, tail, other, recv2, fb2, c2)
-            case _ => (other tee Emit(emit.tail, tail))(t2)
-          }
-          case p => (other tee Emit(emit.tail, tail))(p)
-        }
       t match {
-        case Halt() => this.kill ++ p2.kill ++ Halt() 
+        case Halt(e) => this.kill ++ p2.kill ++ Halt(e) 
         case Emit(h,t) => Emit(h, (this tee p2)(t))
         case Await(side, recv, fb, c) => side.get match {
           case Left(isO) => this match {
-            case Halt() => p2.kill ++ Halt()
-            case Emit(o,ot) => feedL(o, ot, p2, isO.to andThen recv, fb, c) 
+            case Halt(e) => p2.kill ++ Halt(e)
+            case Emit(o,ot) => (ot tee p2)(feedL(o)(t))
             case Await(reqL, recvL, fbL, cL) => 
               Await(reqL, recvL andThen (this2 => (this2 tee p2)(t)), 
                     (fbL tee p2)(t), (cL tee p2)(t))
           }
           case Right(isO2) => p2 match {
-            case Halt() => this.kill ++ Halt()
-            case Emit(o,ot) => feedR(o, ot, this, isO2.to andThen recv, fb, c)
+            case Halt(e) => this.kill ++ Halt(e)
+            case Emit(o,ot) => (this tee ot)(feedR(o)(t))
             case Await(reqR, recvR, fbR, cR) => 
               Await(reqR, recvR andThen (p3 => (this tee p3)(t)), 
                     (this tee fbR)(t), (this tee cR)(t))
@@ -814,26 +815,19 @@ object GeneralizedStreamTransducers {
       zipWith(p2)((_,_))
 
     def to[O2](sink: Sink[F,O]): Process[F,Unit] = 
-      eval { (this zipWith sink)((o,f) => f(o)) }
+      join { (this zipWith sink)((o,f) => f(o)) }
 
-    def through[O2](p2: Process[F, O => F[O2]]): Process[F,O2] = 
-      eval { (this zipWith p2)((o,f) => f(o)) }
+    def through[O2](p2: Channel[F, O, O2]): Process[F,O2] = 
+      join { (this zipWith p2)((o,f) => f(o)) }
 
     def disconnectIn: Process[F,O] = this match {
       case Await(req,recv,fb,c) => fb 
-      case Halt() => Halt()
+      case Halt(e) => Halt(e)
       case Emit(h, t) => Emit(h, t.disconnectIn)
     }
 
     def disconnect[O2]: Process[F,O2] = 
       this.disconnectIn.drain
-
-    def wye[O2,O3](p2: Process[F,O2])(y: Wye[O,O2,O3])(
-                   implicit F: Nondeterminism[F]): Process[F,O3] =
-      ???
-
-    def channel[O2,O3](p2: Process[F,O => F[O2]])(
-                    y: Wye[O, O => O2, O3]): Process[F,O3] = ???
   }
 
   object Process {
@@ -846,25 +840,115 @@ object GeneralizedStreamTransducers {
       head: Seq[O], 
       tail: Process[F,O]) extends Process[F,O]
 
-    case class Halt[F[_],O]() extends Process[F,O]
+    case class Halt[F[_],O](err: Throwable) extends Process[F,O]
 
     def emitAll[F[_],O](
         head: Seq[O], 
-        tail: Process[F,O] = Halt[F,O]()): Process[F,O] = 
+        tail: Process[F,O] = Halt[F,O](End)): Process[F,O] = 
       tail match {
         case Emit(h2,t) => Emit(head ++ h2, t)
         case _ => Emit(head, tail)
       }
     def emit[F[_],O](
         head: O, 
-        tail: Process[F,O] = Halt[F,O]()): Process[F,O] = 
-      emitAll(Stream(head), tail)
+        tail: Process[F,O] = Halt[F,O](End)): Process[F,O] = 
+      emitAll(Vector(head), tail)
 
     def await[F[_],A,O](req: F[A])(
-        recv: A => Process[F,O] = (a: A) => Halt[F,O](), 
-        fallback: Process[F,O] = Halt[F,O](),
-        cleanup: Process[F,O] = Halt[F,O]()): Process[F,O] = 
+        recv: A => Process[F,O] = (a: A) => Halt[F,O](End), 
+        fallback: Process[F,O] = Halt[F,O](End),
+        cleanup: Process[F,O] = Halt[F,O](End)): Process[F,O] = 
       Await(req, recv, fallback, cleanup)
+
+    /** 
+     * Helper function to safely produce `p`, or gracefully halt 
+     * with an error if an exception is thrown. 
+     */
+    def Try[F[_],O](p: => Process[F,O]): Process[F,O] = 
+      try p
+      catch { case e: Throwable => Halt(e) }
+
+    /*
+     * Safely produce `p`, or run `cleanup` and halt gracefully with the
+     * exception thrown while evaluating `p`.
+     */
+    def TryOr[F[_],O](p: => Process[F,O])(cleanup: Process[F,O]): Process[F,O] = 
+      try p
+      catch { case e: Throwable => cleanup ++ Halt(e) }
+
+    /*
+     * Safely produce `p`, or run `cleanup` or `fallback` if an exception 
+     * occurs while evaluating `p`.
+     */
+    def TryAwait[F[_],O](p: => Process[F,O])(fallback: Process[F,O], cleanup: Process[F,O]): Process[F,O] = 
+      try p
+      catch {
+        case End => fallback
+        case e: Throwable => cleanup ++ Halt(e)
+      }
+
+    /** 
+     * Feed `in` to this `Process`. Uses a tail recursive loop as long
+     * as `p` is in the `Await` state.
+     */
+    def feed[I,O](in: Seq[I])(p: Process1[I,O]): Process1[I,O] = {
+      @annotation.tailrec
+      def go(in: Seq[I], cur: Process1[I,O]): Process1[I,O] = 
+        cur match {
+          case Halt(e) => Halt(e)
+          case Await(req,recv,fb,c) => 
+            if (in.nonEmpty) 
+              go(in.tail, TryAwait(recv(req.is.to(in.head)))(fb, c))
+            else 
+              cur
+          case Emit(h, t) => Emit(h, feed(in)(t))
+        } 
+      go(in, p)
+    }
+
+    /* 
+     * Feed the left side of a `Tee`. Uses a tail recursive loop as
+     * `p` is awaiting on the left. 
+     */
+    def feedL[I,I2,O](in: Seq[I])(t: Tee[I,I2,O]): Tee[I,I2,O] = {
+      @annotation.tailrec
+      def go(in: Seq[I], cur: Tee[I,I2,O]): Tee[I,I2,O] = 
+        cur match {
+          case Halt(e) => Halt(e)
+          case Await(side,recv,fb,c) =>
+            if (in.nonEmpty) side.get match {
+              case Left(isI) => 
+                go(in.tail, Try { recv(isI.to(in.head)) })
+              case Right(isI2) => 
+                Await(side, recv andThen (feedL(in)), feedL(in)(fb), c) 
+            }
+            else cur
+          case Emit(h, t) => Emit(h, feedL(in)(t))
+        } 
+      go(in, t)
+    }
+
+    /* 
+     * Feed the right side of a `Tee`. Uses a tail recursive loop as
+     * `p` is awaiting on the right. 
+     */
+    def feedR[I,I2,O](in: Seq[I2])(t: Tee[I,I2,O]): Tee[I,I2,O] = {
+      @annotation.tailrec
+      def go(in: Seq[I2], cur: Tee[I,I2,O]): Tee[I,I2,O] = 
+        cur match {
+          case Halt(e) => Halt(e)
+          case Await(side,recv,fb,c) =>
+            if (in.nonEmpty) side.get match {
+              case Left(isI) => 
+                Await(side, recv andThen (feedR(in)), feedR(in)(fb), c) 
+              case Right(isI2) => 
+                go(in.tail, Try { recv(isI2.to(in.head)) })
+            }
+            else cur
+          case Emit(h, t) => Emit(h, feedR(in)(t))
+        } 
+      go(in, t)
+    }
 
     /* Our generalized `Process` type can represent sources! */
 
@@ -884,21 +968,19 @@ object GeneralizedStreamTransducers {
       def go(cur: Process[IO,O], acc: IndexedSeq[O]): IndexedSeq[O] = 
         cur match {
           case Emit(h,t) => go(t, acc ++ h) 
-          case Halt() => acc
-          case Await(req,recv,fb,err) =>
+          case Halt(End) => acc
+          case Halt(err) => throw err 
+          case Await(req,recv,fb,c) =>
             val next = 
               try recv(req.run)
               catch { 
                 case End => fb // Normal termination
-                case e: Exception => err ++ failIO(e) // Helper function, defined below
+                case err: Throwable => c ++ Halt(err)
               }
             go(next, acc)
         }
       go(src, IndexedSeq()) 
     }
-
-    def failIO[O](e: Throwable): Process[IO,O] = 
-      await[IO,O,O](IO(throw e))()
 
     /* 
      * We can write a version of collect that works for any `Monad`. 
@@ -912,28 +994,62 @@ object GeneralizedStreamTransducers {
      * See `lines` below for an example use. 
      */
     def resource[R,O](acquire: IO[R])(
-                      release: R => IO[Unit])(
-                      step: R => IO[O]): Process[IO,O] = {
-      def go(step: IO[O], onExit: IO[Unit]): Process[IO,O] =
-        await[IO,O,O](step) ( 
-          o => emit(o, go(step, onExit)) // Emit the value and repeat 
-        , await[IO,Unit,O](onExit)()  // Release resource when exhausted
-        , await[IO,Unit,O](onExit)()) // or in event of error
-      await(acquire) ( r => go(step(r), release(r)), Halt(), Halt() )
-    }
+                      release: R => Process[IO,O])(
+                      use: R => Process[IO,O]): Process[IO,O] =
+      await[IO,R,O](acquire)(r => use(r).onComplete(release(r)))
+
+    /*
+     * Like `resource`, but `release` is a single `IO` action.
+     */
+    def resource_[R,O](acquire: IO[R])(
+                       release: R => IO[Unit])(
+                       use: R => Process[IO,O]): Process[IO,O] =
+      resource(acquire)(release andThen (eval_[IO,Unit,O]))(use)
 
     /* 
      * Create a `Process[IO,O]` from the lines of a file, using
      * the `resource` combinator above to ensure the file is closed
      * when processing the stream of lines is finished. 
      */
-    def lines(filename: String): Process[IO,String] = 
-      resource(IO(io.Source.fromFile(filename)))(
-               src => IO(src.close)) { src => 
-        lazy val lines = src.getLines // A stateful iterator 
-        IO { if (lines.hasNext) lines.next else throw End }
-      }
+    def lines(filename: String): Process[IO,String] =
+      resource
+        { IO(io.Source.fromFile(filename)) }
+        { src => await[IO,Unit,String](IO(src.close))() } 
+        { src => 
+            lazy val iter = src.getLines // a stateful iterator
+            def step = if (iter.hasNext) iter.next else throw End
+            await[IO,String,String](IO(step))(emit(_)).repeat
+        }
+
+    /* Exercise 9: Implement `eval`, `eval_`, and use these to implement `lines`. */
+    def eval[F[_],A](a: F[A]): Process[F,A] = 
+      await[F,A,A](a)(a => Emit(Seq(a), Halt(End)))
+
+    /* Evaluate the action purely for its effects. */
+    def eval_[F[_],A,B](a: F[A]): Process[F,B] = 
+      eval[F,A](a).drain[B]
+
+    /* Also handy - evaluate the action repeatedly to produce a (possibly) infinite stream. */
+    def repeatEval[F[_],A](a: F[A]): Process[F,A] =
+      eval[F,A](a).repeat
+
+    def lines2(filename: String): Process[IO,String] =
+      resource
+        { IO(io.Source.fromFile(filename)) }
+        { src => eval_[IO,Unit,String](IO(src.close)) } 
+        { src => 
+            lazy val iter = src.getLines // a stateful iterator
+            def step = if (iter.hasNext) iter.next else throw End
+            eval[IO,String](IO(step)).repeat
+        }
     
+    /* Helper function with better type inference. */
+    def evalIO[A](a: IO[A]): Process[IO,A] = 
+      eval[IO,A](a)
+
+    def repeatIOEval[A](a: IO[A]): Process[IO,A] = 
+      repeatEval[IO,A](a)
+
     /* 
      * We now have nice, resource safe effectful sources, but we don't 
      * have any way to transform them or filter them. Luckily we can 
@@ -949,7 +1065,9 @@ object GeneralizedStreamTransducers {
 
     type Process1[I,O] = Process[Is[I]#f, O]
     
-    def halt1[I,O]: Process1[I,O] = Halt[Is[I]#f, O]()
+    /* Some helper functions to improve type inference. */
+
+    def halt1[I,O]: Process1[I,O] = Halt[Is[I]#f, O](End)
 
     def await1[I,O](
       recv: I => Process1[I,O],
@@ -1010,7 +1128,7 @@ object GeneralizedStreamTransducers {
       await[T[I,I2]#f,I2,O](R)(recv, fallback)
 
     def haltT[I,I2,O]: Tee[I,I2,O] = 
-      Halt[T[I,I2]#f,O]()
+      Halt[T[I,I2]#f,O](End)
 
     def emitT[I,I2,O](h: O, tl: Tee[I,I2,O] = haltT[I,I2,O]): Tee[I,I2,O] = 
       emit(h, tl)
@@ -1069,31 +1187,24 @@ object GeneralizedStreamTransducers {
 
                              */
 
-    type Sink[F[_],O] = Process[F, O => F[Unit]]
+    type Sink[F[_],O] = Process[F, O => Process[F,Unit]]
+
+    import java.io.FileWriter
 
     /* A `Sink` which writes input strings to the given file. */
     def fileW(file: String, append: Boolean = false): Sink[IO,String] = 
-      resource(IO { new java.io.FileWriter(file, append) })(
-               w => IO(w.close)) {
-        w => IO { (s: String) => IO(w.write(s)) } 
-      }
+      resource[FileWriter, String => Process[IO,Unit]]
+        { IO { new FileWriter(file, append) }}
+        { w => eval[IO,Unit](IO(w.close)).drain }
+        { w => constant { (s: String) => eval[IO,Unit](IO(w.write(s))) }}
 
-    /* Exercise 9: Implement `eval`. */
+    /* The infinite, constant stream. */
+    def constant[A](a: A): Process[IO,A] = 
+      eval[IO,A](IO(a)).repeat
 
-    def eval[F[_],O](p: Process[F, F[O]]): Process[F,O] = 
-      p match {
-        case Halt() => Halt()
-        case Emit(h, t) => 
-          if (h.isEmpty) eval(t)
-          else await[F,O,O](h.head)(o => emit(o, eval(emitAll(h.tail, t))))
-        case Await(req,recv,fb,c) => 
-          await(req)(recv andThen eval, eval(fb), eval(c)) 
-      }
-    
-    /* Infix syntax for `eval`. */
-    implicit class EvalProcess[F[_],O](self: Process[F,F[O]]) {
-      def eval = Process.eval(self) 
-    }
+    /* Exercise 10: Implement `join`. Notice this is the standard monadic combinator! */
+    def join[F[_],A](p: Process[F,Process[F,A]]): Process[F,A] = 
+      p.flatMap(pa => pa)
 
     /* 
      * An example use of the combinators we have so far: incrementally 
@@ -1116,7 +1227,7 @@ object GeneralizedStreamTransducers {
 
                              */
     
-    type Channel[F[_],I,O] = Process[F, I => F[O]]
+    type Channel[F[_],I,O] = Process[F, I => Process[F,O]]
 
     /* 
      * Here is an example, a JDBC query runner which returns the
@@ -1128,23 +1239,24 @@ object GeneralizedStreamTransducers {
     import java.sql.{Connection, PreparedStatement, ResultSet}
 
     def query(conn: IO[Connection]): 
-        Channel[IO, Connection => PreparedStatement, 
-                    Process[IO,Map[String,Any]]] = 
-      resource(conn)(c => IO(c.close)) { conn => IO { 
-        (q: Connection => PreparedStatement) => {
-          IO { resource ( IO { 
-            val rs = q(conn).executeQuery
-            val ncols = rs.getMetaData.getColumnCount
-            val colnames = (1 to ncols).map(rs.getMetaData.getColumnName)
-            (rs, colnames)
-          }) ( p => IO { p._1.close } ) { // close the ResultSet 
-            case (rs, cols) => IO { 
-              if (!rs.next) throw End 
-              else cols.map(c => (c, rs.getObject(c): Any)).toMap 
-            }
-          }}
-        }
-      }}
+        Channel[IO, Connection => PreparedStatement, Map[String,Any]] = 
+      resource_ 
+        { conn } 
+        { c => IO(c.close) } 
+        { conn => constant { (q: Connection => PreparedStatement) =>
+          resource_ 
+            { IO { 
+                val rs = q(conn).executeQuery
+                val ncols = rs.getMetaData.getColumnCount
+                val cols = (1 to ncols).map(rs.getMetaData.getColumnName)
+                (rs, cols)
+            }}
+            { p => IO { p._1.close } } // close the ResultSet 
+            { case (rs, cols) => repeatEval[IO,Map[String,Any]] { IO { 
+              if (!rs.next) throw End
+              else cols.map(c => (c, rs.getObject(c): Any)).toMap
+            }}}
+        }}
 
     /* 
      * We can allocate resources dynamically when defining a `Process`.
@@ -1156,10 +1268,11 @@ object GeneralizedStreamTransducers {
     val convertAll: Process[IO,Unit] = (for {
       out <- fileW("celsius.txt").once
       file <- lines("fahrenheits.txt") 
-      _ <- lines(file).
-           map(line => fahrenheitToCelsius(line.toDouble)).
-           map(celsius => out(celsius.toString)).
-           eval // see definition of infix syntax above
+      _ <- join { 
+             lines(file).
+             map(line => fahrenheitToCelsius(line.toDouble)).
+             map(celsius => out(celsius.toString))
+           }
     } yield ()) drain 
 
     /* 
@@ -1187,61 +1300,6 @@ object GeneralizedStreamTransducers {
            map(_ toString).
            to(fileW(file + ".celsius"))
     } yield ()) drain
-
-
-    import These._
-
-    case class Y[I,I2]() {
-      sealed trait f[X] { 
-        def get: (X =:= I) Either 
-                 (X =:= I2) Either 
-                 (X =:= These[I,I2])
-      }
-      val A = new f[I] { def get = Left(Left(implicitly)) }
-      val B = new f[I2] { def get = Left(Right(implicitly)) }
-      val AB = new f[These[I,I2]] { def get = Right(implicitly) }
-    }
-    def A[I,I2] = Y[I,I2]().A
-    def B[I,I2] = Y[I,I2]().B
-    def AB[I,I2] = Y[I,I2]().AB 
-    
-    type Wye[I,I2,O] = Process[Y[I,I2]#f, O]
-    
-    def haltY[I,I2,O]: Wye[I,I2,O] = 
-      Halt[Y[I,I2]#f,O]()
-    
-    def emitY[I,I2,O](h: O, tl: Wye[I,I2,O] = haltY[I,I2,O]): Wye[I,I2,O] = 
-      emit(h, tl)
-
-    def awaitA[I,I2,O](
-        recv: I => Wye[I,I2,O], 
-        fallback: Wye[I,I2,O] = haltY[I,I2,O]): Wye[I,I2,O] = 
-      await[Y[I,I2]#f,I,O](A)(recv, fallback)
-
-    def awaitB[I,I2,O](
-        recv: I2 => Wye[I,I2,O], 
-        fallback: Wye[I,I2,O] = haltY[I,I2,O]): Wye[I,I2,O] = 
-      await[Y[I,I2]#f,I2,O](B)(recv, fallback)
-
-    def awaitAB[I,I2,O](
-        recv: These[I,I2] => Wye[I,I2,O], 
-        fallback: Wye[I,I2,O] = haltY[I,I2,O]): Wye[I,I2,O] = 
-      await[Y[I,I2]#f,These[I,I2],O](AB)(recv, fallback)
-
-    def zipWithY[O,O2,O3](f: (O,O2) => O3): Wye[O,O2,O3] = 
-      awaitAB[O,O2,O3](o => 
-        o match {
-          case That(o2) => awaitA(o => emitY(f(o,o2))) 
-          case This(o) => awaitB(o2 => emitY(f(o,o2)))
-          case Both(o,o2) => emitY(f(o,o2))
-        }).repeat
-
-    trait Nondeterminism[F[_]] {
-      def choose[A,B](a: F[A], b: F[B]): 
-        F[(A, F[B]) Either (F[A], B) ]
-      def choose[A](a: Seq[F[A]]): F[(A, Seq[F[A]])] 
-    }
-    
   }
 }
 

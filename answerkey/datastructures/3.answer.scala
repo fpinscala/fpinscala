@@ -1,9 +1,7 @@
-/* 
-Again, it is somewhat subjective whether to throw an exception when asked to drop more elements than the list contains. The usual default for `drop` is not to throw an exception, since it is typically used in cases where this is not indicative of a programming error. If you pay attention to how you use `drop`, it is often in cases where the length of the input list is unknown, and the number of elements to be dropped is being computed from something else. If `drop` threw an exception, we'd have to first compute or check the length and only drop up to that many elements.  
+/*
+If a function body consists solely of a match expression, we'll often put the match on the same line as the function signature, rather than introducing another level of nesting.
 */
-def drop[A](l: List[A], n: Int): List[A] = 
-  if (n <= 0) l
-  else l match {
-    case Nil => Nil
-    case Cons(_,t) => drop(t, n-1) 
-  }
+def setHead[A](l: List[A])(h: A): List[A] = l match {
+  case Nil => sys.error("setHead on empty list")
+  case Cons(_,t) => Cons(h,t)
+}

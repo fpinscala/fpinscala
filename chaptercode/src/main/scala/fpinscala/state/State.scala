@@ -8,12 +8,12 @@ trait RNG {
 case class State[S,+A](run: S => (A,S))
 
 object RNG {
-  def simple(seed: Long): RNG = new RNG {
-    def nextInt = {
-      val seed2 = (seed*0x5DEECE66DL + 0xBL) & // `&` is bitwise AND
-                  ((1L << 48) - 1) // `<<` is left binary shift
-      ((seed2 >>> 16).asInstanceOf[Int], // `>>>` is right binary shift with zero fill
-       simple(seed2))
+  case class Simple(seed: Long) extends RNG {
+    def nextInt: (Int, RNG) = {
+      val newSeed = (seed * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL // `&` is bitwise AND. We use the current seed to generate a new seed.
+      val nextRNG = Simple(newSeed) // The next state, which is an `RNG` instance created from the new seed.
+      val n = (newSeed >>> 16).toInt // `>>>` is right binary shift with zero fill. The value `n` is our new pseudo-random integer.
+      (n, nextRNG) // The return value is a tuple containing both a pseudo-random integer and the next `RNG` state.
     }
   }
 

@@ -1,8 +1,16 @@
-def eitherMonad[E]: Monad[({type f[x] = Either[E, x]})#f] =
-  new Monad[({type f[x] = Either[E, x]})#f] {
-    def unit[A](a: => A): Either[E, A] = Right(a)
-    def flatMap[A,B](eea: Either[E, A])(f: A => Either[E, B]) = eea match {
-      case Right(a) => f(a)
-      case l => l
-    }
-  }
+/* 
+The pattern is simple. We just curry the the function 
+we want to lift, pass the result to `unit`, and then `apply` 
+as many times as there are arguments. 
+Each call to `apply` is a partial application of the function
+*/
+def map3[A,B,C,D](fa: F[A],
+                  fb: F[B],
+                  fc: F[C])(f: (A, B, C) => D): F[D] =
+  apply(apply(apply(unit(f.curried))(fa))(fb))(fc)
+
+def map4[A,B,C,D,E](fa: F[A],
+                    fb: F[B],
+                    fc: F[C],
+                    fd: F[D])(f: (A, B, C, D) => E): F[E]
+  apply(apply(apply(apply(unit(f.curried))(fa))(fb))(fc))(fd)

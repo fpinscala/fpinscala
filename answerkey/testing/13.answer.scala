@@ -1,1 +1,2 @@
-def unsized: SGen[A] = SGen(_ => this)
+/* A detailed answer is to be found in the file Exhaustive.scala in the code
+   accompanying this chapter. */

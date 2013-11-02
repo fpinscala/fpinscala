@@ -35,15 +35,15 @@ trait Applicative[F[_]] extends Functor[F] {
 
 case class Tree[+A](head: A, tail: List[Tree[A]])
 
-trait Monad[M[_]] extends Applicative[M] {
-  def flatMap[A,B](ma: M[A])(f: A => M[B]): M[B] = join(map(ma)(f))
+trait Monad[F[_]] extends Applicative[F] {
+  def flatMap[A,B](ma: F[A])(f: A => F[B]): F[B] = join(map(ma)(f))
 
-  def join[A](mma: M[M[A]]): M[A] = flatMap(mma)(ma => ma)
+  def join[A](mma: F[F[A]]): F[A] = flatMap(mma)(ma => ma)
 
-  def compose[A,B,C](f: A => M[B], g: B => M[C]): A => M[C] =
+  def compose[A,B,C](f: A => F[B], g: B => F[C]): A => F[C] =
     a => flatMap(f(a))(g)
 
-  override def apply[A,B](mf: M[A => B])(ma: M[A]): M[B] =
+  override def apply[A,B](mf: F[A => B])(ma: F[A]): F[B] =
     flatMap(mf)(f => map(ma)(a => f(a)))
 }
 
@@ -56,8 +56,8 @@ object Monad {
       st flatMap f
   }
 
-  def composeM[M[_],N[_]](implicit M: Monad[M], N: Monad[N], T: Traverse[N]):
-    Monad[({type f[x] = M[N[x]]})#f] = ???
+  def composeM[F[_],N[_]](implicit F: Monad[F], N: Monad[N], T: Traverse[N]):
+    Monad[({type f[x] = F[N[x]]})#f] = ???
 }
 
 sealed trait Validation[+E, +A]
@@ -69,6 +69,16 @@ case class Success[A](a: A) extends Validation[Nothing, A]
 
 
 object Applicative {
+
+  val streamApplicative = new Applicative[Stream] {
+
+    def unit[A](a: => A): Stream[A] =
+      Stream.continually(a) // The infinite, constant stream
+
+    override def map2[A,B,C](a: Stream[A], b: Stream[B])( // Combine elements pointwise
+                    f: (A,B) => C): Stream[C] =
+      a zip b map f.tupled
+  }
 
   def validationApplicative[E]: Applicative[({type f[x] = Validation[E,x]})#f] = ???
 
@@ -82,9 +92,9 @@ object Applicative {
 }
 
 trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
-  def traverse[M[_]:Applicative,A,B](fa: F[A])(f: A => M[B]): M[F[B]] =
+  def traverse[G[_]:Applicative,A,B](fa: F[A])(f: A => G[B]): G[F[B]] =
     sequence(map(fa)(f))
-  def sequence[M[_]:Applicative,A](fma: F[M[A]]): M[F[A]] =
+  def sequence[G[_]:Applicative,A](fma: F[G[A]]): G[F[A]] =
     traverse(fma)(ma => ma)
 
   type Id[A] = A
@@ -122,8 +132,8 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
 
   override def foldLeft[A,B](fa: F[A])(z: B)(f: (B, A) => B): B = ???
 
-  def fuse[M[_],N[_],A,B](fa: F[A])(f: A => M[B], g: A => N[B])
-                         (implicit M: Applicative[M], N: Applicative[N]): (M[F[B]], N[F[B]]) = ???
+  def fuse[G[_],H[_],A,B](fa: F[A])(f: A => G[B], g: A => H[B])
+                         (implicit G: Applicative[G], H: Applicative[H]): (G[F[B]], H[F[B]]) = ???
 
   def compose[G[_]](implicit G: Traverse[G]): Traverse[({type f[x] = F[G[x]]})#f] = ???
 }

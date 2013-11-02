@@ -1,1 +1,1 @@
-The next section works through a possible design in detail.
+Keep reading for a discussion

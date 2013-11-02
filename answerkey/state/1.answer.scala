@@ -1,9 +1,8 @@
-// `Int.MinValue` is a corner case that needs special handling
-// since its absolute value doesn't fit in an `Int`.
-// We could just select `Int.MaxValue` or `0` as a replacement
-// but that would skew the generator. One solution is to simply
-// retry recursively until we get a different number.
+// We need to be quite careful not to skew the generator.
+// Since `Int.Minvalue` is 1 smaller than `-(Int.MaxValue)`,
+// it suffices to increment the negative numbers by 1 and make them positive.
+// This maps Int.MinValue to Int.MaxValue and -1 to 0.
 def positiveInt(rng: RNG): (Int, RNG) = {
   val (i, r) = rng.nextInt
-  if (i == Int.MinValue) positiveInt(r) else (i.abs, r)
+  (if (i < 0) -(i + 1) else i, r)
 }

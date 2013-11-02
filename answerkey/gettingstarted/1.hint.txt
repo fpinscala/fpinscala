@@ -1,1 +1,3 @@
 You will definitely need a helper method like we did with `factorial`. But think about what information you need at each iteration. You might need two values, one for each of the two numbers you need to calculate the next number. And you know the first two numbers already.
+
+Note that the nth Fibonacci number has a closed form solution (see http://en.wikipedia.org/wiki/Fibonacci_number#Closed-form_expression). Using that would be cheating; the point here is just to get some practice writing loops with tail-recursive functions.

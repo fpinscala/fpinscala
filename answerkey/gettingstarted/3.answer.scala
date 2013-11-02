@@ -1,10 +1,7 @@
-// Here's one way to approach implementing this:
-// from the return type, `B => C`, we can immediately
-// begin by writing `(b: B) => ???`. We then look
-// at what values we have in scope - we have an 
-// `a: A`, a `b: B` (from the function parameter), 
-// and an `f: (A,B) => C`. Our goal is to produce a
-// `C`. There isn't anything we can do other than 
-// pass `f` the `A` and the `B` that we have!
-def partial1[A,B,C](a: A, f: (A,B) => C): B => C = 
-  (b: B) => f(a, b)
+/* Note that `=>` associates to the right, so we could write the return type as
+   `A => B => C` */
+def curry[A,B,C](f: (A, B) => C): A => (B => C) =
+  a => b => f(a, b)
+
+/* NB: The `Function2` trait has a `curried` method already, so if you wanted to
+   cheat a little you could write the answer as f.curried */

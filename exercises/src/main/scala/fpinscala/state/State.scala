@@ -6,12 +6,12 @@ trait RNG {
 }
 
 object RNG {
-  def simple(seed: Long): RNG = new RNG {
-    def nextInt = {
-      val seed2 = (seed*0x5DEECE66DL + 0xBL) & // `&` is bitwise AND
-                  ((1L << 48) - 1) // `<<` is left binary shift
-      ((seed2 >>> 16).asInstanceOf[Int], // `>>>` is right binary shift with zero fill
-       simple(seed2))
+  case class Simple(seed: Long) extends RNG {
+    def nextInt: (Int, RNG) = {
+      val newSeed = (seed * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL // `&` is bitwise AND. We use the current seed to generate a new seed.
+      val nextRNG = Simple(newSeed) // The next state, which is an `RNG` instance created from the new seed.
+      val n = (newSeed >>> 16).toInt // `>>>` is right binary shift with zero fill. The value `n` is our new pseudo-random integer.
+      (n, nextRNG) // The return value is a tuple containing both a pseudo-random integer and the next `RNG` state.
     }
   }
 
@@ -28,25 +28,23 @@ object RNG {
       (f(a), rng2)
     }
 
-  def positiveInt(rng: RNG): (Int, RNG) = sys.error("todo")
+  def positiveInt(rng: RNG): (Int, RNG) = ???
 
-  def double(rng: RNG): (Double, RNG) = sys.error("todo")
+  def double(rng: RNG): (Double, RNG) = ???
 
-  def intDouble(rng: RNG): ((Int,Double), RNG) = sys.error("todo")
+  def intDouble(rng: RNG): ((Int,Double), RNG) = ???
 
-  def doubleInt(rng: RNG): ((Double,Int), RNG) = sys.error("todo")
+  def doubleInt(rng: RNG): ((Double,Int), RNG) = ???
 
-  def double3(rng: RNG): ((Double,Double,Double), RNG) = sys.error("todo")
+  def double3(rng: RNG): ((Double,Double,Double), RNG) = ???
 
-  def ints(count: Int)(rng: RNG): (List[Int], RNG) = sys.error("todo")
+  def ints(count: Int)(rng: RNG): (List[Int], RNG) = ???
 
-  def positiveMax(n: Int): Rand[Int] = sys.error("todo")
+  def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = ???
 
-  def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = sys.error("todo")
+  def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = ???
 
-  def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = sys.error("todo")
-
-  def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] = sys.error("todo")
+  def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] = ???
 }
 
 case class State[S,+A](run: S => (A, S)) {
@@ -66,5 +64,5 @@ case class Machine(locked: Boolean, candies: Int, coins: Int)
 
 object State {
   type Rand[A] = State[RNG, A]
-  def simulateMachine(inputs: List[Input]): State[Machine, Int] = sys.error("todo")
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
 }

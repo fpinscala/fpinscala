@@ -1,2 +1,5 @@
-def map[A,B](a: Parser[A])(f: A => B): Parser[B] = 
-  flatMap(a)(f andThen succeed)
+/** In the event of an error, returns the error that occurred after consuming the most number of characters. */
+def furthest[A](p: Parser[A]): Parser[A]
+
+/** In the event of an error, returns the error that occurred most recently. */
+def latest[A](p: Parser[A]): Parser[A]

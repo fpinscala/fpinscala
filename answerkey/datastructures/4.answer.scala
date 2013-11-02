@@ -1,8 +1,9 @@
 /* 
-Somewhat overkill, but to illustrate the feature we are using a _pattern guard_, to only match a `Cons` whose head satisfies our predicate, `f`. The syntax is simply to add `if <cond>` after the pattern, before the `=>`, where `<cond>` can use any of the variables introduced by the pattern.
+Again, it is somewhat subjective whether to throw an exception when asked to drop more elements than the list contains. The usual default for `drop` is not to throw an exception, since it is typically used in cases where this is not indicative of a programming error. If you pay attention to how you use `drop`, it is often in cases where the length of the input list is unknown, and the number of elements to be dropped is being computed from something else. If `drop` threw an exception, we'd have to first compute or check the length and only drop up to that many elements.  
 */
-def dropWhile[A](l: List[A])(f: A => Boolean): List[A] = 
-  l match {
-    case Cons(h,t) if f(h) => dropWhile(t)(f) 
-    case _ => l
+def drop[A](l: List[A], n: Int): List[A] = 
+  if (n <= 0) l
+  else l match {
+    case Nil => Nil
+    case Cons(_,t) => drop(t, n-1) 
   }

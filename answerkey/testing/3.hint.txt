@@ -1,1 +1,1 @@
--
+We can refer to the enclosing `Prop` instance with `Prop.this`

@@ -2,18 +2,18 @@
 `uncons` has exactly the correct signature needed for `unfold`. (Notice that for any `Stream`, `s`, `unfold(s)(_.uncons) == s`. To implement `Stream.map`, we simply transform the first element of the pair returned, using the `map` method on `Option` (discussed in chapter 4). Variation 1 has the same function written using explicit pattern matching on `Option`.
 */
 def mapViaUnfold[B](f: A => B): Stream[B] = 
-  unfold(this)(_.uncons.map { case (h,t) => (f(h), t) })
+  unfold(this)(_.uncons.map { c => (f(c.head), c.tail) })
 
 def mapViaUnfold_1[B](f: A => B): Stream[B] = 
   unfold(this)(_.uncons match {
     case None => None
-    case Some((h,t)) => Some((f(h), t))
+    case Some(c) => Some((f(c.head), c.tail))
   })
 
 def takeViaUnfold(n: Int): Stream[A] = 
   unfold((this,n)) { 
     case (s,n) if n > 0 => 
-      s.uncons.map { case (h,t) => (h, (t,n)) }
+      s.uncons.map { c => (c.head, (c.tail, n)) }
     case _ => None
   }
 
@@ -22,7 +22,7 @@ Notice we are using a _pattern label_ here. In front of any pattern, `x`, we can
 */
 def takeWhileViaUnfold(f: A => Boolean): Stream[A] = 
   unfold(this)(s => s.uncons match { 
-    case s@Some((h,_)) if f(h) => s
+    case s@Some(c) if f(c.head) => Some(c.head, c.tail)
     case _ => None
   })
 
@@ -32,7 +32,7 @@ def zip[B](s2: Stream[B]): Stream[(A,B)] =
 def zipWith[B,C](s2: Stream[B])(f: (A,B) => C): Stream[C] = 
   unfold((this, s2)) { case (s1,s2) => 
     (s1.uncons, s2.uncons) match {
-      case (Some((h1,t1)), Some((h2,t2))) => Some((f(h1,h2), (t1,t2)))
+      case (Some(c1), Some(c2)) => Some((f(c1.head, c2.head), (c1.tail, c2.tail)))
       case _ => None
     }
   }
@@ -47,11 +47,9 @@ def zipWithAll[B,C](s2: Stream[B])(f: (Option[A],Option[B]) => C): Stream[C] = {
   val a = this map (Some(_)) append (constant(None)) 
   val b = s2 map (Some(_)) append (constant(None)) 
   unfold((a, b)) {
-    case (s1,s2) if s1.isEmpty && s2.isEmpty => None
-    case (s1,s2) => {
-      val (h1,t1) = s1.uncons.get 
-      val (h2,t2) = s2.uncons.get
-      Some((f(h1,h2), (t1,t2)))
-    }
+    case (s1,s2) => for {
+      c1 <- s1.uncons
+      c2 <- s2.uncons
+    } yield (f(c1.head, c2.head), (c1.tail, c2.tail))
   }
 }

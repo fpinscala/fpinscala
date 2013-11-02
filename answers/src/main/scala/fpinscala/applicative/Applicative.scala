@@ -60,8 +60,8 @@ trait Applicative[F[_]] extends Functor[F] {
     val self = this
     new Applicative[({type f[x] = F[G[x]]})#f] {
       def unit[A](a: => A) = self.unit(G.unit(a))
-      override def apply[A,B](fgf: F[G[A => B]])(fga: F[G[A]]) =
-        self.map2(fgf, fga)(G.apply(_)(_))
+      override def map2[A,B,C](fga: F[G[A]], fgb: F[G[B]])(f: (A,B) => C) =
+        self.map2(fga, fgb)(G.map2(_,_)(f))
     }
   }
 
@@ -81,6 +81,16 @@ case class Failure[E](head: E, tail: Vector[E])
 case class Success[A](a: A) extends Validation[Nothing, A]
 
 object Applicative {
+  val streamApplicative = new Applicative[Stream] {
+
+    def unit[A](a: => A): Stream[A] =
+      Stream.continually(a) // The infinite, constant stream
+
+    override def map2[A,B,C](a: Stream[A], b: Stream[B])( // Combine elements pointwise
+                    f: (A,B) => C): Stream[C] =
+      a zip b map f.tupled
+  }
+
   def validationApplicative[E]: Applicative[({type f[x] = Validation[E,x]})#f] =
     new Applicative[({type f[x] = Validation[E,x]})#f] {
       def unit[A](a: => A) = Success(a)
@@ -104,23 +114,23 @@ object Applicative {
 
 }
 
-trait Monad[M[_]] extends Applicative[M] {
-  def flatMap[A,B](ma: M[A])(f: A => M[B]): M[B] =
+trait Monad[F[_]] extends Applicative[F] {
+  def flatMap[A,B](ma: F[A])(f: A => F[B]): F[B] =
     join(map(ma)(f))
 
-  override def apply[A,B](mf: M[A => B])(ma: M[A]): M[B] =
+  override def apply[A,B](mf: F[A => B])(ma: F[A]): F[B] =
     flatMap(mf)(f => map(ma)(a => f(a)))
 
-  override def map[A,B](m: M[A])(f: A => B): M[B] =
+  override def map[A,B](m: F[A])(f: A => B): F[B] =
     flatMap(m)(a => unit(f(a)))
 
-  override def map2[A,B,C](ma: M[A], mb: M[B])(f: (A, B) => C): M[C] =
+  override def map2[A,B,C](ma: F[A], mb: F[B])(f: (A, B) => C): F[C] =
     flatMap(ma)(a => map(mb)(b => f(a, b)))
 
-  def compose[A,B,C](f: A => M[B], g: B => M[C]): A => M[C] =
+  def compose[A,B,C](f: A => F[B], g: B => F[C]): A => F[C] =
     a => flatMap(f(a))(g)
 
-  def join[A](mma: M[M[A]]): M[A] = flatMap(mma)(ma => ma)
+  def join[A](mma: F[F[A]]): F[A] = flatMap(mma)(ma => ma)
 }
 
 object Monad {
@@ -142,11 +152,11 @@ object Monad {
   }
 
   // Monad composition
-  def composeM[M[_],N[_]](implicit M: Monad[M], N: Monad[N], T: Traverse[N]):
-    Monad[({type f[x] = M[N[x]]})#f] = new Monad[({type f[x] = M[N[x]]})#f] {
-      def unit[A](a: => A): M[N[A]] = M.unit(N.unit(a))
-      override def flatMap[A,B](mna: M[N[A]])(f: A => M[N[B]]): M[N[B]] =
-        M.flatMap(mna)(na => M.map(T.traverse(na)(f))(N.join))
+  def composeM[G[_],H[_]](implicit G: Monad[G], H: Monad[H], T: Traverse[H]):
+    Monad[({type f[x] = G[H[x]]})#f] = new Monad[({type f[x] = G[H[x]]})#f] {
+      def unit[A](a: => A): G[H[A]] = G.unit(H.unit(a))
+      override def flatMap[A,B](mna: G[H[A]])(f: A => G[H[B]]): G[H[B]] =
+        G.flatMap(mna)(na => G.map(T.traverse(na)(f))(H.join))
     }
 
 }

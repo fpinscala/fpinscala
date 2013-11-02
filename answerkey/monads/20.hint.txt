@@ -1,1 +1,1 @@
-What would you expect `getState` to return right after you call `setState`?
+This monad is very similar to the `State` monad, except that it's "read-only". You can "get" but not "set" the `R` value that `flatMap` carries along.

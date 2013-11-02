@@ -1,2 +1,2 @@
-def compose[A,B,C](f: A => M[B], g: B => M[C]): A => M[C] =
+def compose[A,B,C](f: A => F[B], g: B => F[C]): A => F[C] =
   a => flatMap(f(a))(g)

@@ -1,1 +1,1 @@
-What if `run` were backed by a `java.util.concurrent.ExecutorService`? You may want to spend some time looking through the `java.util.concurrent` package to see what other useful types there could make good building blocks.
+What if `run` were backed by a `java.util.concurrent.ExecutorService`? You may want to spend some time looking through the `java.util.concurrent` package to see what other useful things you can find.

@@ -1,5 +1,8 @@
 package fpinscala.monoids
 
+import fpinscala.parallelism.Nonblocking._
+import fpinscala.parallelism.Nonblocking.Par.toParOps // infix syntax for `Par.map`, `Par.flatMap`, etc
+
 trait Monoid[A] {
   def op(a1: A, a2: A): A
   def zero: A
@@ -63,6 +66,12 @@ object Monoid {
   sealed trait WC
   case class Stub(chars: String) extends WC
   case class Part(lStub: String, words: Int, rStub: String) extends WC
+
+  def par[A](m: Monoid[A]): Monoid[Par[A]] = 
+    sys.error("todo")
+
+  def parFoldMap[A,B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] = 
+    sys.error("todo") 
 
   val wcMonoid: Monoid[WC] = sys.error("todo")
 

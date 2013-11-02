@@ -1,12 +1,11 @@
-def chooser[A,B](a: Par[A])(choices: A => Par[B]): Par[B] = 
-  es => choices(a(es).get)(es)
+def flatMap[B](f: A => Par[B]): Par[B] = 
+  Par.flatMap(p)(f)
 
-/* `chooser` is usually called `flatMap` or `bind`. */
-def flatMap[A,B](a: Par[A])(choices: A => Par[B]): Par[B] = 
-  es => choices(a(es).get)(es)
+def map[B](f: A => B): Par[B] = 
+  Par.map(p)(f)
 
-def choiceViaFlatMap[A](p: Par[Boolean])(ifTrue: Par[A], ifFalse: Par[A]): Par[A] =
-  flatMap(p)(b => if (b) ifTrue else ifFalse)
+def map2[B,C](p2: Par[B])(f: (A,B) => C): Par[C] =
+  Par.map2(p,p2)(f)
 
-def choiceNViaFlatMap[A](p: Par[Int])(choices: List[Par[A]]): Par[A] =
-  flatMap(p)(i => choices(i))
+def zip[B](p2: Par[B]): Par[(A,B)] = 
+  p.map2(p2)((_,_))

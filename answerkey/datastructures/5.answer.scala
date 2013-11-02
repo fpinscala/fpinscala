@@ -1,7 +1,8 @@
-/*
-If a function body consists solely of a match expression, we'll often put the match on the same line as the function signature, rather than introducing another level of nesting.
+/* 
+Somewhat overkill, but to illustrate the feature we are using a _pattern guard_, to only match a `Cons` whose head satisfies our predicate, `f`. The syntax is simply to add `if <cond>` after the pattern, before the `=>`, where `<cond>` can use any of the variables introduced by the pattern.
 */
-def setHead[A](l: List[A])(h: A): List[A] = l match {
-  case Nil => sys.error("setHead on empty list")
-  case Cons(_,t) => Cons(h,t)
-}
+def dropWhile[A](l: List[A], f: A => Boolean): List[A] = 
+  l match {
+    case Cons(h,t) if f(h) => dropWhile(t, f) 
+    case _ => l
+  }

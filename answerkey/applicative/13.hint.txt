@@ -1,1 +1,1 @@
-This implementation is very similar to `toList` except instead of accumulating into a list, we are accumulating into a `B` using the `f` function.
+What happens if you call `traverse` with `Applicative[Option]`? Is there an even simpler `Applicative` you could use?

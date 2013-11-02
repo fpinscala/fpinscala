@@ -1,1 +1,1 @@
--
+To implement `map2` in terms of `map2`, try using `f.curried` and following the types.

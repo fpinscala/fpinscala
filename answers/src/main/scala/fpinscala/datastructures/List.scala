@@ -1,13 +1,13 @@
 package fpinscala.datastructures
 
-sealed trait List[+A] // `List` data type
-case object Nil extends List[Nothing] // data constructor for `List`
-case class Cons[+A](head: A, tail: List[A]) extends List[A]
+sealed trait List[+A] // `List` data type, parameterized on a type, `A`
+case object Nil extends List[Nothing] // A `List` data constructor representing the empty list
+case class Cons[+A](head: A, tail: List[A]) extends List[A] // Another data constructor, representing nonempty lists. Note that `tail` is another `List[A]`, which may be `Nil` or another `Cons`.
 
-object List { // `List` companion object
-  def sum(ints: List[Int]): Int = ints match { // Pattern matching example
-    case Nil => 0
-    case Cons(x,xs) => x + sum(xs)
+object List { // `List` companion object. Contains functions for creating and working with lists.
+  def sum(ints: List[Int]): Int = ints match { // A function that uses pattern matching to add up a list of integers
+    case Nil => 0 // The sum of the empty list is 0.
+    case Cons(x,xs) => x + sum(xs) // The sum of a list starting with `x` is `x` plus the sum of the rest of the list.
   } 
   
   def product(ds: List[Double]): Double = ds match {
@@ -19,10 +19,6 @@ object List { // `List` companion object
   def apply[A](as: A*): List[A] = // Variadic function syntax
     if (as.isEmpty) Nil
     else Cons(as.head, apply(as.tail: _*))
-  
-  val example = Cons(1, Cons(2, Cons(3, Nil))) // Creating lists
-  val example2 = List(1,2,3)
-  val total = sum(example)
 
   val x = List(1,2,3,4,5) match {
     case Cons(x, Cons(2, Cons(4, _))) => x
@@ -45,10 +41,10 @@ object List { // `List` companion object
     }
   
   def sum2(l: List[Int]) = 
-    foldRight(l, 0.0)(_ + _)
+    foldRight(l, 0)((x,y) => x + y)
   
   def product2(l: List[Double]) = 
-    foldRight(l, 1.0)(_ * _)
+    foldRight(l, 1.0)(_ * _) // `_ * _` is more concise notation for `(x,y) => x * y`, see sidebar
 
 
   /* 
@@ -66,6 +62,14 @@ object List { // `List` companion object
       case Cons(_,t) => t
     }
 
+  /*
+  If a function body consists solely of a match expression, we'll often put the match on the same line as the function signature, rather than introducing another level of nesting.
+  */
+  def setHead[A](l: List[A])(h: A): List[A] = l match {
+    case Nil => sys.error("setHead on empty list")
+    case Cons(_,t) => Cons(h,t)
+  }
+
   /* 
   Again, it is somewhat subjective whether to throw an exception when asked to drop more elements than the list contains. The usual default for `drop` is not to throw an exception, since it is typically used in cases where this is not indicative of a programming error. If you pay attention to how you use `drop`, it is often in cases where the length of the input list is unknown, and the number of elements to be dropped is being computed from something else. If `drop` threw an exception, we'd have to first compute or check the length and only drop up to that many elements.  
   */
@@ -79,19 +83,11 @@ object List { // `List` companion object
   /* 
   Somewhat overkill, but to illustrate the feature we are using a _pattern guard_, to only match a `Cons` whose head satisfies our predicate, `f`. The syntax is simply to add `if <cond>` after the pattern, before the `=>`, where `<cond>` can use any of the variables introduced by the pattern.
   */
-  def dropWhile[A](l: List[A])(f: A => Boolean): List[A] = 
+  def dropWhile[A](l: List[A], f: A => Boolean): List[A] = 
     l match {
-      case Cons(h,t) if f(h) => dropWhile(t)(f) 
+      case Cons(h,t) if f(h) => dropWhile(t, f) 
       case _ => l
     }
-
-  /*
-  If a function body consists solely of a match expression, we'll often put the match on the same line as the function signature, rather than introducing another level of nesting.
-  */
-  def setHead[A](l: List[A])(h: A): List[A] = l match {
-    case Nil => sys.error("setHead on empty list")
-    case Cons(_,t) => Cons(h,t)
-  }
 
   /*
   Notice we are copying the entire list up until the last element. Besides being inefficient, the natural recursive solution will use a stack frame for each element of the list, which can lead to stack overflows for large lists (can you see why?). With lists, it's common to use a temporary, mutable buffer internal to the function (with lazy lists or streams which we discuss in chapter 5, we don't normally do this). So long as the buffer is allocated internal to the function, the mutation is not observable and RT is preserved.

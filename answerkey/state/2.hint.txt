@@ -1,1 +1,1 @@
-Use `positiveInt` to generate a random positive integer between `0` and `Int.MaxValue`, inclusive.
+Use `positiveInt` to generate a random positive integer between `0` and `Int.MaxValue`, inclusive. Then map that to the range of doubles from 0 to 1.
