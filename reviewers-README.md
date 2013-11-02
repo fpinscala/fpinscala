@@ -1,15 +1,13 @@
 Hi everyone,
 
-First off, thank you for the good feedback you all provided on the first third of the book! We've tried to incorporate most of the suggestions and bug reports into the version you now have in front of you, with a couple exceptions:
+Thanks for all the feedback and suggestions throughout this (lengthy) process. We've now completed drafts of all chapters of the book, and have just completed a pass through the book making numerous revisions. Chapter 13 is still being actively revised, but aside from chapter 13, we're relatively happy with the structure and content of the other chapters and will be looking to you to tell us if something isn't working or if you really don't like something.
 
-* We haven't done much with chapter 2. Based on the feedback we've gotten and our thinking about the chapter, we're considering doing more substantive edits, so we're holding off on making any fixes or tweaks to it for now.
-* We've also left chapter 5 alone for now. We are going to be making a significant change to the representation of streams, which will affect a lot of the exercises. We are also going to be expanding the discussion of corecursion, which is just mentioned in passing in the chapter right now. 
-* The preface we also left alone for now. We will probably revise that at the end, once we finish with drafts of the chapters.  
+For part 3, we are particularly interested in getting feedback on a few things. If you've completed the exercises in Part 1, and worked through at least one or two of the part 2 chapters, did you find the introduction of more abstract structures like monads approachable? Were the exercises easy, hard? Were they interesting? Although we made the exercises an integral part of the book, we're also curious to know how well the Part 3 and Part 4 content works for you if you maybe haven't done as many of the exercises or engaged as actively with the book content.
 
-The second part of the book is quite different from the first. Now that many of the 'nuts and bolts' are out of the way, we can start writing some nontrivial libraries. Keep in mind you are basically alpha testing these libraries, and if you find problems, definitely feel free to report them on the [GitHub issue tracker](https://github.com/pchiusano/fpinscala-exercises/issues).
+And after finishing part 4, do you feel like you have a relatively complete picture of how to approach writing functional programs that interact with the outside world? Do you feel like you have a solid foundation for approaching programming tasks in a functional way, and for learning more about different areas of FP that you encounter in your work?
 
-We are particularly interested in getting feedback on the effectiveness of the part 2 chapters. Part 2 is supposed to give you a window into the process of designing functional code--the goal is that you come away from part 2 in a good position to try your hand at designing your own functional libraries.
+There are still a number of issues / bugs on the [GitHub issues][]. We'll be making a pass through all those after this final review to make sure all issues get addressed or considered.
 
-Let us know what you think!
+[GitHub issues]: https://github.com/pchiusano/fpinscala/issues
 
---Paul and Rúnar
+_Paul and Rúnar_
