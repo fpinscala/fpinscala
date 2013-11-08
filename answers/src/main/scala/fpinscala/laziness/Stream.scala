@@ -153,6 +153,7 @@ sealed abstract class Stream[+A] { // The abstract base class for streams. It wi
       case (s1,s2) => for {
         c1 <- s1.uncons
         c2 <- s2.uncons
+        if (c1.head.isDefined || c2.head.isDefined)
       } yield (f(c1.head, c2.head), (c1.tail, c2.tail))
     }
   }
