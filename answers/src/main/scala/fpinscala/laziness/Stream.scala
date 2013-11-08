@@ -116,7 +116,7 @@ sealed abstract class Stream[+A] { // The abstract base class for streams. It wi
   def takeViaUnfold(n: Int): Stream[A] = 
     unfold((this,n)) { 
       case (s,n) if n > 0 => 
-        s.uncons.map { c => (c.head, (c.tail, n)) }
+        s.uncons.map { c => (c.head, (c.tail, n-1)) }
       case _ => None
     }
   
