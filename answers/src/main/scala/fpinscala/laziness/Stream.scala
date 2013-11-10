@@ -116,7 +116,7 @@ sealed abstract class Stream[+A] { // The abstract base class for streams. It wi
   def takeViaUnfold(n: Int): Stream[A] = 
     unfold((this,n)) { 
       case (s,n) if n > 0 => 
-        s.uncons.map { c => (c.head, (c.tail, n)) }
+        s.uncons.map { c => (c.head, (c.tail, n-1)) }
       case _ => None
     }
   
@@ -153,6 +153,7 @@ sealed abstract class Stream[+A] { // The abstract base class for streams. It wi
       case (s1,s2) => for {
         c1 <- s1.uncons
         c2 <- s2.uncons
+        if (c1.head.isDefined || c2.head.isDefined)
       } yield (f(c1.head, c2.head), (c1.tail, c2.tail))
     }
   }
