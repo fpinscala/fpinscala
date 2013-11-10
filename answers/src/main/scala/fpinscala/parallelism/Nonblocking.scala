@@ -117,7 +117,7 @@ object Nonblocking {
         def apply(cb: A => Unit): Unit = 
           p(es) { b => 
             if (b) eval(es) { t(es)(cb) } 
-            else eval(es) { t(es)(cb) }
+            else eval(es) { f(es)(cb) }
           }
       }
 
