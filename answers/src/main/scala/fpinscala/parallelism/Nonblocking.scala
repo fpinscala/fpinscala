@@ -129,7 +129,7 @@ object Nonblocking {
       }
 
     def choiceViaChoiceN[A](a: Par[Boolean])(ifTrue: Par[A], ifFalse: Par[A]): Par[A] =
-      choiceN(map(a)(b => if (b) 1 else 0))(List(ifTrue, ifFalse))
+      choiceN(map(a)(b => if (b) 1 else 0))(List(ifFalse, ifTrue))
 
     def choiceMap[K,V](p: Par[K])(ps: Map[K,Par[V]]): Par[V] = 
       es => new Future[V] {

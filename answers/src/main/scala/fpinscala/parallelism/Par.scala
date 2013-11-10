@@ -88,7 +88,7 @@ object Par {
     }
   
   def choiceViaChoiceN[A](a: Par[Boolean])(ifTrue: Par[A], ifFalse: Par[A]): Par[A] =
-    choiceN(map(a)(b => if (b) 1 else 0))(List(ifTrue, ifFalse))
+    choiceN(map(a)(b => if (b) 1 else 0))(List(ifFalse, ifTrue))
 
   def choiceMap[K,V](key: Par[K])(choices: Map[K,Par[V]]): Par[V] =
     es => {
