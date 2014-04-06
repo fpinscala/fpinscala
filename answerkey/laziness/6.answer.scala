@@ -6,7 +6,7 @@ def filter[B](f: A => Boolean): Stream[A] =
     if (f(h)) cons(h, t)
     else t) 
 
-def append[B>:A](s: Stream[B]): Stream[B] = 
+def append[B>:A](s: => Stream[B]): Stream[B] = 
   foldRight(s)((h,t) => cons(h,t))
 
 def flatMap[B](f: A => Stream[B]): Stream[B] = 
