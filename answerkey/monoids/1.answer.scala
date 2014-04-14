@@ -17,4 +17,3 @@ val booleanAnd: Monoid[Boolean] = new Monoid[Boolean] {
   def op(x: Boolean, y: Boolean) = x && y
   val zero = true
 }
-

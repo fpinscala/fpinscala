@@ -1,1 +1,1 @@
--
+You will find this very difficult without an interactive proof assistant like Coq or Agda. If you do decide to take on the challenge, this is the kind of problem that might take someone several days or even a few weeks to think about.

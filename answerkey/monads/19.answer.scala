@@ -1,5 +1,17 @@
-`replicateM` for `State` repeats the same state transition a number of times and returns a list of the results. It's not passing the same starting state many times, but chaining the calls together so that the output state of one is the input state of the next.
+// Getting and setting the same state does nothing:
+getState.flatMap(setState) == unit(())
 
-`map2` works similarly in that it takes two state transitions and feeds the output state of one to the input of the other. The outputs are not put in a list, but combined with a function `f`.
+// written as for-comprehension:
+for {
+  x <- getState
+  _ <- setState(x)
+} yield ()
 
-`sequence` takes an entire list of state transitions and does the same kind of thing as `replicateM`: It feeds the output state of the first state transition to the input state of the next and so on. The results are accumulated in a list.
+// Setting the state to `s` and getting it back out yields `s`.
+setState(s).flatMap(_ => getState) == unit(s)
+
+// alternatively:
+for {
+  _ <- setState(s)
+  x <- getState
+} yield x

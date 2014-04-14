@@ -2,7 +2,7 @@ package fpinscala.state
 
 
 trait RNG {
-  def nextInt: (Int, RNG) // Should generate a random `Int`. We will later define other functions in terms of `nextInt`.
+  def nextInt: (Int, RNG) // Should generate a random `Int`. We'll later define other functions in terms of `nextInt`.
 }
 
 case class State[S,+A](run: S => (A,S))

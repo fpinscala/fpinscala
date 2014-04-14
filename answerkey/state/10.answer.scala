@@ -4,9 +4,9 @@ def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] =
     g(a)(r1) // We pass the new state along
   }
 
-def positiveLessThan(n: Int): Rand[Int] = {
-  flatMap(positiveInt) { i =>
+def nonNegativeLessThan(n: Int): Rand[Int] = {
+  flatMap(nonNegativeInt) { i =>
     val mod = i % n
-    if (i + (n-1) - mod > 0) unit(mod) else positiveLessThan(n)
+    if (i + (n-1) - mod >= 0) unit(mod) else nonNegativeLessThan(n)
   }
 }

@@ -84,11 +84,6 @@ object Monoid {
     forAll(gen)((a: A) =>
       m.op(a, m.zero) == a && m.op(m.zero, a) == a)
 
-  def trimMonoid(s: String): Monoid[String] = new Monoid[String] {
-    def op(a: String, b: String) = (a.trim + " " + b.trim).trim
-    val zero = ""
-  }
-
   def concatenate[A](as: List[A], m: Monoid[A]): A =
     as.foldLeft(m.zero)(m.op)
 
@@ -118,6 +113,9 @@ object Monoid {
       m.op(foldMapV(l, m)(f), foldMapV(r, m)(f))
     }
 
+  // This implementation detects only ascending order,
+  // but you can write a monoid that detects both ascending and descending
+  // order if you like.
   def ordered(ints: IndexedSeq[Int]): Boolean = {
     // Our monoid tracks the minimum and maximum element seen so far
     // as well as whether the elements are so far ordered.
@@ -137,17 +135,17 @@ object Monoid {
   }
 
   // This ability to 'lift' a monoid any monoid to operate within
-  // some context (here `Par`) is something we'll discuss more in 
+  // some context (here `Par`) is something we'll discuss more in
   // chapters 11 & 12
   def par[A](m: Monoid[A]): Monoid[Par[A]] = new Monoid[Par[A]] {
-    def zero = Par.unit(m.zero)  
+    def zero = Par.unit(m.zero)
     def op(a: Par[A], b: Par[A]) = a.map2(b)(m.op)
   }
 
   // we perform the mapping and the reducing both in parallel
-  def parFoldMap[A,B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] = 
-    Par.parMap(v)(f).flatMap { bs => 
-      foldMapV(bs, par(m))(b => Par.async(b)) 
+  def parFoldMap[A,B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] =
+    Par.parMap(v)(f).flatMap { bs =>
+      foldMapV(bs, par(m))(b => Par.lazyUnit(b))
     }
 
   sealed trait WC
@@ -214,10 +212,10 @@ object Monoid {
 trait Foldable[F[_]] {
   import Monoid._
 
-  def foldRight[A, B](as: F[A])(z: B)(f: (A, B) => B): B =
+  def foldRight[A,B](as: F[A])(z: B)(f: (A, B) => B): B =
     foldMap(as)(f.curried)(endoMonoid[B])(z)
 
-  def foldLeft[A, B](as: F[A])(z: B)(f: (B, A) => B): B =
+  def foldLeft[A,B](as: F[A])(z: B)(f: (B, A) => B): B =
     foldMap(as)(a => (b: B) => f(b, a))(dual(endoMonoid[B]))(z)
 
   def foldMap[A, B](as: F[A])(f: A => B)(mb: Monoid[B]): B =
@@ -297,39 +295,5 @@ object OptionFoldable extends Foldable[Option] {
     case None => z
     case Some(a) => f(a, z)
   }
-}
-
-// There is no correct `Either` monoid. The trouble lies in providing a `zero`.
-// Should the `zero` be a `Left` or a `Right`? Also, what happens when we combine
-// both a `Left` and a `Right`? It's not possible to make an arbitrary decision
-// about that and still satisfy the monoid laws.
-// But it is possible to define a monoid coproduct using a slightly different
-// data structure:
-
-sealed trait These[+A, +B]
-case class This[A](a: A) extends These[A, Nothing]
-case class That[B](b: B) extends These[Nothing, B]
-case class Both[A, B](a: A, b: B) extends These[A, B]
-
-// This handily solves the issue of "both left and right" as well as the issue of
-// which `zero` to choose. We simply use both of them.
-
-object These {
-  // A monoid coproduct
-  def theseMonoid[A, B](A: Monoid[A], B: Monoid[B]): Monoid[These[A, B]] =
-    new Monoid[These[A, B]] {
-      def op(x: These[A, B], y: These[A, B]) = (x, y) match {
-        case (This(a1), This(a2)) => This(A.op(a1, a2))
-        case (That(b1), That(b2)) => That(B.op(b1, b2))
-        case (That(b), This(a)) => Both(a, b)
-        case (This(a), That(b)) => Both(a, b)
-        case (Both(a1, b), This(a)) => Both(A.op(a1, a), b)
-        case (Both(a, b1), That(b)) => Both(a, B.op(b1, b))
-        case (This(a1), Both(a, b)) => Both(A.op(a1, a), b)
-        case (That(b), Both(a, b1)) => Both(a, B.op(b1, b))
-        case (Both(a1, b1), Both(a2, b2)) => Both(A.op(a1, a2), B.op(b1, b2))
-      }
-      val zero = Both(A.zero, B.zero)
-    }
 }
 

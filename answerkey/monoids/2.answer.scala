@@ -17,7 +17,6 @@ def dual[A](m: Monoid[A]): Monoid[A] = new Monoid[A] {
   val zero = m.zero
 }
 
-// Now we can have both monoids on hand
+// Now we can have both monoids on hand:
 def firstOptionMonoid[A]: Monoid[Option[A]] = optionMonoid[A]
 def lastOptionMonoid[A]: Monoid[Option[A]] = dual(firstOptionMonoid)
-

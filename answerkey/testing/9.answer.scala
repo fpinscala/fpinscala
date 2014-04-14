@@ -1,11 +1,15 @@
 def &&(p: Prop) = Prop {
-  (n,rng) => run(max,n,rng) orElse p.run(max,n,rng)
+  (max,n,rng) => run(max,n,rng) match {
+    case Passed => p.run(max, n, rng)
+    case x => x
+  }
 }
 
 def ||(p: Prop) = Prop {
-  (n,rng) => run(max,n,rng) flatMap {
+  (max,n,rng) => run(max,n,rng) match {
     // In case of failure, run the other prop.
-    case (msg, _) => p.tag(msg).run(max,n,rng)
+    case Falsified(msg, _) => p.tag(msg).run(max,n,rng)
+    case x => x
   }
 }
 
@@ -13,7 +17,8 @@ def ||(p: Prop) = Prop {
  * the given message on a newline in front of the existing message.
  */
 def tag(msg: String) = Prop {
-  (n,rng) => run(max,n,rng) map {
-    case (e, c) => (msg + "\n" + e, c)
+  (max,n,rng) => run(max,n,rng) match {
+    case Falsified(e, c) => Falsified(msg + "\n" + e, c)
+    case x => x
   }
 }

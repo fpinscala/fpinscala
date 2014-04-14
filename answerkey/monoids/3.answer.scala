@@ -5,4 +5,3 @@ def endoMonoid[A]: Monoid[A => A] = new Monoid[A => A] {
   def op(f: A => A, g: A => A) = f compose g
   val zero = (a: A) => a
 }
-

@@ -7,7 +7,7 @@ This source file contains the answers to the last two exercises in the section
 The Gen data type in this file incorporates exhaustive checking of finite domains.
 */
 
-import fpinscala.laziness.Stream
+import fpinscala.laziness.{Stream,Cons,Empty}
 import fpinscala.state._
 import fpinscala.parallelism._
 import fpinscala.parallelism.Par.Par
@@ -50,16 +50,16 @@ object Prop {
     (n,rng) => {
       def go(i: Int, j: Int, s: Stream[Option[A]], onEnd: Int => Result): Result =
         if (i == j) Right((Unfalsified, i))
-        else s.uncons match {
-          case Some(c) => c.head match {
+        else s match {
+          case Cons(h,t) => h() match {
             case Some(h) =>
               try {
-                if (f(h)) go(i+1,j,s,onEnd)
+                if (f(h)) go(i+1,j,t(),onEnd)
                 else Left(h.toString) }
               catch { case e: Exception => Left(buildMsg(h, e)) }
             case None => Right((Unfalsified,i))
           }
-          case None => onEnd(i)
+          case _ => onEnd(i)
         }
       go(0, n/3, a.exhaustive, i => Right((Proven, i))) match {
         case Right((Unfalsified,_)) =>
@@ -223,7 +223,7 @@ object Gen {
     Gen(State(RNG.boolean), bounded(Stream(true,false)))
 
   def choose(start: Int, stopExclusive: Int): Gen[Int] =
-    Gen(State(RNG.positiveInt).map(n => start + n % (stopExclusive-start)),
+    Gen(State(RNG.nonNegativeInt).map(n => start + n % (stopExclusive-start)),
         bounded(Stream.from(start).take(stopExclusive-start)))
 
   /* This implementation is rather tricky, but almost impossible to get wrong
@@ -335,11 +335,15 @@ object Gen {
    * When either stream is exhausted, insert all remaining elements from the other stream.
    */
   def interleave[A](b: Stream[Boolean], s1: Stream[A], s2: Stream[A]): Stream[A] =
-    b.uncons flatMap { c =>
-      if (c.head) s1.uncons map { sc =>
-        Stream.cons(sc.head, interleave(c.tail, sc.tail, s2)) } orElse s2.uncons
-      else s2.uncons map { sc =>
-        Stream.cons(sc.head, interleave(c.tail, s1, sc.tail)) } orElse s1.uncons
+    b.headOption map { hd =>
+      if (hd) s1 match {
+        case Cons(h, t) => Stream.cons(h(), interleave(b drop 1, t(), s2))
+        case _ => s2
+      }
+      else s2 match {
+        case Cons(h, t) => Stream.cons(h(), interleave(b drop 1, s1, t()))
+        case _ => s1
+      }
     } getOrElse Stream.empty
 
   def listOf[A](g: Gen[A]): SGen[List[A]] =
@@ -374,7 +378,7 @@ object Gen {
 
   val sortedProp = forAll(listOf(smallInt)) { l =>
     val ls = l.sorted
-    l.isEmpty || !l.zip(l.tail).exists { case (a,b) => a > b }
+    l.isEmpty || ls.tail.isEmpty || !l.zip(ls.tail).exists { case (a,b) => a > b }
   }
 
   object ** {
@@ -386,7 +390,7 @@ object Gen {
    * result. This is not the most compelling example, but it provides at least some
    * variation in structure to use for testing.
    */
-  val pint2: Gen[Par[Int]] = choose(-100,100).listOfN(choose(0,20)).map(l =>
+  lazy val pint2: Gen[Par[Int]] = choose(-100,100).listOfN(choose(0,20)).map(l =>
     l.foldLeft(Par.unit(0))((p,i) =>
       Par.fork { Par.map2(p, Par.unit(i))(_ + _) }))
 

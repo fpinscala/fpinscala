@@ -1,4 +1,6 @@
-def from(n: Int): Stream[Int] = new Cons[Int] {
-  val head = n
-  lazy val tail = from(n+1)
+// This is more efficient than `cons(a, constant(a))` since it's just
+// one object referencing itself.
+def constant[A](a: A): Stream[A] = {
+  lazy val tail: Stream[A] = Cons(() => a, () => tail) 
+  tail
 }

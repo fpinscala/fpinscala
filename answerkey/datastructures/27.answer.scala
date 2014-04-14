@@ -1,5 +1,5 @@
 /*
-Again, notice how similar the implementation is to `size` and `maximum`.
+Again, note how similar the implementation is to `size` and `maximum`.
 */
 def depth[A](t: Tree[A]): Int = t match {
   case Leaf(_) => 0

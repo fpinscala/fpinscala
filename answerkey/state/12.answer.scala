@@ -30,14 +30,13 @@ def sequence[S, A](sas: List[State[S, A]]): State[S, List[A]] = {
   State((s: S) => go(s,sas,List()))
 }
 
-// We can also write the loop using a left fold. When the loop has more than
-// one piece of state like this (here we have the current state and the list
-// of values we have accumulated so far), it can be a little awkward to have 
-// to pack and unpack this state into tuples 
-def sequenceViaFoldLeft[S, A](sas: List[State[S,A]]) = 
-  State((s: S) => sas.foldLeft((List[A](),s)) { (t,action) => t match {
-    case (acc,s) => 
-      val (a,s2) = action.run(s)
-      (a :: acc, s2)
-  }} match { case (acc,s) => (acc.reverse,s) })
+// We can also write the loop using a left fold. This is tail recursive like the
+// previous solution, but it reverses the list _before_ folding it instead of after.
+// You might think that this is slower than the `foldRight` solution since it
+// walks over the list twice, but it's actually faster! The `foldRight` solution
+// technically has to also walk the list twice, since it has to unravel the call
+// stack, not being tail recursive. And the call stack will be as tall as the list
+// is long.
+def sequenceViaFoldLeft[S,A](l: List[State[S, A]]): State[S, List[A]] =
+  l.reverse.foldLeft(unit[S, List[A]](List()))((acc, f) => f.map2(acc)( _ :: _ ))
 }

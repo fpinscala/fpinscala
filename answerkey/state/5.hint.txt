@@ -1,1 +1,1 @@
-This is an application of `map` over `positiveInt` or `nextInt`.
+This is an application of `map` over `nonNegativeInt` or `nextInt`.

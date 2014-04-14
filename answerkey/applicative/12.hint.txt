@@ -1,1 +1,1 @@
-Follow the types. There is generally only one sensible implementation that typechecks.
+The standard library lets you treat a `Map` as essentially a list of pairs.

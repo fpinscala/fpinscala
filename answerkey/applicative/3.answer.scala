@@ -1,5 +1,5 @@
 /* 
-The pattern is simple. We just curry the the function 
+The pattern is simple. We just curry the function 
 we want to lift, pass the result to `unit`, and then `apply` 
 as many times as there are arguments. 
 Each call to `apply` is a partial application of the function

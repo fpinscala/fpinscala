@@ -1,11 +1,13 @@
-// The function type `(A, B) => B`, when curried, is `A => (B => B)`.
-// And of course, `B => B` is a monoid for any `B` (via function composition).
-def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B =
-  foldMap(as, endoMonoid[B])(f.curried)(z)
+// This ability to 'lift' a monoid any monoid to operate within
+// some context (here `Par`) is something we'll discuss more in 
+// chapters 11 & 12
+def par[A](m: Monoid[A]): Monoid[Par[A]] = new Monoid[Par[A]] {
+  def zero = Par.unit(m.zero)  
+  def op(a: Par[A], b: Par[A]) = a.map2(b)(m.op)
+}
 
-// Folding to the left is the same except we flip the arguments to
-// the function `f` to put the `B` on the correct side.
-// Then we have to also "flip" the monoid so that it operates from left to right.
-def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B): B =
-  foldMap(as, dual(endoMonoid[B]))(a => b => f(b, a))(z)
-
+// we perform the mapping and the reducing both in parallel
+def parFoldMap[A,B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] = 
+  Par.parMap(v)(f).flatMap { bs => 
+    foldMapV(bs, par(m))(b => Par.async(b)) 
+  }

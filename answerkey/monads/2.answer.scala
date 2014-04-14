@@ -15,8 +15,9 @@ class StateMonads[S] {
 }
 
 // But we don't have to create a full class like `StateMonads`. We can create
-// an anonymous class inline, inside parentheses, and project out its type member,
-// `F`:
+// an anonymous class inline, inside parentheses, and project out its type member `f`.
+// This is sometimes called a "type lambda", since it's very similar to a type-level
+// anonymous function.
 def stateMonad[S] = new Monad[({type f[x] = State[S, x]})#f] {
   def unit[A](a: => A): State[S, A] = State(s => (a, s))
   override def flatMap[A,B](st: State[S, A])(f: A => State[S, B]): State[S, B] =

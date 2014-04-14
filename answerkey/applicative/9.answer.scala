@@ -6,6 +6,3 @@ def compose[G[_]](G: Applicative[G]): Applicative[({type f[x] = F[G[x]]})#f] = {
       self.map2(fga, fgb)(G.map2(_,_)(f))
   }
 }
-// If `self` and `G` both satisfy the laws, then so does the composite.
-// The full solution can be found at:
-// https://github.com/runarorama/sannanir/blob/master/Applicative.v

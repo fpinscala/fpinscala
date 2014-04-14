@@ -1,1 +1,1 @@
-We give a fully fleshed-out solution in the `Future` data type in Chapter 13.
+We give a fully fleshed-out solution in the `Task` data type in the code for Chapter 13.

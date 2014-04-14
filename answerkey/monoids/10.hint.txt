@@ -1,1 +1,3 @@
-Think about what a partial answer looks like. If we have only seen some of the elements of a sequence, we need to know if what we have seen so far is ordered. For every new element we see, if the sequence is in fact ordered, it should not fall inside the range of elements seen already.
+You can use `s.toIndexedSeq` to turn a `String` into an `IndexedSeq[Char]`. Then you can use `foldMap` with your `IndexedSeq` monoid from before. Think about what a `Part` or `Stub` for a given character should look like.
+
+A `Stub` should never contain any whitespace.

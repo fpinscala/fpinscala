@@ -1,0 +1,1 @@
+Follow the types. There is only implementation that typechecks.

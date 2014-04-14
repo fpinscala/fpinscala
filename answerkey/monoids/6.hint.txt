@@ -1,1 +1,1 @@
--
+Notice that the type of the function that is passed to `foldRight` is `(A, B) => B`, which can be curried to `A => (B => B)`. This is a strong hint that we should use the endofunction monoid `B => B` to implement `foldRight`. The implementation of `foldLeft` is then just the dual. Don't worry if these implementations are not very efficient.

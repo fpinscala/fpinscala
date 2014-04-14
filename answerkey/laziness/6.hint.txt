@@ -1,1 +1,1 @@
-Make `foldRight` abstract on `Stream` and give it two concrete implementations, one in `Empty` and one in `Cons`.
+Let `None: Option[A]` be the first argument to `foldRight`. Follow the types from there.

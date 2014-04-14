@@ -1,2 +1,8 @@
-def hasSubsequence[A](s1: Stream[A], s2: Stream[A]): Boolean =
-  s1.tails exists (startsWith(_,s2))
+/*
+The last element of `tails` is always the empty `Stream`, so we handle this as a special case, by appending it to the output.
+*/
+def tails: Stream[Stream[A]] = 
+  unfold(this) { 
+    case Empty => None
+    case s => Some((s, s drop 1))
+  } append (Stream(empty))

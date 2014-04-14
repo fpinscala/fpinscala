@@ -1,2 +1,2 @@
 val _double: Rand[Double] =
-  map(positiveInt)(_ / (Int.MaxValue.toDouble + 1))
+  map(nonNegativeInt)(_ / (Int.MaxValue.toDouble + 1))

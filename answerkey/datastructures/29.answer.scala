@@ -16,7 +16,7 @@ def depthViaFold[A](t: Tree[A]): Int =
   fold(t)(a => 0)((d1,d2) => 1 + (d1 max d2))
 
 /*
-Notice the type annotation required on the expression `Leaf(f(a))`. Without this annotation, we get an error like this: 
+Note the type annotation required on the expression `Leaf(f(a))`. Without this annotation, we get an error like this: 
 
 type mismatch;
   found   : fpinscala.datastructures.Branch[B]
@@ -24,7 +24,7 @@ type mismatch;
      fold(t)(a => Leaf(f(a)))(Branch(_,_))
                                     ^  
 
-This error is an unfortunate consequence of Scala using subtyping to encode algebraic data types. Without the annotation, the result type of the fold gets inferred as `Leaf[B]` and it is then expected that the second argument to `fold` will return `Leaf[B]`, which it does not (it returns `Branch[B]`). Really, we would prefer if Scala would infer `Tree[B]` as the result type in both cases. When working with algebraic data types in Scala, it is somewhat common to define helper functions that simply call the corresponding data constructors but give the less specific result type:  
+This error is an unfortunate consequence of Scala using subtyping to encode algebraic data types. Without the annotation, the result type of the fold gets inferred as `Leaf[B]` and it is then expected that the second argument to `fold` will return `Leaf[B]`, which it doesn't (it returns `Branch[B]`). Really, we'd prefer Scala to infer `Tree[B]` as the result type in both cases. When working with algebraic data types in Scala, it's somewhat common to define helper functions that simply call the corresponding data constructors but give the less specific result type:  
   
   def leaf[A](a: A): Tree[A] = Leaf(a)
   def branch[A](l: Tree[A], r: Tree[A]): Tree[A] = Branch(l, r)

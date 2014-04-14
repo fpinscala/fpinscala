@@ -20,6 +20,6 @@ We'll sometimes just use `~=` when there is an obvious bijection between the two
 
   a.map(f) ** b.map(g) == (a ** b) map { case (a,b) => (f(a), g(b)) }
 
-For instance, if `a` and `b` were both `Parser[String]`, and `f` and `g` both computed the length of a string, it does not matter if we map over the result of `a` to compute its length, or whether we do that _after_ the product.
+For instance, if `a` and `b` were both `Parser[String]`, and `f` and `g` both computed the length of a string, it doesn't matter if we map over the result of `a` to compute its length, or whether we do that _after_ the product.
 
 See chapter 12 for more discussion of these laws.

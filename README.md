@@ -15,7 +15,7 @@ If on mac/linux:
     $ chmod a+x ./sbt
     $ ./sbt
 
-This will download and launch [sbt](https://github.com/harrah/xsbt/wiki/), a build tool for Scala. Once it is finished downloading, you'll get a prompt from which you can issue commands to build and interact with your code. Try the following:
+This will download and launch [sbt](http://scala-sbt.org), a build tool for Scala. Once it is finished downloading, you'll get a prompt from which you can issue commands to build and interact with your code. Try the following:
 
     > project exercises
     > compile

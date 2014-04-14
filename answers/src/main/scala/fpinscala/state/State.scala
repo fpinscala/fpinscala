@@ -2,7 +2,7 @@ package fpinscala.state
 
 
 trait RNG {
-  def nextInt: (Int, RNG) // Should generate a random `Int`. We will later define other functions in terms of `nextInt`.
+  def nextInt: (Int, RNG) // Should generate a random `Int`. We'll later define other functions in terms of `nextInt`.
 }
 
 object RNG {
@@ -19,15 +19,15 @@ object RNG {
   // Since `Int.Minvalue` is 1 smaller than `-(Int.MaxValue)`,
   // it suffices to increment the negative numbers by 1 and make them positive.
   // This maps Int.MinValue to Int.MaxValue and -1 to 0.
-  def positiveInt(rng: RNG): (Int, RNG) = {
+  def nonNegativeInt(rng: RNG): (Int, RNG) = {
     val (i, r) = rng.nextInt
     (if (i < 0) -(i + 1) else i, r)
   }
 
-  // We generate a positive integer and divide it by one higher than the
+  // We generate an integer >= 0 and divide it by one higher than the
   // maximum. This is just one possible solution.
   def double(rng: RNG): (Double, RNG) = {
-    val (i, r) = positiveInt(rng)
+    val (i, r) = nonNegativeInt(rng)
     (i / (Int.MaxValue.toDouble + 1), r)
   }
 
@@ -70,7 +70,7 @@ object RNG {
   def ints2(count: Int)(rng: RNG): (List[Int], RNG) = {
     def go(count: Int, r: RNG, xs: List[Int]): (List[Int], RNG) =
       if (count == 0)
-        (List(), r)
+        (xs, r)
       else {
         val (x, r2) = r.nextInt
         go(count - 1, r2, x :: xs)
@@ -92,7 +92,7 @@ object RNG {
     }
 
   val _double: Rand[Double] =
-    map(positiveInt)(_ / (Int.MaxValue.toDouble + 1))
+    map(nonNegativeInt)(_ / (Int.MaxValue.toDouble + 1))
 
   // This implementation of map2 passes the initial RNG to the first argument
   // and the resulting RNG to the second argument. It's not necessarily wrong
@@ -143,10 +143,10 @@ object RNG {
       g(a)(r1) // We pass the new state along
     }
   
-  def positiveLessThan(n: Int): Rand[Int] = {
-    flatMap(positiveInt) { i =>
+  def nonNegativeLessThan(n: Int): Rand[Int] = {
+    flatMap(nonNegativeInt) { i =>
       val mod = i % n
-      if (i + (n-1) - mod > 0) unit(mod) else positiveLessThan(n)
+      if (i + (n-1) - mod >= 0) unit(mod) else nonNegativeLessThan(n)
     }
   }
 
@@ -214,16 +214,15 @@ object State {
     State((s: S) => go(s,sas,List()))
   }
   
-  // We can also write the loop using a left fold. When the loop has more than
-  // one piece of state like this (here we have the current state and the list
-  // of values we have accumulated so far), it can be a little awkward to have 
-  // to pack and unpack this state into tuples 
-  def sequenceViaFoldLeft[S, A](sas: List[State[S,A]]) = 
-    State((s: S) => sas.foldLeft((List[A](),s)) { (t,action) => t match {
-      case (acc,s) => 
-        val (a,s2) = action.run(s)
-        (a :: acc, s2)
-    }} match { case (acc,s) => (acc.reverse,s) })
+  // We can also write the loop using a left fold. This is tail recursive like the
+  // previous solution, but it reverses the list _before_ folding it instead of after.
+  // You might think that this is slower than the `foldRight` solution since it
+  // walks over the list twice, but it's actually faster! The `foldRight` solution
+  // technically has to also walk the list twice, since it has to unravel the call
+  // stack, not being tail recursive. And the call stack will be as tall as the list
+  // is long.
+  def sequenceViaFoldLeft[S,A](l: List[State[S, A]]): State[S, List[A]] =
+    l.reverse.foldLeft(unit[S, List[A]](List()))((acc, f) => f.map2(acc)( _ :: _ ))
 
   def modify[S](f: S => S): State[S, Unit] = for {
     s <- get // Gets the current state and assigns it to `s`.

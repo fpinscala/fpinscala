@@ -1,1 +1,1 @@
-Try adding another piece of state to `ParseState`, `isSliced`.
+Try adding another piece of state to `Location`, `isSliced`. You may want to rename `Location` to `ParseState`, as it's no longer just the location!

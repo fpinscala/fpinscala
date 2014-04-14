@@ -12,4 +12,3 @@ def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Prop =
   // Identity
   forAll(gen)((a: A) =>
     m.op(a, m.zero) == a && m.op(m.zero, a) == a)
-

@@ -1,4 +1,4 @@
-We will just work through left and right identity, but the basic idea for all these proofs is to substitute the definition of all functions, then use the monad laws to make simplifications to the applicative identities. 
+We'll just work through left and right identity, but the basic idea for all these proofs is to substitute the definition of all functions, then use the monad laws to make simplifications to the applicative identities. 
 
 Let's start with left and right identity:
 
@@ -29,7 +29,7 @@ Therefore, `compose(unit, u => fa)` simplifies to `u => fa`. And `u` is just `Un
     (u => fa)(()) == fa
     fa == fa
 
-Right identity is symmetric, we just end up using the other identity for `compose`, that `compose(f, unit) == f`.  
+Right identity is symmetric; we just end up using the other identity for `compose`, that `compose(f, unit) == f`.
 
     flatMap(fa)(a => map(unit(()))(u => a)) == fa
     flatMap(fa)(a => unit(a)) == fa  // via functor laws

@@ -10,13 +10,17 @@ import java.util.concurrent.{Executors,ExecutorService}
 
 case class Prop(run: (MaxSize,TestCases,RNG) => Result) {
   def &&(p: Prop) = Prop {
-    (max,n,rng) => run(max,n,rng) orElse p.run(max,n,rng)
+    (max,n,rng) => run(max,n,rng) match {
+      case Passed | Proved => p.run(max, n, rng)
+      case x => x
+    }
   }
 
   def ||(p: Prop) = Prop {
-    (max,n,rng) => run(max,n,rng) flatMap {
+    (max,n,rng) => run(max,n,rng) match {
       // In case of failure, run the other prop.
-      case (msg, _) => p.tag(msg).run(max,n,rng)
+      case Falsified(msg, _) => p.tag(msg).run(max,n,rng)
+      case x => x
     }
   }
 
@@ -24,8 +28,9 @@ case class Prop(run: (MaxSize,TestCases,RNG) => Result) {
    * the given message on a newline in front of the existing message.
    */
   def tag(msg: String) = Prop {
-    (max,n,rng) => run(max,n,rng) map {
-      case (e, c) => (msg + "\n" + e, c)
+    (max,n,rng) => run(max,n,rng) match {
+      case Falsified(e, c) => Falsified(msg + "\n" + e, c)
+      case x => x
     }
   }
 }
@@ -35,20 +40,34 @@ object Prop {
   type TestCases = Int
   type MaxSize = Int
   type FailedCase = String
-  type Result = Option[(FailedCase, SuccessCount)]
+
+  sealed trait Result {
+    def isFalsified: Boolean
+  }
+  case object Passed extends Result {
+    def isFalsified = false
+  }
+  case class Falsified(failure: FailedCase,
+                       successes: SuccessCount) extends Result {
+    def isFalsified = true
+  }
+  case object Proved extends Result {
+    def isFalsified = false
+  }
 
 
   /* Produce an infinite random stream from a `Gen` and a starting `RNG`. */
   def randomStream[A](g: Gen[A])(rng: RNG): Stream[A] =
     Stream.unfold(rng)(rng => Some(g.sample.run(rng)))
 
-  def forAll[A](as: Gen[A])(f: A => Boolean): Prop = Prop { (n,rng) =>
-    randomStream(as)(rng).zip(Stream.from(0)).take(n).foldRight(None:Result) {
-      case ((a, i), r) => try {
-        if (f(a)) r else Some(a.toString -> i)
-      } catch { case e: Exception => Some(buildMsg(a, e) -> i) }
-    }
+  def forAll[A](as: Gen[A])(f: A => Boolean): Prop = Prop {
+    (n,rng) => randomStream(as)(rng).zip(Stream.from(0)).take(n).map {
+      case (a, i) => try {
+        if (f(a)) Passed else Falsified(a.toString, i)
+      } catch { case e: Exception => Falsified(buildMsg(a, e), i) }
+    }.find(_.isFalsified).getOrElse(Passed)
   }
+
 
   // String interpolation syntax. A string starting with `s"` can refer to
   // a Scala value `v` as `$v` or `${v}` in the string.
@@ -77,21 +96,24 @@ object Prop {
   }
 
   def run(p: Prop,
-          maxSize: Int = 100, // A default argument of `100`
+          maxSize: Int = 100,
           testCases: Int = 100,
           rng: RNG = RNG.Simple(System.currentTimeMillis)): Unit =
     p.run(maxSize, testCases, rng) match {
-      case Some((msg, n)) => println(s"! Falsified after $n passed tests:\n $msg")
-      case None => println(s"+ OK, passed $testCases tests.")
+      case Falsified(msg, n) =>
+        println(s"! Falsified after $n passed tests:\n $msg")
+      case Passed =>
+        println(s"+ OK, passed $testCases tests.")
+      case Proved =>
+        println(s"+ OK, proved property.")
     }
 
   val ES: ExecutorService = Executors.newCachedThreadPool
   val p1 = Prop.forAll(Gen.unit(Par.unit(1)))(i =>
     Par.map(i)(_ + 1)(ES).get == Par.unit(2)(ES).get)
 
-  def check(p: => Boolean): Prop = { // Note that we are non-strict here 
-    lazy val result = p // Result is memoized to avoid recomputation
-    forAll(unit(()))(_ => result)
+  def check(p: => Boolean): Prop = Prop { (_, _, _) =>
+    if (p) Passed else Falsified("()", 0)
   }
 
   val p2 = check {
@@ -168,7 +190,7 @@ object Gen {
     Gen(State(RNG.boolean))
 
   def choose(start: Int, stopExclusive: Int): Gen[Int] =
-    Gen(State(RNG.positiveInt).map(n => start + n % (stopExclusive-start)))
+    Gen(State(RNG.nonNegativeInt).map(n => start + n % (stopExclusive-start)))
 
   def listOfN[A](n: Int, g: Gen[A]): Gen[List[A]] =
     Gen(State.sequence(List.fill(n)(g.sample)))
@@ -239,7 +261,7 @@ object Gen {
   // or has no two consecutive elements `(a,b)` such that `a` is greater than `b`.
   val sortedProp = forAll(listOf(smallInt)) { l =>
     val ls = l.sorted
-    l.isEmpty || ls.tail.isEmpty || !l.zip(l.tail).exists { case (a,b) => a > b }
+    l.isEmpty || ls.tail.isEmpty || !l.zip(ls.tail).exists { case (a,b) => a > b }
   }
 
   object ** {
@@ -250,8 +272,11 @@ object Gen {
    * computation for each element of the input list summed to produce the final
    * result. This is not the most compelling example, but it provides at least some
    * variation in structure to use for testing.
+   *
+   * Note that this has to be a `lazy val` because of the way Scala initializes objects.
+   * It depends on the `Prop` companion object being created, which references `pint2`.
    */
-  val pint2: Gen[Par[Int]] = choose(-100,100).listOfN(choose(0,20)).map(l =>
+  lazy val pint2: Gen[Par[Int]] = choose(-100,100).listOfN(choose(0,20)).map(l =>
     l.foldLeft(Par.unit(0))((p,i) =>
       Par.fork { Par.map2(p, Par.unit(i))(_ + _) }))
 
@@ -271,3 +296,4 @@ case class SGen[+A](g: Int => Gen[A]) {
   def **[B](s2: SGen[B]): SGen[(A,B)] =
     SGen(n => apply(n) ** s2(n))
 }
+

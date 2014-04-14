@@ -1,24 +1,20 @@
-def foldMapV[A, B](as: IndexedSeq[A], m: Monoid[B])(f: A => B): B =
-  if (as.length == 0)
-    m.zero
-  else if (as.length == 1)
-    f(as(0))
-  else {
-    val (l, r) = as.splitAt(as.length / 2)
-    m.op(foldMapV(l, m)(f), foldMapV(r, m)(f))
+// This implementation detects only ascending order,
+// but you can write a monoid that detects both ascending and descending
+// order if you like.
+def ordered(ints: IndexedSeq[Int]): Boolean = {
+  // Our monoid tracks the minimum and maximum element seen so far
+  // as well as whether the elements are so far ordered.
+  val mon = new Monoid[Option[(Int, Int, Boolean)]] {
+    def op(o1: Option[(Int, Int, Boolean)], o2: Option[(Int, Int, Boolean)]) =
+      (o1, o2) match {
+        // The ranges should not overlap if the sequence is ordered.
+        case (Some((x1, y1, p)), Some((x2, y2, q))) =>
+          Some((x1 min x2, y1 max y2, p && q && y1 <= x2))
+        case (x, None) => x
+        case (None, x) => x
+      }
+    val zero = None
   }
-
-// This ability to 'lift' a monoid any monoid to operate within
-// some context (here `Par`) is something we'll discuss more in 
-// chapters 11 & 12
-def par[A](m: Monoid[A]): Monoid[Par[A]] = new Monoid[Par[A]] {
-  def zero = Par.unit(m.zero)  
-  def op(a: Par[A], b: Par[A]) = a.map2(b)(m.op)
+  // The empty sequence is ordered, and each element by itself is ordered.
+  foldMapV(ints, mon)(i => Some((i, i, true))).map(_._3).getOrElse(true)
 }
-
-// we perform the mapping and the reducing both in parallel
-def parFoldMap[A,B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] = 
-  Par.parMap(v)(f).flatMap { bs => 
-    foldMapV(bs, par(m))(b => Par.async(b)) 
-  }
-

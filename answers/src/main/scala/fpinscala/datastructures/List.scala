@@ -34,17 +34,17 @@ object List { // `List` companion object. Contains functions for creating and wo
       case Cons(h,t) => Cons(h, append(t, a2))
     }
 
-  def foldRight[A,B](l: List[A], z: B)(f: (A, B) => B): B = // Utility functions
-    l match {
+  def foldRight[A,B](as: List[A], z: B)(f: (A, B) => B): B = // Utility functions
+    as match {
       case Nil => z
       case Cons(x, xs) => f(x, foldRight(xs, z)(f))
     }
   
-  def sum2(l: List[Int]) = 
-    foldRight(l, 0)((x,y) => x + y)
+  def sum2(ns: List[Int]) = 
+    foldRight(ns, 0)((x,y) => x + y)
   
-  def product2(l: List[Double]) = 
-    foldRight(l, 1.0)(_ * _) // `_ * _` is more concise notation for `(x,y) => x * y`, see sidebar
+  def product2(ns: List[Double]) = 
+    foldRight(ns, 1.0)(_ * _) // `_ * _` is more concise notation for `(x,y) => x * y`; see sidebar
 
 
   /* 
@@ -52,9 +52,9 @@ object List { // `List` companion object. Contains functions for creating and wo
   */
 
   /*
-  Although we could return `Nil` when the input list is empty, we choose to throw an exception instead. This is a somewhat subjective choice. In our experience taking the tail of an empty list is often a bug, and silently returning a value just means this bug will be discovered later, further from the place where it was introduced. 
+  Although we could return `Nil` when the input list is empty, we choose to throw an exception instead. This is a somewhat subjective choice. In our experience, taking the tail of an empty list is often a bug, and silently returning a value just means this bug will be discovered later, further from the place where it was introduced. 
   
-  It's generally good practice when pattern matching to use '_' for any variables you don't intend to use on the right hand side of a pattern. It makes it clear the value isn't relevant.  
+  It's generally good practice when pattern matching to use `_` for any variables you don't intend to use on the right hand side of a pattern. This makes it clear the value isn't relevant.  
   */
   def tail[A](l: List[A]): List[A] = 
     l match {
@@ -65,13 +65,13 @@ object List { // `List` companion object. Contains functions for creating and wo
   /*
   If a function body consists solely of a match expression, we'll often put the match on the same line as the function signature, rather than introducing another level of nesting.
   */
-  def setHead[A](l: List[A])(h: A): List[A] = l match {
+  def setHead[A](l: List[A], h: A): List[A] = l match {
     case Nil => sys.error("setHead on empty list")
     case Cons(_,t) => Cons(h,t)
   }
 
   /* 
-  Again, it is somewhat subjective whether to throw an exception when asked to drop more elements than the list contains. The usual default for `drop` is not to throw an exception, since it is typically used in cases where this is not indicative of a programming error. If you pay attention to how you use `drop`, it is often in cases where the length of the input list is unknown, and the number of elements to be dropped is being computed from something else. If `drop` threw an exception, we'd have to first compute or check the length and only drop up to that many elements.  
+  Again, it's somewhat subjective whether to throw an exception when asked to drop more elements than the list contains. The usual default for `drop` is not to throw an exception, since it's typically used in cases where this is not indicative of a programming error. If you pay attention to how you use `drop`, it's often in cases where the length of the input list is unknown, and the number of elements to be dropped is being computed from something else. If `drop` threw an exception, we'd have to first compute or check the length and only drop up to that many elements.  
   */
   def drop[A](l: List[A], n: Int): List[A] = 
     if (n <= 0) l
@@ -81,7 +81,7 @@ object List { // `List` companion object. Contains functions for creating and wo
     }
 
   /* 
-  Somewhat overkill, but to illustrate the feature we are using a _pattern guard_, to only match a `Cons` whose head satisfies our predicate, `f`. The syntax is simply to add `if <cond>` after the pattern, before the `=>`, where `<cond>` can use any of the variables introduced by the pattern.
+  Somewhat overkill, but to illustrate the feature we're using a _pattern guard_, to only match a `Cons` whose head satisfies our predicate, `f`. The syntax is to add `if <cond>` after the pattern, before the `=>`, where `<cond>` can use any of the variables introduced by the pattern.
   */
   def dropWhile[A](l: List[A], f: A => Boolean): List[A] = 
     l match {
@@ -90,9 +90,9 @@ object List { // `List` companion object. Contains functions for creating and wo
     }
 
   /*
-  Notice we are copying the entire list up until the last element. Besides being inefficient, the natural recursive solution will use a stack frame for each element of the list, which can lead to stack overflows for large lists (can you see why?). With lists, it's common to use a temporary, mutable buffer internal to the function (with lazy lists or streams which we discuss in chapter 5, we don't normally do this). So long as the buffer is allocated internal to the function, the mutation is not observable and RT is preserved.
+  Note that we're copying the entire list up until the last element. Besides being inefficient, the natural recursive solution will use a stack frame for each element of the list, which can lead to stack overflows for large lists (can you see why?). With lists, it's common to use a temporary, mutable buffer internal to the function (with lazy lists or streams, which we discuss in chapter 5, we don't normally do this). So long as the buffer is allocated internal to the function, the mutation is not observable and RT is preserved.
   
-  Another common convention is to accumulate the output list in reverse order, then reverse it at the end, which does not require even local mutation. We will write a reverse function later in this chapter.
+  Another common convention is to accumulate the output list in reverse order, then reverse it at the end, which doesn't require even local mutation. We'll write a reverse function later in this chapter.
   */
   def init[A](l: List[A]): List[A] = 
     l match { 
@@ -113,7 +113,7 @@ object List { // `List` companion object. Contains functions for creating and wo
   }
 
   /* 
-  No, this is not possible! The reason is that _before_ we ever call our function, `f`, we evaluate its argument, which in the case of `foldRight` means traversing the list all the way to the end. We need _non-strict_ evaluation to support early termination---we discuss this in chapter 5.
+  No, this is not possible! The reason is because _before_ we ever call our function, `f`, we evaluate its argument, which in the case of `foldRight` means traversing the list all the way to the end. We need _non-strict_ evaluation to support early termination---we discuss this in chapter 5.
   */
 
   /* 
@@ -146,9 +146,9 @@ object List { // `List` companion object. Contains functions for creating and wo
   def reverse[A](l: List[A]): List[A] = foldLeft(l, List[A]())((acc,h) => Cons(h,acc))
 
   /*
-  The implementation of `foldRight` in terms of `reverse` and `foldLeft` is a common trick for avoiding stack overflows when implementing a strict `foldRight` function as we've done in this chapter. (We will revisit this in a later chapter, when we discuss laziness).
+  The implementation of `foldRight` in terms of `reverse` and `foldLeft` is a common trick for avoiding stack overflows when implementing a strict `foldRight` function as we've done in this chapter. (We'll revisit this in a later chapter, when we discuss laziness).
   
-  The other implementations build up a chain of functions which, when called, results in the operations being performed with the correct associativity.
+  The other implementations build up a chain of functions which, when called, results in the operations being performed with the correct associativity. We are calling `foldRight` with the `B` type being instantiated to `B => B`, then calling the built up function with the `z` argument. Try expanding the definitions by substituting equals for equals using a simple example, like `foldLeft(List(1,2,3), 0)(_ + _)` if this isn't clear. Note these implementations are more of theoretical interest - they aren't stack-safe and won't work for large lists.
   */
   def foldRightViaFoldLeft[A,B](l: List[A], z: B)(f: (A,B) => B): B = 
     foldLeft(reverse(l), z)((b,a) => f(a,b))
@@ -168,7 +168,7 @@ object List { // `List` companion object. Contains functions for creating and wo
   /*
   Since `append` takes time proportional to its first argument, and this first argument never grows because of the right-associativity of `foldRight`, this function is linear in the total length of all lists. You may want to try tracing the execution of the implementation on paper to convince yourself that this works. 
   
-  Notice we are simply referencing the `append` function, without writing something like `(x,y) => append(x,y)` or `append(_,_)`. In Scala there is a rather arbitrary distinction between functions defined as _methods_, which are introduced with the `def` keyword, and function values, which are the first-class objects we can pass to other functions, put in collections, and so on. This is a case where Scala lets us pretend the distinction doesn't exist. In other cases, you'll be forced to write `append _` (to convert a `def` to a function value) or even `(x: List[A], y: List[A]) => append(x,y)` if the function is polymorphic and the type arguments are not known. 
+  Note that we're simply referencing the `append` function, without writing something like `(x,y) => append(x,y)` or `append(_,_)`. In Scala there is a rather arbitrary distinction between functions defined as _methods_, which are introduced with the `def` keyword, and function values, which are the first-class objects we can pass to other functions, put in collections, and so on. This is a case where Scala lets us pretend the distinction doesn't exist. In other cases, you'll be forced to write `append _` (to convert a `def` to a function value) or even `(x: List[A], y: List[A]) => append(x,y)` if the function is polymorphic and the type arguments aren't known. 
   */
   def concat[A](l: List[List[A]]): List[A] = 
     foldRight(l, Nil:List[A])(append)
@@ -180,7 +180,7 @@ object List { // `List` companion object. Contains functions for creating and wo
     foldRight(l, Nil:List[String])((h,t) => Cons(h.toString,t))
 
   /* 
-  A natural solution is using `foldRight`, however this will stack overflow for large lists. We can use `foldRightViaFoldLeft` to avoid the stack overflow (variation 1), but more commonly, with our current implementation of `List`, `map` will just be implemented using local mutation (variation 2). Again, notice that the mutation is not observable outside the function, since we are only mutating a buffer that we have allocated. 
+  A natural solution is using `foldRight`, but our implementation of `foldRight` is not stack-safe. We can use `foldRightViaFoldLeft` to avoid the stack overflow (variation 1), but more commonly, with our current implementation of `List`, `map` will just be implemented using local mutation (variation 2). Again, note that the mutation isn't observable outside the function, since we're only mutating a buffer that we've allocated. 
   */
   def map[A,B](l: List[A])(f: A => B): List[B] = 
     foldRight(l, Nil:List[B])((h,t) => Cons(f(h),t))
@@ -227,7 +227,7 @@ object List { // `List` companion object. Contains functions for creating and wo
     flatMap(l)(a => if (f(a)) List(a) else Nil)
 
   /* 
-  To match on multiple values, we can put the values into a pair and match on the pair, as shown below, and the same syntax extends to matching on N values (see sidebar "Pairs and tuples in Scala" for more about pair and tuple objects). You can also (somewhat less conveniently, but a bit more efficient) nest pattern matches: on the right hand side of the `=>`, simply begin another `match` expression. The inner `match` will have access to all the variables introduced in the outer `match`. 
+  To match on multiple values, we can put the values into a pair and match on the pair, as shown next, and the same syntax extends to matching on N values (see sidebar "Pairs and tuples in Scala" for more about pair and tuple objects). You can also (somewhat less conveniently, but a bit more efficiently) nest pattern matches: on the right hand side of the `=>`, simply begin another `match` expression. The inner `match` will have access to all the variables introduced in the outer `match`. 
   
   The discussion about stack usage from the explanation of `map` also applies here.
   */
@@ -247,21 +247,25 @@ object List { // `List` companion object. Contains functions for creating and wo
   }
 
   /*
-  There's nothing particularly bad about this implementation, except that it's somewhat monolithic and easy to get wrong. (Without pattern matching and pattern guards, the implementation would be even more finnicky.) Where possible, we prefer to assemble functions like this using combinations of other functions. It makes the code more obviously correct and easier to read and understand. Notice that in this implementation we need special purpose logic to break out of our loops early. In Chapter 5 we'll discuss ways of composing functions like this from simpler components, without giving up the efficiency of having the resulting functions work in one pass over the data.
+  There's nothing particularly bad about this implementation, 
+  except that it's somewhat monolithic and easy to get wrong. 
+  Where possible, we prefer to assemble functions like this using 
+  combinations of other functions. It makes the code more obviously 
+  correct and easier to read and understand. Notice that in this 
+  implementation we need special purpose logic to break out of our
+  loops early. In Chapter 5 we'll discuss ways of composing functions
+  like this from simpler components, without giving up the efficiency
+  of having the resulting functions work in one pass over the data.
   */
   def startsWith[A](l: List[A], prefix: List[A]): Boolean = (l,prefix) match {
     case (_,Nil) => true
-    case (Nil,_) => false
     case (Cons(h,t),Cons(h2,t2)) if h == h2 => startsWith(t, t2)
     case _ => false
   }
-  def hasSubsequence[A](l: List[A], sub: List[A]): Boolean = {
-    @annotation.tailrec
-    def go[A](l: List[A]): Boolean = l match {
-      case Nil => false
-      case Cons(h,t) if startsWith(l, sub) => true
-      case Cons(h,t) => go(t)  
-    }
-    go(l)
+  @annotation.tailrec
+  def hasSubsequence[A](l: List[A], sub: List[A]): Boolean = l match {
+    case Nil => false
+    case Cons(h,t) if startsWith(l, sub) => true
+    case Cons(h,t) => hasSubsequence(t, sub)  
   }
 }

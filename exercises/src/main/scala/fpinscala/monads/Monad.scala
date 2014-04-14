@@ -13,7 +13,10 @@ trait Functor[F[_]] {
   def distribute[A,B](fab: F[(A, B)]): (F[A], F[B]) =
     (map(fab)(_._1), map(fab)(_._2))
 
-  def cofactor[A,B](e: Either[F[A], F[B]]): F[Either[A, B]] = ???
+  def codistribute[A,B](e: Either[F[A], F[B]]): F[Either[A, B]] = e match {
+    case Left(fa) => map(fa)(Left(_))
+    case Right(fb) => map(fb)(Right(_))
+  }
 }
 
 object Functor {
@@ -24,6 +27,7 @@ object Functor {
 
 trait Monad[M[_]] extends Functor[M] {
   def unit[A](a: => A): M[A]
+  def flatMap[A,B](ma: M[A])(f: A => M[B]): M[B]
 
   def map[A,B](ma: M[A])(f: A => B): M[B] =
     flatMap(ma)(a => unit(f(a)))
@@ -43,8 +47,8 @@ trait Monad[M[_]] extends Functor[M] {
 
   def join[A](mma: M[M[A]]): M[A] = ???
 
-  def flatMap[A,B](ma: M[A])(f: A => M[B]): M[B] = ???
-
+  // Implement in terms of `join`:
+  def __flatMap[A,B](ma: M[A])(f: A => M[B]): M[B] = ???
 }
 
 case class Reader[R, A](run: R => A)

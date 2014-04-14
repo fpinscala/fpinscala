@@ -1,1 +1,1 @@
-You can use the `trim` method on `String` to remove excess whitespace from the ends of a string.
+You can `map` and then `concatenate`, but that will go over the list twice. Use a single fold instead.

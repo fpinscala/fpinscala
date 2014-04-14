@@ -1,1 +1,1 @@
-What happens if you call `traverse` with `Applicative[Option]`? Is there an even simpler `Applicative` you could use?
+Follow the types. There is generally only one sensible implementation that typechecks.

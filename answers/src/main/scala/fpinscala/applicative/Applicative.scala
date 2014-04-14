@@ -119,7 +119,7 @@ trait Monad[F[_]] extends Applicative[F] {
     join(map(ma)(f))
 
   override def apply[A,B](mf: F[A => B])(ma: F[A]): F[B] =
-    flatMap(mf)(f => map(ma)(a => f(a)))
+    flatMap(mf)(f => map(ma)(f))
 
   override def map[A,B](m: F[A])(f: A => B): F[B] =
     flatMap(m)(a => unit(f(a)))
