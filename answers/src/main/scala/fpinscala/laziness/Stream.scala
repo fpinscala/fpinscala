@@ -74,8 +74,10 @@ trait Stream[+A] {
   It's a common Scala style to write method calls without `.` notation, as in `t() takeWhile f`.  
   */
   def takeWhile(f: A => Boolean): Stream[A] = this match { 
-    case Cons(h,t) if f(h()) => cons(h(), t() takeWhile f)
-    case _ => empty 
+    case Cons(h,t) =>
+      val head = h()
+      if (f(head)) cons(head, t() takeWhile f) else empty
+    case _ => empty
   }
 
   def foldRight[B](z: => B)(f: (A, => B) => B): B = // The arrow `=>` in front of the argument type `B` means that the function `f` takes its second argument by name and may choose not to evaluate it.
@@ -129,7 +131,9 @@ trait Stream[+A] {
   
   def takeWhileViaUnfold(f: A => Boolean): Stream[A] = 
     unfold(this) { 
-      case Cons(h,t) if f(h()) => Some((h(), t()))
+      case Cons(h,t) =>
+        val head = h()
+        if (f(head)) Some((head, t())) else None
       case _ => None
     }
   
@@ -197,7 +201,9 @@ trait Stream[+A] {
   @annotation.tailrec
   final def find(f: A => Boolean): Option[A] = this match {
     case Empty => None
-    case Cons(h, t) => if (f(h())) Some(h()) else t().find(f)
+    case Cons(h, t) =>
+      val head = h()
+      if (f(head)) Some(head) else t().find(f)
   }
 }
 case object Empty extends Stream[Nothing]
