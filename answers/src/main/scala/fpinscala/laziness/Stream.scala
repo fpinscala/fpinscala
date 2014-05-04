@@ -48,13 +48,14 @@ trait Stream[+A] {
   /*
   `take` first checks if n==0. In that case we need not look at the stream at all.
   */
-  def take(n: Int): Stream[A] = 
+  def take(n: Int): Stream[A] =
     if (n > 0) this match {
+      case Cons(h, t) if n == 1 => cons(h(), Stream.empty) // we can say Stream.empty
       case Cons(h, t) => cons(h(), t().take(n-1))
-      case _ => Stream.empty // we can say Stream.empty
+      case _ => Stream.empty
     }
     else Stream()            // or Stream()
-  
+
   /* 
   Unlike `take`, `drop` is not incremental. That is, it doesn't generate the
   answer lazily. It must traverse the first `n` elements of the stream eagerly.
@@ -123,6 +124,7 @@ trait Stream[+A] {
   
   def takeViaUnfold(n: Int): Stream[A] = 
     unfold((this,n)) { 
+      case (Cons(h,t), n) if n == 1 => Some((h(), (empty, n-1)))
       case (Cons(h,t), n) if n > 0 => Some((h(), (t(), n-1)))
       case _ => None
     }
