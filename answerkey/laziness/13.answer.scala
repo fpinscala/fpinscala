@@ -4,8 +4,9 @@ def mapViaUnfold[B](f: A => B): Stream[B] =
     case _ => None
   }
 
-def takeViaUnfold(n: Int): Stream[A] = 
-  unfold((this,n)) { 
+def takeViaUnfold(n: Int): Stream[A] =
+  unfold((this,n)) {
+    case (Cons(h,t), n) if n == 1 => Some((h(), (empty, n-1)))
     case (Cons(h,t), n) if n > 0 => Some((h(), (t(), n-1)))
     case _ => None
   }
