@@ -10,9 +10,11 @@ def takeViaUnfold(n: Int): Stream[A] =
     case _ => None
   }
 
-def takeWhileViaUnfold(f: A => Boolean): Stream[A] = 
-  unfold(this) { 
-    case Cons(h,t) if f(h()) => Some((h(), t()))
+def takeWhileViaUnfold(f: A => Boolean): Stream[A] =
+  unfold(this) {
+    case Cons(h,t) =>
+      val head = h()
+      if (f(head)) Some((head, t())) else None
     case _ => None
   }
 
