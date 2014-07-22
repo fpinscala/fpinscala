@@ -6,3 +6,9 @@ project/boot
 .history
 project.vim
 *.old
+#Eclipse stuff
+.classpath
+.cache
+.project
+*.sc
+.worksheet

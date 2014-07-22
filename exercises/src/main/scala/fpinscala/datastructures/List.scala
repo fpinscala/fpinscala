@@ -61,5 +61,35 @@ object List { // `List` companion object. Contains functions for creating and wo
 
   def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B = sys.error("todo")
 
+  def sumViaFoldLeft(nums: List[Int]): Int = sys.error("todo")
+
+  def productViaFoldLeft(nums: List[Double]): Double = sys.error("todo")
+
+  def lengthViaFoldLeft(l: List[_]): Int = sys.error("todo")
+
+  def reverse[A](l: List[A]): List[A] = sys.error("todo")
+
+  def appendViaFoldRight[A](l1: List[A], l2: List[A]): List[A] = sys.error("todo")
+
+  def appendViaFoldLeft[A](a1: List[A], a2: List[A]): List[A] = sys.error("todo")
+
+  def concat[A](l: List[List[A]]): List[A] = sys.error("todo")
+
+  def add1[T](nums: List[T])(implicit ev: Numeric[T]): List[T] = sys.error("todo")
+
+  def doubleToString(l: List[Double]): List[String] = sys.error("todo")
+
   def map[A,B](l: List[A])(f: A => B): List[B] = sys.error("todo")
+
+  def filter[A](l: List[A])(f: A => Boolean): List[A] = sys.error("todo")
+
+  def flatMap[A,B](l: List[A])(f: A => List[B]): List[B] = sys.error("todo")
+
+  def filterViaFlatMap[A](l: List[A])(f: A => Boolean): List[A] = sys.error("todo")
+
+  def addPairwise(a: List[Int], b: List[Int]): List[Int] = sys.error("todo")
+
+  def zipWith[A,B,C](a: List[A], b: List[B])(f: (A,B) => C): List[C] = sys.error("todo")
+
+  def hasSubsequence[A](l: List[A], sub: List[A]): Boolean = sys.error("todo")
 }
