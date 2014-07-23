@@ -16,6 +16,7 @@ import org.scalacheck.Gen
 @RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class OptionSpec extends FlatSpec with PropertyChecks {
 
+  // copied from org.scalacheck.Arbitrary
   implicit def arbOption[T](implicit a: Arbitrary[T]): Arbitrary[Option[T]] =
     Arbitrary(sized(n =>
       // When n is larger, make it less likely that we generate None,
