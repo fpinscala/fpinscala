@@ -34,4 +34,15 @@ Configure and initialize your personal repository:
 * http://james-iry.blogspot.de/2007/08/kingdom-of-nerbs.html
 
 ## Chapter 2: Getting started with functional programming in Scala
+### Notes
+#### “return” keyword in Scala
+Actually, I have never ever used it, so I had to look up the exact meaning.
+Seems to be similar to Java, but try to avoid it. Really! There might be only a few useful cases:
+http://stackoverflow.com/questions/3770989/purpose-of-return-statement-in-scala
+ 
+#### Is the book’s partial1 function really a case of a closure?
+According to Wikipedia it is: http://en.wikipedia.org/wiki/Closure_%28computer_science%29
+The function incrementBy in the first example is a closure b/c of variable x, defined outside its body/lexical scope.
+This is exactly like the returned function from partial1.
+
 ### Additional links
