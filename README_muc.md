@@ -11,7 +11,7 @@ Clone the "main" respsitory:
     $ git clone git@github.com:fpinscala-muc/fpinscala.git
     $ cd fpinscala
 
-If you use your work notebook you may not want to use your real name and TD email address for commits as they will be visible in public, in that case configure your username and email for the repository only:
+If you use your work notebook you may not want to use your real name and TD email address for commits as they will be visible in public, in that case configure your username and email for the repository only. (Hint: [Keeping your email address private](Keeping your email address private)):
 
     $ git config user.email "youremail@example.com"
     $ git config user.name "Your name or pseudonym"
