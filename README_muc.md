@@ -18,10 +18,10 @@ If you use your work notebook you may not want to use your real name and TD emai
 
 Configure and initialize your personal repository:
 
-   $ git remote remove origin
-   $ git remote add origin git@github.com:fpinscala-muc/fpinscala-<YOUR-GITHUB-USERNAME>.git
-   $ git remote add upstream git@github.com:fpinscala-muc/fpinscala.git
-   $ git push -u origin master
+    $ git remote remove origin
+    $ git remote add origin git@github.com:fpinscala-muc/fpinscala-<YOUR-GITHUB-USERNAME>.git
+    $ git remote add upstream git@github.com:fpinscala-muc/fpinscala.git
+    $ git push -u origin master
 
 
 
