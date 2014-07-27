@@ -7,14 +7,17 @@ Here are the steps to setup everything.
 Create the personal repository, go to https://github.com/fpinscala-muc and create a new repository called "pfinscala-<YOUR-GITHUB-USERNAME>", select "public" and don't initialize the repo yet.
 
 Clone the "main" respsitory:
+
     $ git clone git@github.com:fpinscala-muc/fpinscala.git
     $ cd fpinscala
 
 If you use your work notebook you may not want to use your real name and TD email address for commits as they will be visible in public, in that case configure your username and email for the repository only:
+
     $ git config user.email "youremail@example.com"
     $ git config user.name "Your name or pseudonym"
 
 Configure and initialize your personal repository:
+
    $ git remote remove origin
    $ git remote add origin git@github.com:fpinscala-muc/fpinscala-<YOUR-GITHUB-USERNAME>.git
    $ git remote add upstream git@github.com:fpinscala-muc/fpinscala.git
