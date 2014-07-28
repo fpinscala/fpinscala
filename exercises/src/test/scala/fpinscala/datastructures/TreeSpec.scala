@@ -22,8 +22,6 @@ class TreeSpec extends FlatSpec with PropertyChecks {
         rIsLeaf <- arbitrary[Boolean]
         l <- createTree(lIsLeaf, depth)
         r <- createTree(rIsLeaf, depth)
-//        l <- arbTree[T].arbitrary
-//        r <- arbTree[T].arbitrary
       } yield Branch(l, r)
     }
     def createTree(isLeaf: Boolean, depth: Int): Gen[Tree[T]] =

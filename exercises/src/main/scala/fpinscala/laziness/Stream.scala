@@ -17,13 +17,36 @@ trait Stream[+A] {
     case Empty => None
     case Cons(h, t) => if (f(h())) Some(h()) else t().find(f)
   }
+
+  def toList: List[A] = sys.error("todo")
+
   def take(n: Int): Stream[A] = sys.error("todo")
+
+  def takeViaUnfold(n: Int): Stream[A] = sys.error("todo")
 
   def drop(n: Int): Stream[A] = sys.error("todo")
 
   def takeWhile(p: A => Boolean): Stream[A] = sys.error("todo")
 
+  def takeWhileViaUnfold(p: A => Boolean): Stream[A] = sys.error("todo")
+
   def forAll(p: A => Boolean): Boolean = sys.error("todo")
+
+  def takeWhileViaFoldRight(p: A => Boolean): Stream[A] = sys.error("todo")
+
+  def headOption: Option[A] = sys.error("todo")
+
+  def map[B](f: A => B): Stream[B] = sys.error("todo")
+
+  def mapViaUnfold[B](f: A => B): Stream[B] = sys.error("todo")
+
+  def filter(p: A => Boolean): Stream[A] = sys.error("todo")
+
+  def append[B>:A](other: Stream[B]): Stream[B] = sys.error("todo")
+
+  def flatMap[B](f: A => Stream[B]): Stream[B] = sys.error("todo")
+
+  def zipWith[B,C](s2: Stream[B])(f: (A,B) => C): Stream[C] = sys.error("todo")
 
   def startsWith[A](s: Stream[A]): Boolean = sys.error("todo")
 }
@@ -44,7 +67,20 @@ object Stream {
     else cons(as.head, apply(as.tail: _*))
 
   val ones: Stream[Int] = Stream.cons(1, ones)
+
+  def constant[A](a: A): Stream[A] = sys.error("todo")
+
   def from(n: Int): Stream[Int] = sys.error("todo")
 
+  val fibs: Stream[Int] = sys.error("todo")
+
   def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = sys.error("todo")
+
+  val fibsViaUnfold: Stream[Int] = sys.error("todo")
+
+  def fromViaUnfold(n: Int): Stream[Int] = sys.error("todo")
+
+  def constantViaUnfold[A](a: A): Stream[A] = sys.error("todo")
+
+  val onesViaUnfold: Stream[Int] = sys.error("todo")
 }

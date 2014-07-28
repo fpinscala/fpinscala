@@ -20,7 +20,7 @@ import PolymorphicFunctions.uncurry
 @RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class GettingStartedSpec extends FlatSpec with PropertyChecks {
 
-  behavior of "fib"
+  behavior of "2.1 fib"
 
   it should "work" in {
     val tests = Table(
@@ -37,7 +37,7 @@ class GettingStartedSpec extends FlatSpec with PropertyChecks {
     }
   }
 
-  behavior of "isSorted"
+  behavior of "2.2 isSorted"
 
   // make use of Scala's built-in Orderings
   import scala.math.Ordering.Implicits._
@@ -130,7 +130,7 @@ class GettingStartedSpec extends FlatSpec with PropertyChecks {
     checkForAll(asTuple[Int,String])(toTest)
   }
 
-  behavior of "curry"
+  behavior of "2.3 curry"
 
   it should "add 1 + 3 (1)" in {
     assertResult(4)(curry(plus)(1)(3))
@@ -150,7 +150,7 @@ class GettingStartedSpec extends FlatSpec with PropertyChecks {
     checkForAll(asTuple[Int,String])(toTest)
   }
 
-  behavior of "uncurry"
+  behavior of "2.4 uncurry"
 
   it should "add 1 + 3 (2)" in {
     assertResult(4)(uncurry(curriedPlus)(1, 3))
@@ -203,7 +203,7 @@ class GettingStartedSpec extends FlatSpec with PropertyChecks {
     checkForAll(asTuple[Int,String])(toTest)
   }
 
-  behavior of "compose"
+  behavior of "2.5 compose"
 
   def toString[T](t: T) = t.toString
   def neg[T](t: T)(implicit num: Numeric[T]) = num.negate(t)
