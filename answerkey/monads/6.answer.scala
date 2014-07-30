@@ -8,10 +8,10 @@ subsets of the input list, where the function `f` picks a
 'weight' for each element (in the form of a
 `Gen[Boolean]`)
 */
-def filterM[A](ms: List[A])(f: A => F[Boolean]): F[List[A]] = 
+def filterM[A](ms: List[A])(f: A => F[Boolean]): F[List[A]] =
   ms match {
     case Nil => unit(Nil)
-    case h :: t => flatMap(f(h))(b => 
-      if (!b) filterM(t)
-      else map(filterM(t))(h :: _)
+    case h :: t => flatMap(f(h))(b =>
+      if (!b) filterM(t)(f)
+      else map(filterM(t)(f))(h :: _))
   }
