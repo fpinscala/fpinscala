@@ -47,6 +47,12 @@ object RNG {
   def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = ???
 
   def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] = ???
+
+  def nonNegativeLessThan(n: Int): Rand[Int] = ???
+
+  def mapViaFlatMap[A,B](ra: Rand[A])(f: A => B): Rand[B] = ???
+
+  def map2ViaFlatMap[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = ???
 }
 
 case class State[S,+A](run: S => (A, S)) {
@@ -64,7 +70,25 @@ case object Turn extends Input
 
 case class Machine(locked: Boolean, candies: Int, coins: Int)
 
+object Candy {
+
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
+
+  // these methods actually belong to State, but reside here to avoid conflicts in Applicative.scala
+  def modify[S](f: S => S): State[S, Unit] = for {
+    s <- get // Gets the current state and assigns it to `s`.
+    _ <- set(f(s)) // Sets the new state to `f` applied to `s`.
+  } yield ()
+
+  def get[S]: State[S, S] = State(s => (s, s))
+
+  def set[S](s: S): State[S, Unit] = State(_ => ((), s))
+}
+
 object State {
   type Rand[A] = State[RNG, A]
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
+
+  def unit[S,A](a: A): State[S,A] = ???
+
+  def sequence[S,A](sas: List[State[S, A]]): State[S, List[A]] = ???
 }
