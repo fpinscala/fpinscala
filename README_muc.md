@@ -23,7 +23,17 @@ Configure and initialize your personal repository:
     $ git remote add upstream git@github.com:fpinscala-muc/fpinscala.git
     $ git push -u origin master
 
+### Import projects into Eclipse
 
+To import the project into Eclipse the project files have to be generated first.
+
+    $ sbt eclipse
+
+If not done yet the sbteclipse plugin has to be configured, add the following to `~/.sbt/0.13/plugins/plugins.sbt`:
+
+    addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.5.0")
+
+See also https://github.com/typesafehub/sbteclipse/
 
 ## Chapter 1: What is functional programming?
 ### Additional links
