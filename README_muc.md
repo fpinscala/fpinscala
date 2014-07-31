@@ -23,6 +23,10 @@ Configure and initialize your personal repository:
     $ git remote add upstream git@github.com:fpinscala-muc/fpinscala.git
     $ git push -u origin master
 
+### Get updates from main repo
+
+When changes are made to the main `git@github.com:fpinscala-muc/fpinscala.git` repository (e.g. new tests) those changes can be pulled by `$ git pull upstream master`.
+
 ### Import projects into Eclipse
 
 To import the project into Eclipse the project files have to be generated first.
