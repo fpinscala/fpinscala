@@ -19,28 +19,28 @@ object FutureTest extends App {
       } yield (acc + i)
     }
   def worstCaseScenario2 =
-    (0 to N).map(i => delay(i)).foldLeft(delay(0)) {
+    (0 to N).map(i => Future.delay(i)).foldLeft(Future.delay(0)) {
       (f1,f2) => for {
         acc <- f1
         i <- f2
       } yield (acc + i)
     }
   def worstCaseScenario2a =
-    (0 to N).map(i => delay(i)).foldLeft(now(0)) {
+    (0 to N).map(i => Future.delay(i)).foldLeft(Future.now(0)) {
       (f1,f2) => for {
         acc <- f1
         i <- f2
       } yield (acc + i)
     }
   def worstCaseScenario3 =
-    (0 to N).map(i => Future(i)).foldLeft(now(0)) {
+    (0 to N).map(i => Future(i)).foldLeft(Future.now(0)) {
       (f1,f2) => for {
         acc <- f1
         i <- f2
       } yield (acc + i)
     }
   def worstCaseScenario3a =
-    (0 to N).map(i => Future(i)).foldLeft(delay(0)) {
+    (0 to N).map(i => Future(i)).foldLeft(Future.delay(0)) {
       (f1,f2) => for {
         acc <- f1
         i <- f2
@@ -49,8 +49,8 @@ object FutureTest extends App {
 
   def runRepeatedly(n: Int): Future[Unit] =
     if (n > 0) Future { () } flatMap (_ => runRepeatedly(n-1))
-    else now(())
-  
+    else Future.now(())
+
   println(worstCaseScenario1.run)
   println(worstCaseScenario1a.run)
   println(worstCaseScenario2.run)
@@ -59,4 +59,3 @@ object FutureTest extends App {
   println(worstCaseScenario3a.run)
   runRepeatedly(10000).run
 }
-
