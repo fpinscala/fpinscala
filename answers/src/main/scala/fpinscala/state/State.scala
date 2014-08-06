@@ -6,6 +6,8 @@ trait RNG {
 }
 
 object RNG {
+  // NB - this was called SimpleRNG in the book text
+
   case class Simple(seed: Long) extends RNG {
     def nextInt: (Int, RNG) = {
       val newSeed = (seed * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL // `&` is bitwise AND. We use the current seed to generate a new seed.
@@ -39,33 +41,33 @@ object RNG {
     val (d, r2) = double(r1)
     ((i, d), r2)
   }
-  
+
   def doubleInt(rng: RNG): ((Double, Int), RNG) = {
     val ((i, d), r) = intDouble(rng)
     ((d, i), r)
   }
-  
+
   def double3(rng: RNG): ((Double, Double, Double), RNG) = {
     val (d1, r1) = double(rng)
     val (d2, r2) = double(r1)
     val (d3, r3) = double(r2)
     ((d1, d2, d3), r3)
   }
-  
+
   // There is something terribly repetitive about passing the RNG along
   // every time. What could we do to eliminate some of this duplication
   // of effort?
 
   // A simple recursive solution
   def ints(count: Int)(rng: RNG): (List[Int], RNG) =
-    if (count == 0) 
+    if (count == 0)
       (List(), rng)
     else {
       val (x, r1)  = rng.nextInt
       val (xs, r2) = ints(count - 1)(r1)
       (x :: xs, r2)
     }
-  
+
   // A tail-recursive solution
   def ints2(count: Int)(rng: RNG): (List[Int], RNG) = {
     def go(count: Int, r: RNG, xs: List[Int]): (List[Int], RNG) =
@@ -114,7 +116,7 @@ object RNG {
 
   val randIntDouble: Rand[(Int, Double)] =
     both(int, double)
-  
+
   val randDoubleInt: Rand[(Double, Int)] =
     both(double, int)
 
@@ -129,11 +131,11 @@ object RNG {
   // to use `foldLeft` followed by `reverse`. What do you think?
   def sequence[A](fs: List[Rand[A]]): Rand[List[A]] =
     fs.foldRight(unit(List[A]()))((f, acc) => map2(f, acc)(_ :: _))
-  
+
   // It's interesting that we never actually need to talk about the `RNG` value
   // in `sequence`. This is a strong hint that we could make this function
   // polymorphic in that type.
-  
+
   def _ints(count: Int): Rand[List[Int]] =
     sequence(List.fill(count)(int))
 
@@ -142,7 +144,7 @@ object RNG {
       val (a, r1) = f(rng)
       g(a)(r1) // We pass the new state along
     }
-  
+
   def nonNegativeLessThan(n: Int): Rand[Int] = {
     flatMap(nonNegativeInt) { i =>
       val mod = i % n
@@ -152,7 +154,7 @@ object RNG {
 
   def _map[A,B](s: Rand[A])(f: A => B): Rand[B] =
     flatMap(s)(a => unit(f(a)))
-  
+
   def _map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
     flatMap(ra)(a => map(rb)(b => f(a, b)))
 }
@@ -196,24 +198,24 @@ object State {
 
   def unit[S, A](a: A): State[S, A] =
     State(s => (a, s))
-  
+
   // The idiomatic solution is expressed via foldRight
   def sequenceViaFoldRight[S,A](sas: List[State[S, A]]): State[S, List[A]] =
     sas.foldRight(unit[S, List[A]](List()))((f, acc) => f.map2(acc)(_ :: _))
-  
+
   // This implementation uses a loop internally and is the same recursion
-  // pattern as a left fold. It is quite common with left folds to build 
-  // up a list in reverse order, then reverse it at the end. 
+  // pattern as a left fold. It is quite common with left folds to build
+  // up a list in reverse order, then reverse it at the end.
   // (We could also use a collection.mutable.ListBuffer internally.)
   def sequence[S, A](sas: List[State[S, A]]): State[S, List[A]] = {
-    def go(s: S, actions: List[State[S,A]], acc: List[A]): (List[A],S) = 
+    def go(s: S, actions: List[State[S,A]], acc: List[A]): (List[A],S) =
       actions match {
         case Nil => (acc.reverse,s)
-        case h :: t => h.run(s) match { case (a,s2) => go(s2, t, a :: acc) } 
+        case h :: t => h.run(s) match { case (a,s2) => go(s2, t, a :: acc) }
       }
     State((s: S) => go(s,sas,List()))
   }
-  
+
   // We can also write the loop using a left fold. This is tail recursive like the
   // previous solution, but it reverses the list _before_ folding it instead of after.
   // You might think that this is slower than the `foldRight` solution since it
