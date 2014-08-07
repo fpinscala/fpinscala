@@ -16,8 +16,17 @@ trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trai
   def char(c: Char): Parser[Char] =
     string(c.toString) map (_.charAt(0))
 
-  def succeed[A](a: A): Parser[A] =
+  /*
+   * A default `succeed` implementation in terms of `string` and `map`.
+   * We leave `succeed` abstract, since `map` is defined below in terms of
+   * `flatMap` and `succeed`, which would be a circular definition! But we include
+   * the definition here in case implementations wish to use it
+   * (say if they provide a custom implementation of `map`, breaking the cycle)
+   */
+  def defaultSucceed[A](a: A): Parser[A] =
     string("") map (_ => a)
+
+  def succeed[A](a: A): Parser[A]
 
   def slice[A](p: Parser[A]): Parser[String]
 

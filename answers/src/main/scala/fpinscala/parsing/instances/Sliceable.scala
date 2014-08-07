@@ -113,6 +113,9 @@ object Sliceable extends Parsers[Parser] {
     p(s0).extract(s)
   }
 
+  // consume no characters and succeed with the given value
+  def succeed[A](a: A): Parser[A] = s => Success(a, 0)
+
   def or[A](p: Parser[A], p2: => Parser[A]): Parser[A] =
     s => p(s) match {
       case r@Failure(e,committed) if committed =>
