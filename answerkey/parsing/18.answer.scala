@@ -1,8 +1,8 @@
-// We'll just give a sketch here. They basic idea is to add an additional field to `ParseError`
+// We'll just give a sketch here. The basic idea is to add an additional field to `ParseError`
 
 case class ParseError(stack: List[(Location,String)] = List(),
                       otherFailures: List[ParseError] = List()) {
-  
+
   def addFailure(e: ParseError): ParseError =
     this.copy(otherFailures = e :: this.otherFailures)
   ...
