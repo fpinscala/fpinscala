@@ -64,12 +64,6 @@ trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trai
 
   def attempt[A](p: Parser[A]): Parser[A]
 
-  /** In the event of an error, returns the error that occurred after consuming the most number of characters. */
-  def furthest[A](p: Parser[A]): Parser[A]
-
-  /** In the event of an error, returns the error that occurred most recently. */
-  def latest[A](p: Parser[A]): Parser[A]
-
   /** Sequences two parsers, ignoring the result of the first.
     * We wrap the ignored half in slice, since we don't care about its result. */
   def skipL[B](p: Parser[Any], p2: => Parser[B]): Parser[B] =
@@ -93,7 +87,7 @@ trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trai
   def thru(s: String): Parser[String] = (".*?"+Pattern.quote(s)).r
 
   /** Unescaped string literals, like "foo" or "bar". */
-  def quoted: Parser[String] = string("\"") *> thru("\"")
+  def quoted: Parser[String] = string("\"") *> thru("\"").map(_.dropRight(1))
 
   /** Unescaped or escaped string literals, like "An \n important \"Quotation\"" or "bar". */
   def escapedQuoted: Parser[String] =
@@ -180,7 +174,10 @@ trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trai
 case class Location(input: String, offset: Int = 0) {
 
   lazy val line = input.slice(0,offset+1).count(_ == '\n') + 1
-  lazy val col = input.slice(0,offset+1).reverse.indexOf('\n')
+  lazy val col = input.slice(0,offset+1).lastIndexOf('\n') match {
+    case -1 => offset + 1
+    case lineStart => offset - lineStart
+  }
 
   def toError(msg: String): ParseError =
     ParseError(List((this, msg)))
@@ -191,29 +188,22 @@ case class Location(input: String, offset: Int = 0) {
   def currentLine: String =
     if (input.length > 1) input.lines.drop(line-1).next
     else ""
+
+  def columnCaret = (" " * (col-1)) + "^"
 }
 
-case class ParseError(stack: List[(Location,String)] = List(),
-                      otherFailures: List[ParseError] = List()) {
+case class ParseError(stack: List[(Location,String)] = List()) {
   def push(loc: Location, msg: String): ParseError =
     copy(stack = (loc,msg) :: stack)
 
   def label[A](s: String): ParseError =
-    ParseError(latestLoc.map((_,s)).toList,
-               otherFailures map (_.label(s)))
+    ParseError(latestLoc.map((_,s)).toList)
 
   def latest: Option[(Location,String)] =
     stack.lastOption
 
   def latestLoc: Option[Location] =
     latest map (_._1)
-
-  def furthest: ParseError =
-    copy(otherFailures = List()) ::
-    otherFailures maxBy (_.latest.map(_._1.offset))
-
-  def addFailure(e: ParseError): ParseError =
-    this.copy(otherFailures = e :: this.otherFailures)
 
   /**
   Display collapsed error stack - any adjacent stack elements with the
@@ -227,28 +217,17 @@ case class ParseError(stack: List[(Location,String)] = List(),
   5.10 ':'
 
   { "MSFT" ; 24,
-           ^
-  If a level contains nonempty `otherFailures`, these are placed on the
-  next line, indented.
   */
   override def toString =
-    if (stack.isEmpty) "empty error message"
+    if (stack.isEmpty) "no error message"
     else {
-      val flat: List[(Int,(Location,String))] =
-        allMsgs(0).groupBy(_._2._1).toList.
-                   sortBy(_._1.offset).
-                   flatMap(_._2)
-      val context = flat.map {
-        case (lvl,(loc,msg)) => ("  " * lvl) + formatLoc(loc) + " " + msg
-      } mkString "\n"
-      val errorPointer = flat.filter(_._1 == 0).last match {
-        case (_,(loc,_)) => loc.currentLine + "\n" + (" " * (loc.col-1)) + "^"
-      }
-      context + "\n\n" + errorPointer
+      val collapsed = collapseStack(stack)
+      val context =
+        collapsed.lastOption.map("\n\n" + _._1.currentLine).getOrElse("") +
+        collapsed.lastOption.map("\n" + _._1.columnCaret).getOrElse("")
+      collapsed.map { case (loc,msg) => loc.line.toString + "." + loc.col + " " + msg }.mkString("\n") +
+      context
     }
-
-  def allMsgs(level: Int): List[(Int,(Location,String))] =
-    collapseStack(stack).map((level,_)) ++ otherFailures.flatMap(_.allMsgs(level+1))
 
   /* Builds a collapsed version of the given error stack -
    * messages at the same location have their messages merged,

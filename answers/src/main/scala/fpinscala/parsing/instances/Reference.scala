@@ -76,15 +76,14 @@ object Reference extends Parsers[Parser] {
 
   def or[A](p: Parser[A], p2: => Parser[A]): Parser[A] =
     s => p(s) match {
-      case r@Failure(e,committed) if !committed =>
-        p2(s).mapError(_.addFailure(e))
+      case Failure(e,false) => p2(s)
       case r => r // committed failure or success skips running `p2`
     }
 
   def flatMap[A,B](f: Parser[A])(g: A => Parser[B]): Parser[B] =
     s => f(s) match {
       case Success(a,n) => g(a)(s.advanceBy(n))
-                           .addCommit(n == 0)
+                           .addCommit(n != 0)
                            .advanceSuccess(n)
       case f@Failure(_,_) => f
     }
@@ -127,12 +126,6 @@ object Reference extends Parsers[Parser] {
       case Success(_,n) => Success(s.slice(n),n)
       case f@Failure(_,_) => f
     }
-
-  def latest[A](p: Parser[A]): Parser[A] =
-    s => p(s).mapError(_.copy(otherFailures = List()))
-
-  def furthest[A](p: Parser[A]): Parser[A] =
-    s => p(s).mapError(_.furthest)
 
   /* We provide an overridden version of `many` that accumulates
    * the list of results using a monolithic loop. This avoids
