@@ -34,7 +34,7 @@ object ReferenceTypes {
     }
     /* Used by `flatMap` */
     def addCommit(isCommitted: Boolean): Result[A] = this match {
-      case Failure(e,false) if isCommitted => Failure(e, true)
+      case Failure(e,c) => Failure(e, c || isCommitted)
       case _ => this
     }
     /* Used by `scope`, `label`. */
