@@ -405,9 +405,6 @@ object IO3 {
 
   type ~>[F[_], G[_]] = Translate[F,G] // gives us infix syntax `F ~> G` for `Translate[F,G]`
 
-  // Exercise 4: Write `runFree`, then use this to implement `runConsoleFunction0`.
-  // You can use the following `Monad[Function0]` definitions
-
   implicit val function0Monad = new Monad[Function0] {
     def unit[A](a: => A) = () => a
     def flatMap[A,B](a: Function0[A])(f: A => Function0[B]) =
@@ -445,7 +442,7 @@ object IO3 {
   running: `freeMonad.forever(Console.printLn("Hello"))`.
   */
 
-  // Exercise 5 (optional, hard): Implement `runConsole` using `runFree`,
+  // Exercise 4 (optional, hard): Implement `runConsole` using `runFree`,
   // without going through `Par`. Hint: define `translate` using `runFree`.
 
   def translate[F[_],G[_],A](f: Free[F,A])(fg: F ~> G): Free[G,A] = {
@@ -529,7 +526,7 @@ object IO3 {
   type IO[A] = Free[Par, A]
 
   /*
-   * Exercise 6: Implement a non-blocking read from an asynchronous file channel.
+   * Exercise 5: Implement a non-blocking read from an asynchronous file channel.
    * We'll just give the basic idea - here, we construct a `Future`
    * by reading from an `AsynchronousFileChannel`, a `java.nio` class
    * which supports asynchronous reads.
@@ -547,9 +544,9 @@ object IO3 {
 
   def read(file: AsynchronousFileChannel,
            fromPosition: Long,
-           numBytes: Int): IO[Either[Throwable, Array[Byte]]] = {
-    val buf = ByteBuffer.allocate(numBytes)
-    Async { (cb: Either[Throwable, Array[Byte]] => Unit) =>
+           numBytes: Int): Par[Either[Throwable, Array[Byte]]] =
+    Par.async { (cb: Either[Throwable, Array[Byte]] => Unit) =>
+      val buf = ByteBuffer.allocate(numBytes)
       file.read(buf, fromPosition, (), new CompletionHandler[Integer, Unit] {
         def completed(bytesRead: Integer, ignore: Unit) = {
           val arr = new Array[Byte](bytesRead)
@@ -560,5 +557,4 @@ object IO3 {
           cb(Left(err))
       })
     }
-  }
 }
