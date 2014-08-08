@@ -75,7 +75,7 @@ object List { // `List` companion object. Contains functions for creating and wo
 
   def concat[A](l: List[List[A]]): List[A] = sys.error("todo")
 
-  def add1[T](nums: List[T])(implicit ev: Numeric[T]): List[T] = sys.error("todo")
+  def add1(nums: List[Int]): List[Int] = sys.error("todo")
 
   def doubleToString(l: List[Double]): List[String] = sys.error("todo")
 
