@@ -59,4 +59,12 @@ According to Wikipedia it is: http://en.wikipedia.org/wiki/Closure_%28computer_s
 The function incrementBy in the first example is a closure b/c of variable x, defined outside its body/lexical scope.
 This is exactly like the returned function from partial1.
 
+## Chapter 3: Functional data structures
+### Notes
+#### type Nothing
+Quote from http://programmers.stackexchange.com/questions/195793/how-is-nothing-a-subtype-of-every-other-type-in-scala :
+"As for how this is done: We don't know, it's compiler magic and an implementation detail.
+Quite often a language does things you as a programmer can't. As a counterpart to Nothing: Everything in Scala inherits from Any, everything except Any. Why doesn't Any inherit from something? You can't do that. Why can Scala do that? Well, because Scala set the rules, not you. Nothing being a subtype of everything is just an other instance of this."
+And here is what Big M has to say about the Scala type hierarchy in general: http://www.artima.com/pins1ed/scalas-hierarchy.html
+
 ### Additional links
