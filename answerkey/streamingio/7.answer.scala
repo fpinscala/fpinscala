@@ -17,3 +17,11 @@ def zip[A,B,C](p1: Process[A,B], p2: Process[A,C]): Process[A,(B,C)] =
     case (_, Await(recv2)) =>
       Await((oa: Option[A]) => zip(feed(oa)(p1), recv2(oa)))
   }
+  
+def feed[A,B](oa: Option[A])(p: Process[A,B]): Process[A,B] =
+  p match {
+    case Halt() => p
+    case Emit(h,t) => Emit(h, feed(oa)(t))
+    case Await(recv) => recv(oa)
+  }
+
