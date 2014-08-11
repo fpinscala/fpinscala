@@ -68,3 +68,10 @@ Quite often a language does things you as a programmer can't. As a counterpart t
 And here is what Big M has to say about the Scala type hierarchy in general: http://www.artima.com/pins1ed/scalas-hierarchy.html
 
 ### Additional links
+For the easily bored:
+* http://www.codecommit.com/blog/scala/scala-collections-for-the-easily-bored-part-1 Scala Collections FTEB
+* http://www.codecommit.com/blog/scala/scala-collections-for-the-easily-bored-part-2
+* http://www.codecommit.com/blog/scala/scala-collections-for-the-easily-bored-part-3
+* http://typelevel.org/blog/2013/10/13/towards-scalaz-1.html Addition FTEB
+* http://typelevel.org/blog/2013/12/15/towards-scalaz-2.html Fold FTEB
+
