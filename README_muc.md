@@ -67,11 +67,25 @@ Quote from http://programmers.stackexchange.com/questions/195793/how-is-nothing-
 Quite often a language does things you as a programmer can't. As a counterpart to Nothing: Everything in Scala inherits from Any, everything except Any. Why doesn't Any inherit from something? You can't do that. Why can Scala do that? Well, because Scala set the rules, not you. Nothing being a subtype of everything is just an other instance of this."
 And here is what Big M has to say about the Scala type hierarchy in general: http://www.artima.com/pins1ed/scalas-hierarchy.html
 
+#### Currying, partional and higher order functions
+* http://danielwestheide.com/blog/2013/01/30/the-neophytes-guide-to-scala-part-11-currying-and-partially-applied-functions.html
+* http://danielwestheide.com/blog/2013/01/23/the-neophytes-guide-to-scala-part-10-staying-dry-with-higher-order-functions.html
+
 ### Additional links
 For the easily bored:
 * http://www.codecommit.com/blog/scala/scala-collections-for-the-easily-bored-part-1 Scala Collections FTEB
 * http://www.codecommit.com/blog/scala/scala-collections-for-the-easily-bored-part-2
 * http://www.codecommit.com/blog/scala/scala-collections-for-the-easily-bored-part-3
+* http://danielwestheide.com/blog/2012/12/05/the-neophytes-guide-to-scala-part-3-patterns-everywhere.html Pattern Matching
+* http://danielwestheide.com/blog/2012/12/05/the-neophytes-guide-to-scala-part-3-patterns-everywhere.html
 * http://typelevel.org/blog/2013/10/13/towards-scalaz-1.html Addition FTEB
 * http://typelevel.org/blog/2013/12/15/towards-scalaz-2.html Fold FTEB
+
+### Chapter 4: Handling errors without exceptions
+
+### Additional links
+* http://danielwestheide.com/blog/2012/12/19/the-neophytes-guide-to-scala-part-5-the-option-type.html
+* http://danielwestheide.com/blog/2012/12/26/the-neophytes-guide-to-scala-part-6-error-handling-with-try.html Try has its theoretical flaws, but in practice ...
+* http://danielwestheide.com/blog/2013/01/02/the-neophytes-guide-to-scala-part-7-the-either-type.html
+* http://typelevel.org/blog/2014/02/21/error-handling.html
 
