@@ -49,6 +49,6 @@ To get a menu of possible main methods to execute.
 
 All code in this repository is [MIT-licensed](http://opensource.org/licenses/mit-license.php). See the LICENSE file for details.
 
-Have fun, and good luck! Also be sure to check out [the community wiki](https://github.com/fpinscala/fpinscala/wiki) for the chapter notes, links to more reading, and more.
+Have fun, and good luck! Also be sure to check out [the community wiki](https://github.com/fpinscala/fpinscala/wiki) for the **chapter notes**, links to more reading, and more.
 
 _Paul and Rúnar_
