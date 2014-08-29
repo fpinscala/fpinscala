@@ -1,0 +1,1 @@
+You'll need to use a local helper function which accepts the current sum and count.

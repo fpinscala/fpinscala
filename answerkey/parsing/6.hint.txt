@@ -1,1 +1,0 @@
-Given a string of digits, `s`, you can use `s.toInt` to convert that to an `Int`.

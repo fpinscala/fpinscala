@@ -136,6 +136,18 @@ object Monad {
     override def flatMap[A,B](ida: Id[A])(f: A => Id[B]): Id[B] = ida flatMap f
   }
 
+  def getState[S]: State[S,S] = State(s => (s,s))
+  def setState[S](s: S): State[S,Unit] = State(_ => ((),s))
+
+  val F = stateMonad[Int]
+
+  def zipWithIndex[A](as: List[A]): List[(Int,A)] =
+    as.foldLeft(F.unit(List[(Int, A)]()))((acc,a) => for {
+      xs <- acc
+      n  <- getState
+      _  <- setState(n + 1)
+    } yield (n, a) :: xs).run(0)._1.reverse
+
   // The action of Reader's `flatMap` is to pass the `r` argument along to both the
   // outer Reader and also to the result of `f`, the inner Reader. Similar to how
   // `State` passes along a state, except that in `Reader` the "state" is read-only.

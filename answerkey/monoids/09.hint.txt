@@ -1,0 +1,2 @@
+Try creating a data type which tracks the _interval_ of the values in a given segment, as well as whether an 'unordered segment' has been found.
+When merging the values for two segments, think about how these two pieces of information should be updated.

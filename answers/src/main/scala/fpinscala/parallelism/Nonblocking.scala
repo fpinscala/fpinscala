@@ -60,6 +60,9 @@ object Nonblocking {
         def apply(cb: C => Unit): Unit = {
           var ar: Option[A] = None
           var br: Option[B] = None
+          // this implementation is a little too liberal in forking of threads -
+          // it forks a new logical thread for the actor and for stack-safety,
+          // forks evaluation of the callback `cb`
           val combiner = Actor[Either[A,B]](es) {
             case Left(a) =>
               if (br.isDefined) eval(es)(cb(f(a,br.get)))

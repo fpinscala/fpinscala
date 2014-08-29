@@ -1,0 +1,1 @@
+To define translate, use `runFree` with `Free[Function0,_]` as the target monad. Then use the specialized `runTrampoline` function written earlier.

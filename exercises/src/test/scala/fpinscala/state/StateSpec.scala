@@ -6,7 +6,7 @@ import org.scalacheck.Gen
 import org.scalatest.Matchers
 import org.scalatest.prop.PropertyChecks
 import RNG._
-import Candy._
+import State._
 import org.scalacheck.Commands
 import org.scalatest.prop.Checkers
 
@@ -150,11 +150,11 @@ class StateSpec extends FlatSpec with PropertyChecks with Matchers {
     testProperty(testMap2)
   }
 
-  behavior of "6.7 sequence"
+  behavior of "6.7 RNG.sequence"
 
   def testSequence(count: Int)(n: Int) = {
     val seq = List.fill(count)(int)
-    val (is, _) = sequence(seq)(TestRNG(n))
+    val (is, _) = RNG.sequence(seq)(TestRNG(n))
     is should have length count
   }
 

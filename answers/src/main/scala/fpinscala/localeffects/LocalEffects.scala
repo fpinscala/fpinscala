@@ -55,7 +55,7 @@ object ST {
     }
   }
   def runST[A](st: RunnableST[A]): A =
-    st[Null].run(null)._1
+    st[Unit].run(())._1
 }
 
 sealed trait STRef[S,A] {

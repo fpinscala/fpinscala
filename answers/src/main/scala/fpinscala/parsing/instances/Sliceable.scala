@@ -66,7 +66,7 @@ object SliceableTypes {
     }
     /* Used by `flatMap` */
     def addCommit(isCommitted: Boolean): Result[A] = this match {
-      case Failure(e,false) if isCommitted => Failure(e, true)
+      case Failure(e,c) => Failure(e, c || isCommitted)
       case _ => this
     }
     /* Used by `scope`, `label`. */
@@ -113,10 +113,12 @@ object Sliceable extends Parsers[Parser] {
     p(s0).extract(s)
   }
 
+  // consume no characters and succeed with the given value
+  def succeed[A](a: A): Parser[A] = s => Success(a, 0)
+
   def or[A](p: Parser[A], p2: => Parser[A]): Parser[A] =
     s => p(s) match {
-      case r@Failure(e,committed) if committed =>
-        p2(s).mapError(_.addFailure(e))
+      case Failure(e,false) => p2(s)
       case r => r // committed failure or success skips running `p2`
     }
 
@@ -165,7 +167,7 @@ object Sliceable extends Parsers[Parser] {
     s => f(s.unslice) match {
       case Success(a,n) =>
         g(a)(s.advanceBy(n).reslice(s))
-        .addCommit(n == 0)
+        .addCommit(n != 0)
         .advanceSuccess(n)
       case Slice(n) => g(s.slice(n).asInstanceOf[A])(s.advanceBy(n).reslice(s))
                        .advanceSuccess(n)
@@ -213,12 +215,6 @@ object Sliceable extends Parsers[Parser] {
 
   def slice[A](p: Parser[A]): Parser[String] =
     s => p(s.copy(isSliced = true)).slice
-
-  def latest[A](p: Parser[A]): Parser[A] =
-    s => p(s).mapError(_.copy(otherFailures = List()))
-
-  def furthest[A](p: Parser[A]): Parser[A] =
-    s => p(s).mapError(_.furthest)
 
   /* As with `map`, we require casts in a few places. */
   override def map2[A,B,C](p: Parser[A], p2: => Parser[B])(f: (A,B) => C): Parser[C] =

@@ -1,0 +1,1 @@
+Use `Par.async[Either[Throwable,Array[Byte]]] { cb => ... }`. Follow the types - what is the type of `cb` here and how can you use it?

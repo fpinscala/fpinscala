@@ -1,1 +1,0 @@
-Multiplication of numbers is associative, `a * (b * c) == (a * b) * c`. Is there an analogous property for parsers? What can you say about the relationship between `map` and `product`?
