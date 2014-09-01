@@ -89,3 +89,10 @@ For the easily bored:
 * http://danielwestheide.com/blog/2013/01/02/the-neophytes-guide-to-scala-part-7-the-either-type.html
 * http://typelevel.org/blog/2014/02/21/error-handling.html
 
+### Chapter 5: Strictness and laziness
+
+### Additional links
+* http://www.nurkiewicz.com/2013/05/lazy-sequences-in-scala-and-clojure.html
+* https://github.com/ardlema/scala-lazy-evaluation (exercise from Coursera "Principles of Reactive Programming" course https://www.coursera.org/course/reactive)
+
+
