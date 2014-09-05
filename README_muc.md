@@ -85,16 +85,20 @@ For the easily bored:
 ### Notes
 #### variance implemented with for-comprehension
 First here's a straightforward solution using flatMap & map:  
-	def variance(xs: Seq[Double]): Option[Double] =
-	  mean(xs) flatMap { m =>
-	    mean(xs map(x => math.pow(m - x, 2)))
-	  }
+
+    def variance(xs: Seq[Double]): Option[Double] =
+      mean(xs) flatMap { m =>
+        mean(xs map(x => math.pow(m - x, 2)))
+      }
+
 Jörg could not fall asleep after today's session before he had not solved the variance w/ for-comprehension puzzle! So here is his solution:  
-	def variance(xs: Seq[Double]): Option[Double] =
-	  for {
-	    m <- mean(xs)
-	    v <- mean(xs map (x => pow(x - m, 2)))
-	  } yield v
+
+    def variance(xs: Seq[Double]): Option[Double] =
+      for {
+        m <- mean(xs)
+        v <- mean(xs map (x => pow(x - m, 2)))
+      } yield v
+
 This arguably looks and read better than the flatMap/map combinator solution, and by all means feel free to write code like this in for-comprehension style!
 Yesterday I (Achim) just saw the pattern "flatMap followed by map" and immediately read that as just one for-comprehension.
 I was wrong here b/c the flatMap belongs to an Option (the result of "mean(xs)") whereas map belongs to a Seq (namely "xs").
@@ -104,9 +108,11 @@ Thanks, Jörg! And I hope you had sweet dreams after this.
 #### scala.util.Try
 See the Additional links below for some (of many) tutorials for Try.
 When it comes to FP error handling in concrete daily life cases I personally ask myself the following questions:
+
 * Do I care about the error at all? If not use Option.
 * Do I care about the error, and I want to break up at the first error and pass it along to the caller? Use Try.
-* Do I need to accumulate errors and pass them along to the caller? Use something fancing like scalaz.Validation.
+* Do I need to accumulate errors and pass them along to the caller? Use something fancy like scalaz.Validation.
+
 The article "How do I error handle thee?" (the typelevel.org link below) gives a nice summary.  
 But if you are a purist then Try is out of the question - it is not a true Monad!
 
