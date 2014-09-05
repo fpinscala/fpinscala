@@ -70,6 +70,8 @@ trait Monad[F[_]] extends Functor[F] {
 
   def join[A](mma: F[F[A]]): F[A] = flatMap(mma)(ma => ma)
 
+  def filterM[A](ms: List[A])(f: A => F[Boolean]): F[List[A]] =
+    ms.foldRight(unit(List[A]()))((x,y) => compose(f, (b: Boolean) => if (b) map2(unit(x),y)(_ :: _) else y)(x))
 }
 
 case class Reader[R, A](run: R => A)
