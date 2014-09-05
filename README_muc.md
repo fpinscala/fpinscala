@@ -126,6 +126,9 @@ https://news.ycombinator.com/item?id=7258866
 MHO: Scala collections seem to work as expected (even just great if compare them to Java collections or helper libs like Guava),
 so why bother too much about internals?
 
+#### Some more examples for Option and Either
+These are the additional examples from the session: https://github.com/fpinscala-muc/fpinscala-abo64/blob/master/exercises/src/main/scala/fpinscala/errorhandling/Worksheet.sc
+
 ### Additional links
 * http://danielwestheide.com/blog/2012/12/19/the-neophytes-guide-to-scala-part-5-the-option-type.html
 * http://danielwestheide.com/blog/2012/12/26/the-neophytes-guide-to-scala-part-6-error-handling-with-try.html Try has its theoretical flaws, but in practice ...
