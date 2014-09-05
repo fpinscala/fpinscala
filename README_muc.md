@@ -83,22 +83,11 @@ For the easily bored:
 
 ### Chapter 4: Handling errors without exceptions
 ### Notes
-#### variance implemented with for-comprehension
+#### Exercise 4.2 variance: implemented with for-comprehension
 First here's a straightforward solution using flatMap & map:  
-
-    def variance(xs: Seq[Double]): Option[Double] =
-      mean(xs) flatMap { m =>
-        mean(xs map(x => math.pow(m - x, 2)))
-      }
-
+https://github.com/fpinscala-muc/fpinscala-abo64/blob/master/exercises/src/main/scala/fpinscala/errorhandling/Option.scala#L51  
 Jörg could not fall asleep after today's session before he had not solved the variance w/ for-comprehension puzzle! So here is his solution:  
-
-    def variance(xs: Seq[Double]): Option[Double] =
-      for {
-        m <- mean(xs)
-        v <- mean(xs map (x => pow(x - m, 2)))
-      } yield v
-
+https://github.com/fpinscala-muc/fpinscala-g-fresh/blob/master/exercises/src/main/scala/fpinscala/errorhandling/Option.scala#L130  
 This arguably looks and read better than the flatMap/map combinator solution, and by all means feel free to write code like this in for-comprehension style!
 Yesterday I (Achim) just saw the pattern "flatMap followed by map" and immediately read that as just one for-comprehension.
 I was wrong here b/c the flatMap belongs to an Option (the result of "mean(xs)") whereas map belongs to a Seq (namely "xs").
@@ -138,6 +127,7 @@ These are the additional examples from the session: https://github.com/fpinscala
 * http://typelevel.org/blog/2014/02/21/error-handling.html
 * http://aboutwhichmorelater.tumblr.com/post/30409572482/scala-util-try
 * https://gist.github.com/ms-tg/6222775
+* http://technotroph.wordpress.com/2013/05/02/collection-of-fp-articles-by-paul-callaghan/ For the easily bored again: Yes, it is Haskell, but the principles apply to FP in general.
 
 ### Chapter 5: Strictness and laziness
 
