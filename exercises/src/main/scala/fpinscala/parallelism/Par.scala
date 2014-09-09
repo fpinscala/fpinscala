@@ -8,7 +8,9 @@ object Par {
   def run[A](s: ExecutorService)(a: Par[A]): Future[A] = a(s)
 
   def unit[A](a: A): Par[A] = (es: ExecutorService) => UnitFuture(a) // `unit` is represented as a function that returns a `UnitFuture`, which is a simple implementation of `Future` that just wraps a constant value. It doesn't use the `ExecutorService` at all. It's always done and can't be cancelled. Its `get` method simply returns the value that we gave it.
-  
+
+  def lazyUnit[A](a: => A): Par[A] = ???
+
   private case class UnitFuture[A](get: A) extends Future[A] {
     def isDone = true 
     def get(timeout: Long, units: TimeUnit) = get 
@@ -28,10 +30,16 @@ object Par {
       def call = a(es).get
     })
 
+  def asyncF[A,B](f: A => B): A => Par[B] = ???
+
   def map[A,B](pa: Par[A])(f: A => B): Par[B] = 
     map2(pa, unit(()))((a,_) => f(a))
 
   def sortPar(parList: Par[List[Int]]) = map(parList)(_.sorted)
+
+  def sequence[A](as: List[Par[A]]): Par[List[A]] = ???
+
+  def parFilter[A](l: List[A])(f: A => Boolean): Par[List[A]] = ???
 
   def equal[A](e: ExecutorService)(p: Par[A], p2: Par[A]): Boolean = 
     p(e).get == p2(e).get
@@ -43,6 +51,26 @@ object Par {
     es => 
       if (run(es)(cond).get) t(es) // Notice we are blocking on the result of `cond`.
       else f(es)
+
+  def choiceN[A](n: Par[Int])(choices: List[Par[A]]): Par[A] = ???
+
+  def choiceViaChoiceN[A](a: Par[Boolean])(ifTrue: Par[A], ifFalse: Par[A]): Par[A] = ???
+
+  def choiceMap[K,V](key: Par[K])(choices: Map[K,Par[V]]): Par[V] = ???
+
+  def chooser[A,B](pa: Par[A])(choices: A => Par[B]): Par[B] = ???
+
+  def choiceViaChooser[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] = ???
+
+  def choiceNViaChooser[A](n: Par[Int])(choices: List[Par[A]]): Par[A] = ???
+
+  def flatMap[A,B](pa: Par[A])(f: A => Par[B]): Par[B] = ???
+
+  def join[A](ppa: Par[Par[A]]): Par[A] = ???
+
+  def flatMapViaJoin[A,B](pa: Par[A])(f: A => Par[B]): Par[B] = ???
+
+  def joinViaFlatMap[A](ppa: Par[Par[A]]): Par[A] = ???
 
   /* Gives us infix syntax for `Par`. */
   implicit def toParOps[A](p: Par[A]): ParOps[A] = new ParOps(p)
