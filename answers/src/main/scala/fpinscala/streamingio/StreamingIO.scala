@@ -140,7 +140,7 @@ object SimpleStreamTransducers {
         case Await(f) => this match {
           case Emit(h,t) => t |> f(Some(h))
           case Halt() => Halt() |> f(None)
-          case Await(g) => Await((i: Option[I]) => g(i) |> p2)
+          case Await(g) => Await((i: Option[I]) => g(i) |> p2).repeat
         }
       }
     }
