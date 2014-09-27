@@ -6,3 +6,4 @@ project/boot
 .history
 project.vim
 *.old
+.idea
