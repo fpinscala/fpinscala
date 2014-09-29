@@ -53,7 +53,7 @@ See also https://github.com/typesafehub/sbteclipse/
 Actually, I have never ever used it, so I had to look up the exact meaning.
 Seems to be similar to Java, but try to avoid it. Really! There might be only a few useful cases:
 http://stackoverflow.com/questions/3770989/purpose-of-return-statement-in-scala
- 
+
 #### Is the book’s partial1 function really a case of a closure?
 According to Wikipedia it is: http://en.wikipedia.org/wiki/Closure_%28computer_science%29
 The function incrementBy in the first example is a closure b/c of variable x, defined outside its body/lexical scope.
@@ -118,7 +118,7 @@ so why bother too much about internals?
 #### Some more examples for Option and Either
 These are the additional examples from the session: https://github.com/fpinscala-muc/fpinscala-abo64/blob/master/exercises/src/main/scala/fpinscala/errorhandling/Worksheet.sc
 
-### Additional links
+#### Additional links
 * http://danielwestheide.com/blog/2012/12/19/the-neophytes-guide-to-scala-part-5-the-option-type.html
 * http://danielwestheide.com/blog/2012/12/26/the-neophytes-guide-to-scala-part-6-error-handling-with-try.html Try has its theoretical flaws, but in practice ...
 * http://danielwestheide.com/blog/2013/01/02/the-neophytes-guide-to-scala-part-7-the-either-type.html
@@ -131,14 +131,16 @@ These are the additional examples from the session: https://github.com/fpinscala
 
 ### Chapter 5: Strictness and laziness
 
-### Additional links
+#### Additional links
 * http://www.nurkiewicz.com/2013/05/lazy-sequences-in-scala-and-clojure.html
 * https://github.com/ardlema/scala-lazy-evaluation (exercise from Coursera "Principles of Reactive Programming" course https://www.coursera.org/course/reactive)
 
-### Google Billboard Puzzle
+#### Google Billboard Puzzle
 Here is the problem http://mathworld.wolfram.com/news/2004-10-13/google/ with the Mathematica solution  
 Select[FromDigits/@Partition[First[RealDigits[E,10,1000]],10,1],PrimeQ,1]  
 Here is a Java solution: http://google-tale.blogspot.de/2008/07/google-billboard-puzzle.html  
 Can we come up with an elegant (Stream?!) solution in Scala that is somewhere in between Mathematica and Java?
 
+### Misc
+* Interesting talk about types and type inference: https://www.youtube.com/watch?v=fDTt_uo0F-g
 
