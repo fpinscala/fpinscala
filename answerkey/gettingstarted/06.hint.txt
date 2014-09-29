@@ -1,1 +1,0 @@
-You need to return a new function of type `A => C`. Start by accepting an argument of type `A`. Now follow the types. You have an `A`. What can you do with it? Do you have a function that accepts an `A`?
