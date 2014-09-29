@@ -1,7 +1,5 @@
-/* Note that `=>` associates to the right, so we could write the return type as
-   `A => B => C` */
-def curry[A,B,C](f: (A, B) => C): A => (B => C) =
-  a => b => f(a, b)
+// Polymorphic functions are often so constrained by their type
+// that they only have one implementation! Here's an example:
 
-/* NB: The `Function2` trait has a `curried` method already, so if you wanted to
-   cheat a little you could write the answer as f.curried */
+def partial1[A,B,C](a: A, f: (A,B) => C): B => C =
+  (b: B) => f(a, b)
