@@ -15,7 +15,6 @@ trait Stream[+A] {
   step we cons onto the front of the `acc` list, which will result in the
   reverse of the stream. Then at the end we reverse the result to get the
   correct order again.
-  [:ben] are the line breaks above okay? I'm unclear on whether these "hints" are supposed to go in the book or not
   */
   def toList: List[A] = {
     @annotation.tailrec
