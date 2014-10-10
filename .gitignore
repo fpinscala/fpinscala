@@ -12,3 +12,6 @@ project.vim
 .project
 *.sc
 .worksheet
+
+.idea
+.idea_modules
