@@ -498,4 +498,73 @@ class StreamSpec extends FlatSpec with PropertyChecks {
     }
   }
 
+  behavior of "5.13.5 zipAll"
+
+  it should "work" in {
+    def testZipAll(as: Stream[Int], as2: Stream[Int], expected: List[(Option[Int], Option[Int])]) =
+      assertResult(expected)(as.zipAll(as2).toList)
+
+    val tests = Table(
+      ("as: Stream[Int]", "as2: Stream[Int]", "as.zipAll(as2)"),
+      (Stream(), Stream(), List[(Option[Int], Option[Int])]()),
+      (Stream(), Stream(0, 2, 3), List(None -> Some(0), None -> Some(2), None -> Some(3))),
+      (Stream(0, 2, 3), Stream(), List(Some(0) -> None, Some(2) -> None, Some(3) -> None)),
+      (Stream(0, 2, 4), Stream(1, 3, 5), List(Some(0) -> Some(1), Some(2) -> Some(3), Some(4) -> Some(5))),
+      (Stream(0, 2), Stream(1, 3, 5), List(Some(0) -> Some(1), Some(2) -> Some(3), None -> Some(5))))
+    forAll(tests)(testZipAll)
+  }
+
+  behavior of "5.14 startsWith"
+
+  it should "work" in {
+    def testStartsWith(as: Stream[Int], as2: Stream[Int], expected: Boolean) =
+      assertResult(expected)(as.startsWith(as2))
+
+    val tests = Table(
+      ("as: Stream[Int]", "as2: Stream[Int]", "as.startsWith(as2)"),
+      (Stream(), Stream(), true),
+      (Stream(), Stream(0, 2, 3), false),
+      (Stream(0, 1), Stream(0, 1, 2), false),
+      (Stream(0, 1, 2), Stream(0, 2, 1), false),
+      (Stream(0, 1, 2), Stream(), true),
+      (Stream(0, 1, 2), Stream(0), true),
+      (Stream(0, 1, 2), Stream(0, 1), true),
+      (Stream(0, 1, 2), Stream(0, 1, 2), true)
+    )
+    forAll(tests)(testStartsWith)
+  }
+
+  behavior of "5.15 tails using unfold"
+
+  it should "work" in {
+    def testTails(as: Stream[Int], expected: List[List[Int]]) =
+      assertResult(expected)(as.tails.toList.map(_.toList))
+
+    // nested streams don't work with == anymore?
+    val tests = Table(
+      ("as: Stream[Int]", "as.tails"),
+      (Empty, List(Nil)),
+      (Stream(0), List(List(0), Nil)),
+      (Stream(0, 1), List(List(0, 1), List(1), Nil)),
+      (Stream(0, 1, 2), List(List(0, 1, 2), List(1, 2), List(2), Nil))
+    )
+    forAll(tests)(testTails)
+  }
+
+  behavior of "5.16 scanRight"
+
+  it should "work" in {
+    def testScanRight(as: Stream[Int], expected: List[Int]) =
+      assertResult(expected)(as.scanRight(0)(_ + _).toList)
+
+    val tests = Table(
+      ("as: Stream[Int]", "as.scanRight(0)(_ + _)"),
+      (Empty, List(0)),
+      (Stream(1), List(1, 0)),
+      (Stream(1, 2), List(3, 2, 0)),
+      (Stream(1, 2, 3), List(6, 5, 3, 0))
+    )
+    forAll(tests)(testScanRight)
+  }
+
 }
