@@ -39,6 +39,9 @@ If not done yet the sbteclipse plugin has to be configured, add the following to
 
 See also https://github.com/typesafehub/sbteclipse/
 
+## In the Beginning - Scala
+* Scala Coding guidelines: http://twitter.github.io/effectivescala/ (see also the Learning Scala links in the Intro section there)
+
 ## Chapter 1: What is functional programming?
 ### Additional links
 * http://www.youtube.com/watch?v=1gZAqJA2pEk This video by Paul Chiusano is about an earlier version (with a different example) of the first chapter. It gives a nice intro & summary what the book is up to.
