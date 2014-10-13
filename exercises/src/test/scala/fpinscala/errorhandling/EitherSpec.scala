@@ -103,4 +103,41 @@ class EitherSpec extends FlatSpec with PropertyChecks {
       assertResult(expected)(e.map2(e)(_ + _))
     }
   }
+
+  behavior of "4.7.1 sequence"
+
+  it should "work" in {
+    def testSequence(es: List[Either[String, Int]], expected: Either[String, List[Int]]) =
+      assertResult(expected)(Either.sequence(es))
+
+    val tests = Table(
+      ("es: List[Either[String,Int]]", "sequence(b)"),
+      (List(Left("oops"), Right(1), Right(2)), Left("oops")),
+      (List(Left("oops0"), Left("oops1"), Left("oops2")), Left("oops0")),
+      (List(Right(0), Left("oops"), Right(2)), Left("oops")),
+      (List(Right(0), Right(1), Left("oops")), Left("oops")),
+      (List(Right(0), Right(1), Right(2)), Right(List(0, 1, 2))),
+      (List(), Right(List())),
+      (List(Left("oops")), Left("oops")))
+    forAll(tests)(testSequence)
+  }
+
+  behavior of "4.7.2 traverse"
+
+  it should "work" in {
+    def testTraverse(as: List[Int], f: Int => Either[String, Int], expected: Either[String, List[Int]]) =
+      assertResult(expected)(Either.traverse(as)(f))
+
+    val tests = Table(
+      ("es: List[Int]", "f: Int => Either[String, Int]", "sequence(b)"),
+      (List(0, 1, 2, 3), (a: Int) => Left("oops" + a), Left("oops0")),
+      (List(0, 1, 2, 3), (a: Int) => if (a < 3) Right(a) else Left("oops" + a), Left("oops3")),
+      (List(0, 1, 2, 3), (a: Int) => Right(a), Right(List(0, 1, 2, 3))),
+      (List(0, 1, 2, 3), (a: Int) => Right(a * 2), Right(List(0, 2, 4, 6))),
+      (List(0, 1, 2, 3), (a: Int) => Right(1), Right(List(1, 1, 1, 1))),
+      (List(), (a: Int) => Right(a), Right(List())),
+      (List(), (a: Int) => Left("oops"), Right(List()))
+    )
+    forAll(tests)(testTraverse)
+  }
 }
