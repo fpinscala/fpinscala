@@ -39,6 +39,18 @@ If not done yet the sbteclipse plugin has to be configured, add the following to
 
 See also https://github.com/typesafehub/sbteclipse/
 
+### Import projects into IntelliJ IDEA
+
+To import the project into IntelliJ IDEA the project files have to be generated first.
+
+    $ sbt gen-idea
+
+If not done yet the IntelliJ plugin has to be configured, add the following to `~/.sbt/0.13/plugins/plugins.sbt`:
+
+    addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.6.0")
+
+See also https://github.com/mpeltonen/sbt-idea/
+
 ## In the Beginning - Scala
 * Scala Coding guidelines: http://twitter.github.io/effectivescala/ (see also the Learning Scala links in the Intro section there)
 
