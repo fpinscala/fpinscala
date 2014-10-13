@@ -146,8 +146,9 @@ Can we come up with an elegant (Stream?!) solution in Scala that is somewhere in
 
 ### Misc
 * Interesting talk about types and type inference: https://www.youtube.com/watch?v=fDTt_uo0F-g
-* Property-based testing with ScalaCheck: http://www.nurkiewicz.com/2014/09/property-based-testing-with-scalacheck.html  
-(although ScalaTests's docu is also quite ok. http://scalatest.org/user_guide/generator_driven_property_checks)
+* [Property-based testing with ScalaCheck](http://www.nurkiewicz.com/2014/09/property-based-testing-with-scalacheck.html)
+(although [ScalaTests's docu](http://scalatest.org/user_guide/generator_driven_property_checks) is also quite ok).
+* [Object-Functional Programming – A Beautiful Unification or a Kitchen Sink?](https://speakerdeck.com/missingfaktor/object-functional-programming-a-beautiful-unification-or-a-kitchen-sink)
 
 #### Is Scala too complex?
 * http://lampwww.epfl.ch/~odersky/blogs/isscalacomplex.html
