@@ -4,6 +4,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import org.junit.runner.RunWith
 import org.scalacheck.Arbitrary
+import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.FlatSpec
@@ -28,8 +29,8 @@ class MonadSpec extends FlatSpec with PropertyChecks with BeforeAndAfterEach {
   // tests w/ Int are simplest
   private type T = Int
 
-  private implicit def arbitraryMonad[M[_] <: Monad[M]](m: M[T]): Arbitrary[M[T]] =
-    Arbitrary(Gen.choose(-100, 100) map(m.unit(_)))
+//  private implicit def arbitraryMonad[M[_] <: Monad[M]](m: M[T]): Arbitrary[M[T]] =
+//    Arbitrary(Gen.choose(-100, 100) map(m.unit(_)))
 
   var executorService: ExecutorService = _
 
@@ -40,6 +41,10 @@ class MonadSpec extends FlatSpec with PropertyChecks with BeforeAndAfterEach {
       mEq: (F[Int], F[Int]) => Boolean = ((_:F[Int]) == (_:F[Int])))
   {
     import M._
+
+    private implicit def arbitraryM: Arbitrary[F[T]] =
+      Arbitrary(arbitrary[T] map (unit(_)))
+
     def kleisli[B](f: T => B) = (a: T) => unit[B](f(a))
     val f = kleisli[T](_ + 1)
     val g = kleisli(_ + 2)
@@ -53,26 +58,28 @@ class MonadSpec extends FlatSpec with PropertyChecks with BeforeAndAfterEach {
       mapPreservesStructure
     }
 
-    def testFlatMap =
+    def testFlatMap = {
       forAll("n") { n: T =>
         assertEq(flatMap(f(n))(g), fg(n))
       }
+      forAll("m") { m: F[T] =>
+        assertEq(flatMap(m)(unit(_)), m)
+      }
+    }
     def testUnit =
       forAll("n") { n: T =>
-        assertEq(flatMap(unit(n))(x => unit(x)), unit(n))
+        assertEq(flatMap(unit(n))(unit(_)), unit(n))
       }
     def mapPreservesStructure =
-      forAll("n") { n: T =>
-        val m = unit(n)
-        val idM = map(m)(identity[T])
-        assertEq(idM, m)
+      forAll("n") { m: F[T] =>
+        assertEq(map(m)(identity[T]), m)
       }
     private def assertEq(m1: F[T], m2: F[T]) =
       assert(mEq(m1, m2), s"""eq($m1, $m2)""")
 
     def testSequence =
       forAll("l") { l: List[T] =>
-        val lma = l map(M.unit(_))
+        val lma = l map(unit(_))
         assert(sequence(lma) == unit(l))
       }
 
@@ -119,11 +126,13 @@ class MonadSpec extends FlatSpec with PropertyChecks with BeforeAndAfterEach {
     MonadTest(parMonad,
         (p1: Par[Int], p2: Par[Int]) => prun(executorService)(p1) == prun(executorService)(p2))
   }
+
   lazy val parserMonadTest =
     MonadTest(parserMonad(ParserImpl),
       (p1: ParserTypes.Parser[Int], p2: ParserTypes.Parser[Int]) => {
         ParserImpl.run(p1)("") == ParserImpl.run(p1)("")
       })
+
   lazy val idMonadTest = MonadTest(idMonad)
 
   behavior of "11.1.1 parMonad"
