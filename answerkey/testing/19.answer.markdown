@@ -51,7 +51,7 @@ trait Cogen[-A] {
 }
 ~~~
 
-As an exercise (hard), try implementing a generalized version of `genStringFn`.
+As an exercise, try implementing a generalized version of `genStringFn`.
 
 ~~~ Scala
 def fn[A,B](in: Cogen[A])(out: Gen[B]): Gen[A => B]
