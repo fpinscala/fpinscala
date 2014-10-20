@@ -313,7 +313,7 @@ class ApplicativeSpec extends FlatSpec with PropertyChecks {
   import Traverse._
 
   behavior of "12.13.1 listTraverse"
-  it should "result in None if List[Option[T]] contains None" in {
+  it should "behave as described on page 219" in {
     implicit val oa = optionApplicative
     forAll("fma") { fma: List[Option[T]] =>
       val expected = if (fma.contains(None)) None else Some(fma map(_.get))
@@ -322,7 +322,7 @@ class ApplicativeSpec extends FlatSpec with PropertyChecks {
   }
 
   behavior of "12.13.2 optionTraverse"
-  it should "work" in {
+  it should "behave as described on page 219" in {
     implicit val la = listApplicative
     forAll("fma") { fma: Option[List[T]] =>
       val expected =
@@ -336,7 +336,7 @@ class ApplicativeSpec extends FlatSpec with PropertyChecks {
   }
 
   behavior of "12.13.3 treeTraverse"
-  it should "result in None if Tree[Option[T]] contains None" in {
+  it should "behave as described on page 219" in {
     implicit def arbTree[T](implicit ev: Arbitrary[T]): Arbitrary[Tree[T]] = {
       val MaxTreeDepth = 5 // to prevent StackOverflows
       def arbitraryTree(maxDepth: Int): Gen[Tree[T]] =
