@@ -6,7 +6,8 @@ import org.scalatest.prop.PropertyChecks
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
-
+import java.util.Date
+import scala.util.Try
 
 @RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class ApplicativeSpec extends FlatSpec with PropertyChecks {
@@ -14,12 +15,11 @@ class ApplicativeSpec extends FlatSpec with PropertyChecks {
   // tests w/ Int are simplest
   private type T = Int
 
-//  private implicit def arbitraryApplicative[M[_] <: Applicative[M]](m: M[T]): Arbitrary[M[T]] =
-//    Arbitrary(Gen.choose(-100, 100) map(m.unit(_)))
+  //  private implicit def arbitraryApplicative[M[_] <: Applicative[M]](m: M[T]): Arbitrary[M[T]] =
+  //    Arbitrary(Gen.choose(-100, 100) map(m.unit(_)))
 
   private[ApplicativeSpec] case class ApplicativeTest[F[_]](M: Applicative[F],
-      mEq: (F[Int], F[Int]) => Boolean = ((_:F[Int]) == (_:F[Int])))
-{
+    mEq: (F[Int], F[Int]) => Boolean = ((_: F[Int]) == (_: F[Int]))) {
     import M._
 
     private implicit def arbitraryA: Arbitrary[F[T]] =
@@ -30,14 +30,14 @@ class ApplicativeSpec extends FlatSpec with PropertyChecks {
 
     def testSequence =
       forAll("l") { l: List[T] =>
-        val lma = l map(unit(_))
+        val lma = l map (unit(_))
         assert(sequence(lma) == unit(l))
       }
 
     def testTraverse = {
-      val f = (a:T) => unit(a + 1)
+      val f = (a: T) => unit(a + 1)
       forAll("l") { l: List[T] =>
-        assert(traverse(l)(f) == unit(l map(_ + 1)))
+        assert(traverse(l)(f) == unit(l map (_ + 1)))
       }
     }
 
@@ -48,25 +48,80 @@ class ApplicativeSpec extends FlatSpec with PropertyChecks {
 
     def testProduct =
       forAll("a", "b") { (a: T, b: T) =>
-        assert(product(unit(a), unit(b)) == unit((a,b)))
-      }
-
-    def mapPreservesStructure =
-      forAll("n") { m: F[T] =>
-        assertEq(map(m)(identity[T]), m)
+        assert(product(unit(a), unit(b)) == unit((a, b)))
       }
 
     def testMap3 = {
-      val f = (a:T, b:T, c:T) => a + b + c
+      val f = (a: T, b: T, c: T) => a + b + c
       forAll("a", "b", "c") { (a: T, b: T, c: T) =>
-        assert(map3(unit(a), unit(b), unit(c))(f) == unit(f(a,b,c)))
+        assert(map3(unit(a), unit(b), unit(c))(f) == unit(f(a, b, c)))
       }
     }
 
     def testMap4 = {
-      val f = (a:T, b:T, c:T, d:T) => a + b + c + d
-      forAll("a", "b", "c", "d") { (a: T, b: T, c: T, d:T) =>
-        assert(map4(unit(a), unit(b), unit(c), unit(d))(f) == unit(f(a,b,c,d)))
+      val f = (a: T, b: T, c: T, d: T) => a + b + c + d
+      forAll("a", "b", "c", "d") { (a: T, b: T, c: T, d: T) =>
+        assert(map4(unit(a), unit(b), unit(c), unit(d))(f) == unit(f(a, b, c, d)))
+      }
+    }
+
+    def applicativeLaws = {
+      functorLaws
+      identityLaws
+      associativeLaw
+      naturalityLaw
+    }
+
+    def functorLaws = { // 214
+      // map "preserves structure"
+      forAll("m") { m: F[T] =>
+        assertEq(map(m)(identity[T]), m)
+      }
+
+      val f = (a: T) => a + 1
+      val g = (a: T) => a + 2
+      forAll("m") { m: F[T] =>
+        assertEq(map(map(m)(g))(f), map(m)(f compose g))
+      }
+    }
+
+    def identityLaws = { // 215
+      // map2 "preserves structure"
+      forAll("m") { m: F[T] =>
+        assertEq(map2(unit(()), m)((_, a) => a), m)
+        assertEq(map2(m, unit(()))((a, _) => a), m)
+      }
+    }
+
+    def associativeLaw = { // 216
+      def assoc[A, B, C](p: (A, (B, C))): ((A, B), C) =
+        p match { case (a, (b, c)) => ((a, b), c) }
+
+      forAll("fa", "fb", "fc") { (fa: F[T], fb: F[T], fc: F[T]) =>
+        assert(product(product(fa, fb), fc) == map(product(fa, product(fb, fc)))(assoc))
+      }
+    }
+
+    def naturalityLaw = {
+      def productF[I, O, I2, O2](f: I => O, g: I2 => O2): (I, I2) => (O, O2) =
+        (i, i2) => (f(i), g(i2))
+      val f = (_:T) + 1
+      val g = (_:T) + 2
+
+      forAll("a", "b") { (a: F[T], b: F[T]) =>
+        assert(map2(a, b)(productF(f, g)) == product(map(a)(f), map(b)(g)))
+      }
+    }
+
+    def testSequenceMap = {
+//      def toFunction(m: Map[T,T]) = m.apply _
+      forAll("ofa") { ofa: Map[T,F[T]] =>
+//        val ofa = ttMap mapValues(unit(_))
+        val fMap = sequenceMap(ofa)
+        val fGet: F[T => T] = fMap.map(m => m(_)) // Map as Function
+        ofa.keySet foreach { k: T =>
+          assert(unit(k).apply(fGet) == ofa(k))
+        }
       }
     }
   }
@@ -92,8 +147,8 @@ class ApplicativeSpec extends FlatSpec with PropertyChecks {
   it should "work in OptionApplicative" in optionApplicativeTest.testTraverse
 
   behavior of "12.2 map via unit and apply"
-  it should "work in ListApplicative" in listApplicativeTest.mapPreservesStructure
-  it should "work in OptionApplicative" in optionApplicativeTest.mapPreservesStructure
+  it should "obey the Functor laws in ListApplicative" in listApplicativeTest.functorLaws
+  it should "obey the Functor laws in OptionApplicative" in optionApplicativeTest.functorLaws
 
   behavior of "12.3.1 map3"
   it should "work in ListApplicative" in listApplicativeTest.testMap3
@@ -103,4 +158,200 @@ class ApplicativeSpec extends FlatSpec with PropertyChecks {
   it should "work in ListApplicative" in listApplicativeTest.testMap4
   it should "work in OptionApplicative" in optionApplicativeTest.testMap4
 
+  behavior of "12.4 StreamApplicative.sequence"
+  it should "work" in {
+    import streamApplicative._
+    val l = List(1, 2)
+    val sl = sequence(l map (unit(_))) // sequence(List(unit(1), unit(2)))
+    forAll(Gen.choose(0, 10) label "n") { n =>
+      val takeN = sl.take(n).toList
+      assert(takeN == List.fill(n)(l))
+      assert(takeN == unit(l).take(n).toList)
+    }
+  }
+
+  case class WebForm(name: String, birthdate: Date, phoneNumber: String)
+
+  trait CheckResult[R[String, _]] {
+    type Result[A] = R[String, A]
+    def success[A](a: A): Result[A]
+    def failure[A](s: String): Result[A]
+
+    val NameErrorMsg = "Name cannot be empty"
+    val BirthDateErrorMsg = "Birthdate must be in the form yyyy-MM-dd"
+    val PhoneNumberErrorMsg = "Phone number must be 10 digits"
+
+    val NameFailure = failure[String](NameErrorMsg)
+    val BirthDateFailure = failure[Date](BirthDateErrorMsg)
+    val PhoneNumberFailure = failure[String](PhoneNumberErrorMsg)
+
+    val (goodName, badName) = ("Darth", "")
+    val (goodBirthDate, badBirthDate) = ("1970-01-01", "what?")
+    val (goodPhoneNumber, badPhoneNumber) = ("1234567890", "what?")
+
+    def parseDate(date: String): Date =
+      new java.text.SimpleDateFormat("yyyy-MM-dd").parse(date)
+    val WebFormSuccess = success(WebForm(goodName, parseDate(goodBirthDate), goodPhoneNumber))
+
+    def validName(name: String): Result[String] =
+      if (name != "") success(name)
+      else NameFailure
+    def validBirthdate(birthdate: String): Result[Date] =
+      Try {
+        success(parseDate(birthdate))
+      } getOrElse BirthDateFailure
+    def validPhone(phoneNumber: String): Result[String] =
+      if (phoneNumber.matches("[0-9]{10}"))
+        success(phoneNumber)
+      else PhoneNumberFailure
+
+    def getResults(toWebForm: (String, String, String) => Result[WebForm]) =
+      (toWebForm(goodName, goodBirthDate, goodPhoneNumber),
+        toWebForm(badName, goodBirthDate, goodPhoneNumber),
+        toWebForm(badName, badBirthDate, goodPhoneNumber),
+        toWebForm(badName, badBirthDate, badPhoneNumber))
+  }
+
+  behavior of "12.5 eitherMonad.flatMap"
+  it should "stop at first failure in WebForm example" in {
+    val checkResultEither = new CheckResult[Either] {
+      override def success[A](a: A) = Right(a)
+      override def failure[A](s: String) = Left(s)
+    }
+    import checkResultEither._
+    val eitherM = Monad.eitherMonad[String]
+    implicit class EitherOps[A](either: Either[String, A]) {
+      def flatMap[B](f: A => Either[String, B]) = eitherM.flatMap(either)(f)
+      def map[B](f: A => B) = eitherM.map(either)(f)
+    }
+
+    def monadicWebFormViaFlatMap(name: String, birthDate: String, phoneNumber: String) =
+      //      for {
+      //        n <- validName(name)
+      //        d <- validBirthdate(birthDate)
+      //        p <- validPhone(phoneNumber)
+      //      } yield WebForm(n,d,p)
+      validName(name) flatMap (f1 =>
+        validBirthdate(birthDate) flatMap (f2 =>
+          validPhone(phoneNumber) map (f3 => WebForm(f1, f2, f3))))
+    val flatMapResults = getResults(monadicWebFormViaFlatMap)
+    assert(flatMapResults ==
+      (WebFormSuccess, NameFailure, NameFailure, NameFailure)) // always only first failure
+
+    def monadicWebFormViaMap3(name: String, birthDate: String, phoneNumber: String) =
+      eitherM.map3(
+        validName(name),
+        validBirthdate(birthDate),
+        validPhone(phoneNumber))(WebForm(_, _, _))
+    val map3Results = getResults(monadicWebFormViaMap3)
+    assert(map3Results ==
+      (WebFormSuccess, NameFailure, NameFailure, NameFailure)) // again: always only first failure
+  }
+
+  behavior of "12.6 validationApplicative"
+  it should "accumulate errors in WebForm example" in {
+    val checkResultValidation = new CheckResult[Validation] {
+      override def success[A](a: A) = Success(a)
+      override def failure[A](s: String) = Failure(s, Vector())
+    }
+    import checkResultValidation._
+
+    def applicativeWebFormViaMap3(name: String, birthDate: String, phoneNumber: String) =
+      validationApplicative.map3(
+        validName(name),
+        validBirthdate(birthDate),
+        validPhone(phoneNumber))(WebForm(_, _, _))
+    val map3Results = getResults(applicativeWebFormViaMap3)
+    assert(map3Results ==
+      (WebFormSuccess,
+        failures(NameErrorMsg),
+        failures(NameErrorMsg, BirthDateErrorMsg),
+        failures(NameErrorMsg, BirthDateErrorMsg, PhoneNumberErrorMsg)))
+
+    def failures(errors: String*) = Failure(errors.head, errors.tail.toVector)
+  }
+
+  behavior of "p.214 ff. Functor Laws"
+  it should "hold for ListApplicative" in listApplicativeTest.applicativeLaws
+  it should "hold for OptionApplicative" in optionApplicativeTest.applicativeLaws
+
+  behavior of "12.8 product of two applicative functors"
+  it should "work" in {
+//    type ProductType[A[_],B[_]] = ({ type f[x] = (A[x], B[x]) })#f
+    val listOptionProduct = listApplicative.product(optionApplicative)
+    assert(listOptionProduct.unit(1) == (List(1), (Some(1))))
+    val listOptionProductTest =
+      ApplicativeTest[({ type f[x] = (List[x], Option[x]) })#f](listOptionProduct)
+    listOptionProductTest.applicativeLaws
+
+    val optionListProduct = optionApplicative.product(listApplicative)
+    assert(optionListProduct.unit(1) == (Some(1), (List(1))))
+    val optionListProductTest =
+      ApplicativeTest[({ type f[x] = (Option[x], List[x]) })#f](optionListProduct)
+    optionListProductTest.applicativeLaws
+  }
+
+  behavior of "12.9 compose of two applicative functors"
+  it should "work" in {
+    val listOptionCompose = listApplicative.compose(optionApplicative)
+    assert(listOptionCompose.unit(1) == List(Some(1)))
+    val listOptionComposeTest =
+      ApplicativeTest[({ type f[x] = List[Option[x]] })#f](listOptionCompose)
+    listOptionComposeTest.applicativeLaws
+
+    val optionListCompose = optionApplicative.compose(listApplicative)
+    assert(optionListCompose.unit(1) == Some(List(1)))
+    val optionListComposeTest =
+      ApplicativeTest[({ type f[x] = Option[List[x]] })#f](optionListCompose)
+    optionListComposeTest.applicativeLaws
+  }
+
+  behavior of "12.12 sequenceMap"
+  it should "work in ListApplicative" in listApplicativeTest.testSequenceMap
+  it should "work in OptionApplicative" in optionApplicativeTest.testSequenceMap
+
+  import Traverse._
+
+  behavior of "12.13.1 listTraverse"
+  it should "result in None if List[Option[T]] contains None" in {
+    implicit val oa = optionApplicative
+    forAll("fma") { fma: List[Option[T]] =>
+      val expected = if (fma.contains(None)) None else Some(fma map(_.get))
+      assert(listTraverse.sequence(fma) == expected)
+    }
+  }
+
+  behavior of "12.13.2 optionTraverse"
+  it should "work" in {
+    implicit val la = listApplicative
+    forAll("fma") { fma: Option[List[T]] =>
+      val expected =
+        if (fma.isEmpty) List(None)
+        else {
+          val l = fma.get
+          if (l.isEmpty) List() else List(Some(l.head))
+        }
+      assert(optionTraverse.sequence(fma) == expected)
+    }
+  }
+
+  behavior of "12.13.3 treeTraverse"
+  it should "result in None if Tree[Option[T]] contains None" in {
+    implicit def arbTree[T](implicit ev: Arbitrary[T]): Arbitrary[Tree[T]] = {
+      val MaxTreeDepth = 5 // to prevent StackOverflows
+      def arbitraryTree(maxDepth: Int): Gen[Tree[T]] =
+        for {
+          h <- arbitrary[T]
+          numChildren <- Gen.choose(0, maxDepth)
+        } yield Tree(h, List.fill(numChildren)(arbitraryTree(maxDepth - 1).sample.get))
+      Arbitrary(arbitraryTree(MaxTreeDepth))
+    }
+    def contains[A](ta: Tree[A], a: A): Boolean =
+      ta.head == a || ta.tail.exists(contains(_, a))
+    implicit val oa = optionApplicative
+    forAll("toa") { toa: Tree[Option[T]] =>
+      val expected = if (contains(toa, None)) None else Some(treeTraverse.map(toa)(_.get))
+      assert(treeTraverse.sequence(toa) == expected)
+    }
+  }
 }

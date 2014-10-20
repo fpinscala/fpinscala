@@ -7,7 +7,12 @@ import State._
 import StateUtil._ // defined at bottom of this file
 import monoids._
 
-trait Applicative[F[_]] extends Functor[F] {
+trait Applicative[F[_]] extends Functor[F] { self =>
+
+  implicit class ApplicativeOps[A](fa: F[A]) {
+    def apply[B](fab: F[A => B]): F[B] = self.apply(fab)(fa)
+    def map[B](f: A => B): F[B] = self.map(fa)(f)
+  }
 
   def map2[A,B,C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C] = ???
 
@@ -149,11 +154,11 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
 }
 
 object Traverse {
-  val listTraverse = ???
+  lazy val listTraverse: Traverse[List] = ???
 
-  val optionTraverse = ???
+  lazy val optionTraverse: Traverse[Option] = ???
 
-  val treeTraverse = ???
+  lazy val treeTraverse: Traverse[Tree] = ???
 }
 
 // The `get` and `set` functions on `State` are used above,
