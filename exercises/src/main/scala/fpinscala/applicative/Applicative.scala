@@ -118,7 +118,7 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
   def mapAccum[S,A,B](fa: F[A], s: S)(f: (A, S) => (B, S)): (F[B], S) =
     traverseS(fa)((a: A) => (for {
       s1 <- get[S]
-      (b, s2) = f(a, s)
+      (b, s2) = f(a, s1)
       _  <- set(s2)
     } yield b)).run(s)
 
