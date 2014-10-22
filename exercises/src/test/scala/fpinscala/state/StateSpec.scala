@@ -42,7 +42,7 @@ class StateSpec extends FlatSpec with PropertyChecks with Matchers {
   }
 
   it should "return a value >= 0 for all nextInt values" in {
-    testCornerCases(testNonNegativeInt)
+    testProperty(testNonNegativeInt)
   }
 
   behavior of "6.2 double"
@@ -56,7 +56,7 @@ class StateSpec extends FlatSpec with PropertyChecks with Matchers {
   }
 
   it should "return a value >= 0 and < 1 for all nextInt values" in {
-    testCornerCases(testDouble)
+    testProperty(testDouble)
   }
 
   behavior of "6.3.1 intDouble"
