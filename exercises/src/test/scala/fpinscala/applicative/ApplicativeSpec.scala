@@ -368,6 +368,19 @@ class ApplicativeSpec extends FlatSpec with PropertyChecks {
       forAll("tt") { tt: F[T] =>
         assert(reverse(tt) == mf(tt))
       }
+
+    def testFoldLeft(f: (Int,T) => Int)(sum: F[T] => Int)(implicit ev: Arbitrary[F[T]]) =
+      forAll("tt") { tt: F[T] =>
+        assert(foldLeft(tt)(0)(f) == sum(tt))
+      }
+
+    implicit lazy val la = listApplicative
+    implicit lazy val lo = optionApplicative
+    def testFuse(expected: F[T] => (List[F[String]], Option[F[String]]))(implicit ev: Arbitrary[F[T]]) =
+      forAll("tt") { tt: F[T] =>
+        assert(fuse[List,Option,T,String](tt)(a => List(a.toString), a => Option(a.toString)) ==
+          expected(tt))
+      }
   }
 
   private lazy val listTraverseTest = new TraverseTest(listTraverse)
@@ -383,7 +396,7 @@ class ApplicativeSpec extends FlatSpec with PropertyChecks {
     treeTraverseTest.testMap(_.toString)(mapTree(_)(_.toString))
   }
 
-  behavior of "12.15 Traverse.reverse"
+  behavior of "12.16 Traverse.reverse"
   it should "work for listTraverse" in listTraverseTest.testReverse(_.reverse)
   it should "work for optionTraverse" in optionTraverseTest.testReverse(identity[Option[T]])
   it should "obey the law on page 223 for listTraverse" in {
@@ -395,4 +408,67 @@ class ApplicativeSpec extends FlatSpec with PropertyChecks {
           reverse(toList(y) ++ toList(x)))
       }
     }
+
+  behavior of "12.17 Traverse.foldLeft via mapAccum"
+  it should "work for listTraverse" in listTraverseTest.testFoldLeft(_ + _)(_.sum)
+  it should "work for optionTraverse" in optionTraverseTest.testFoldLeft(_ + _)(_.getOrElse(0))
+  it should "work for treeTraverse" in {
+    def sumTree(tt: Tree[Int]): Int = tt.head + tt.tail.map(sumTree).sum
+    treeTraverseTest.testFoldLeft(_ + _)(sumTree)
+  }
+
+  behavior of "12.18 Traverse.fuse"
+  it should "work for listTraverse" in
+    listTraverseTest.testFuse(lt => (List(lt map(_.toString)), Option(lt map(_.toString))))
+  it should "work for optionTraverse" in
+    optionTraverseTest.testFuse(lt => (List(lt map(_.toString)), Option(lt map(_.toString))))
+
+  behavior of "12.19 Traverse.compose"
+  it should "work for listTraverse" in
+    forAll("lo") { lo: List[Option[T]] =>
+      assert(listTraverse.compose(optionTraverse).map(lo)(identity) == lo)
+    }
+  it should "work for optionTraverse" in
+    forAll("ol") { ol: Option[List[T]] =>
+      assert(optionTraverse.compose(listTraverse).map(ol)(identity) == ol)
+    }
+
+  behavior of "12.20 Monad.composeM"
+
+  private def listMonad: Monad[List] =
+    new Monad[List] {
+    override def unit[A](a: => A): List[A] = List(a)
+    override def map[A,B](ma: List[A])(f: A => B): List[B] =
+      ma map f
+    override def flatMap[A,B](ma: List[A])(f: A => List[B]): List[B] =
+      ma flatMap f
+  }
+
+  private def optionMonad: Monad[Option] =
+    new Monad[Option] {
+    override def unit[A](a: => A): Option[A] = Option(a)
+    override def map[A,B](ma: Option[A])(f: A => B): Option[B] =
+      ma map f
+    override def flatMap[A,B](ma: Option[A])(f: A => Option[B]): Option[B] =
+      ma flatMap f
+  }
+
+  it should "work for listTraverse" in {
+    implicit lazy val lm = listMonad
+    implicit lazy val om = optionMonad
+    implicit lazy val lt = listTraverse
+    implicit lazy val ot = optionTraverse
+    forAll("lo") { lo: List[Option[T]] =>
+      assert(Monad.composeM[List, Option].flatMap(lo)(x => List(Option(x))) == lo)
+    }
+  }
+  it should "work for optionTraverse" in {
+    implicit lazy val lm = listMonad
+    implicit lazy val om = optionMonad
+    implicit lazy val lt = listTraverse
+    implicit lazy val ot = optionTraverse
+    forAll("ol") { ol: Option[List[T]] =>
+      assert(Monad.composeM[Option, List].flatMap(ol)(x => Option(List(x))) == ol)
+    }
+  }
 }
