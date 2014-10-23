@@ -6,7 +6,7 @@ import org.scalacheck.Gen
 import org.scalatest.Matchers
 import org.scalatest.prop.PropertyChecks
 import RNG._
-import State._
+import State.simulateMachine
 import org.scalacheck.Commands
 import org.scalatest.prop.Checkers
 
@@ -33,16 +33,35 @@ class StateSpec extends FlatSpec with PropertyChecks with Matchers {
     }
   }
 
+  private def testMean[A: Numeric](rand: Rand[A], meanCheck: Double => Unit) = {
+    val NumIterations = 100000
+    val ev = implicitly[Numeric[A]]
+    val rng: RNG = Simple(42)
+    val (sumRNs, _) = (1 to NumIterations).foldLeft((0d, rng)) {
+      case ((sum1, rng1), _) => map(rand)(sum1 + ev.toDouble(_))(rng1)
+    }
+    val meanRNs = sumRNs / NumIterations
+    meanCheck(meanRNs)
+  }
+
+  private def rangeCheck(mean: Double, delta: Double)(d: Double) =
+    d should (be >= mean - delta and be <= mean + delta)
+
   behavior of "6.1 nonNegativeInt"
 
   def testNonNegativeInt(n: Int) = nonNegativeInt(TestRNG(n))._1 should be >= 0
 
-  it should "work for corner cases" in {
-    testCornerCases(testNonNegativeInt)
-  }
-
-  it should "return a value >= 0 for all nextInt values" in {
-    testProperty(testNonNegativeInt)
+  it should "work for corner cases" in testCornerCases(testNonNegativeInt)
+  it should "return a value >= 0 for all nextInt values" in testProperty(testNonNegativeInt)
+  it should "have a mean of Int.MaxValue / 2" in {
+    // narrow the range [0, Int.MaxValue] for less variance of mean value
+    val NarrowingFactor = 10000d
+    def nonNegativeIntNarrowed(rng: RNG): (Double, RNG) = {
+//      map(nonNegativeInt)(_ / NarrowingFactor)(rng)
+      val (i, rng1) = nonNegativeInt(rng)
+      (i / NarrowingFactor, rng1)
+    }
+    testMean(nonNegativeIntNarrowed, rangeCheck(Int.MaxValue / (2 * NarrowingFactor), 100))
   }
 
   behavior of "6.2 double"
@@ -51,13 +70,9 @@ class StateSpec extends FlatSpec with PropertyChecks with Matchers {
 
   def testDouble(n: Int) = testDoubleRange(double(TestRNG(n))._1)
 
-  it should "work for corner cases" in {
-    testCornerCases(testDouble)
-  }
-
-  it should "return a value >= 0 and < 1 for all nextInt values" in {
-    testProperty(testDouble)
-  }
+  it should "work for corner cases" in testCornerCases(testDouble)
+  it should "return a value >= 0 and < 1 for all nextInt values" in testProperty(testDouble)
+  it should "have a mean of 0.5" in testMean(double, rangeCheck(0.5, 0.01))
 
   behavior of "6.3.1 intDouble"
 
