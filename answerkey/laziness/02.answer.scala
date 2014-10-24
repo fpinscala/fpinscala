@@ -8,7 +8,7 @@ def take(n: Int): Stream[A] =
     case Cons(h, t) => cons(h(), t().take(n-1))
     case _ => Stream.empty
   }
-  else Stream()            // or Stream()
+  else Stream()            // or Stream.empty
 
 /* 
 Unlike `take`, `drop` is not incremental. That is, it doesn't generate the
