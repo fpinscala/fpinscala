@@ -157,6 +157,11 @@ Select[FromDigits/@Partition[First[RealDigits[E,10,1000]],10,1],PrimeQ,1]
 Here is a Java solution: http://google-tale.blogspot.de/2008/07/google-billboard-puzzle.html  
 Can we come up with an elegant (Stream?!) solution in Scala that is somewhere in between Mathematica and Java?
 
+### Chapter 5: Strictness and laziness
+
+#### Additional links
+* On composability of Functors, Applicatives, and Monads: https://speakerdeck.com/larsrh/optimusprimet
+
 ### Misc
 * Interesting talk about types and type inference: https://www.youtube.com/watch?v=fDTt_uo0F-g
 * [Property-based testing with ScalaCheck](http://www.nurkiewicz.com/2014/09/property-based-testing-with-scalacheck.html)
