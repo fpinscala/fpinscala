@@ -52,7 +52,8 @@ If not done yet the IntelliJ plugin has to be configured, add the following to `
 See also https://github.com/mpeltonen/sbt-idea/
 
 ## In the Beginning - Scala
-* Scala Coding guidelines: http://twitter.github.io/effectivescala/ (see also the Learning Scala links in the Intro section there)
+* [Scala Coding guidelines:](http://twitter.github.io/effectivescala/) (see also the Learning Scala links in the Intro section there)
+* [Scala Best Practices](https://github.com/alexandru/scala-best-practices/)
 
 ## Chapter 1: What is functional programming?
 ### Additional links
