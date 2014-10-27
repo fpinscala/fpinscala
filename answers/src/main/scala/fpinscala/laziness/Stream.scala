@@ -15,7 +15,6 @@ trait Stream[+A] {
   step we cons onto the front of the `acc` list, which will result in the
   reverse of the stream. Then at the end we reverse the result to get the
   correct order again.
-  [:ben] are the line breaks above okay? I'm unclear on whether these "hints" are supposed to go in the book or not
   */
   def toList: List[A] = {
     @annotation.tailrec
@@ -234,6 +233,15 @@ object Stream {
       case Some((h,s)) => cons(h, unfold(s)(f))
       case None => empty
     }
+
+  /*
+  The below two implementations use `fold` and `map` functions in the Option class to implement unfold, thereby doing away with the need to manually pattern match as in the above solution.
+   */
+  def unfoldViaFold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] =
+    f(z).fold(empty[A])((p: (A,S)) => cons(p._1,unfold(p._2)(f)))
+
+  def unfoldViaMap[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] =
+    f(z).map((p: (A,S)) => cons(p._1,unfold(p._2)(f))).getOrElse(empty[A])
 
   /*
   Scala provides shorter syntax when the first action of a function literal is to match on an expression.  The function passed to `unfold` in `fibsViaUnfold` is equivalent to `p => p match { case (f0,f1) => ... }`, but we avoid having to choose a name for `p`, only to pattern match on it.

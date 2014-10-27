@@ -1,0 +1,62 @@
+Let's start by looking at the signature of our motivating example, generating a function from `String => Int` given a `Gen[Int]`:
+
+~~~ Scala
+def genStringInt(g: Gen[Int]): Gen[String => Int]
+~~~
+
+And let's generalize this a bit to not be specialized to `Int`, because that would let us cheat a bit (by, say, returning the `hashCode` of the input `String`, which just so happens to be an `Int`).
+
+~~~ Scala
+def genStringFn[A](g: Gen[A]): Gen[String => A]
+~~~
+
+We've already ruled out just returning a function that ignores the input `String`, since that's not very interesting! Instead, we want to make sure we _use information from_ the input `String` to influence what `A` we generate. How can we do that? Well, the only way we can have any influence on what value a `Gen` produces is to modify the `RNG` value it receives as input:
+
+Recall our definition of `Gen`:
+
+~~~ Scala
+case class Gen[+A](sample: State[RNG,A])
+~~~
+
+Just by following the types, we can start writing:
+
+~~~ Scala
+def genStringFn[A](g: Gen[A]): Gen[String => A] = Gen {
+  State { (rng: RNG) => ??? }
+}
+~~~
+
+Where `???` has to be of type `(String => A, RNG)`, and moreover, we want the `String` to somehow affect what `A` is generated. We do that by modifying the seed of the `RNG` before passing it to the `Gen[A]` sample function. A simple way of doing this is to compute the hash of the input string, and mix this into the `RNG` state before using it to produce an `A`: 
+
+~~~ Scala
+def genStringFn[A](g: Gen[A]): Gen[String => A] = Gen {
+  State { (rng: RNG) =>
+    val (seed, rng2) = rng.nextInt // we still use `rng` to produce a seed, so we get a new function each time
+    val f = (s: String) => g.sample.run(RNG.Simple(seed.toLong ^ s.hashCode.toLong))._1
+    (f, rng2)
+  }
+}
+~~~
+
+More generally, any function which takes a `String` and an `RNG` and produces a new `RNG` could be used. Here, we're computing the `hashCode` of the `String` and then XOR'ing it with a seed value to produce a new `RNG`. We could just as easily take the length of the `String` and use this value to perturn our RNG state, or take the first 3 characters of the string. The choices affect what sort of function we are producing:
+
+* If we use `hashCode` to perturb the `RNG` state, the function we are generating uses all the information of the `String` to influence the `A` value generated. Only input strings that share the same `hashCode` are guaranteed to produce the same `A`.
+* If we use the `length`, the function we are generating is using only some of the information of the `String` to influence the `A` being generated. For all input strings that have the same length, we are guaranteed to get the same `A`.
+
+The strategy we pick depends on what functions we think are realistic for our tests. Do we want functions that use all available information to produce a result, or are we more interested in functions that use only bits and pieces of their input? We can wrap the policy up in a `trait`:
+
+~~~ Scala
+trait Cogen[-A] {
+  def sample(a: A, rng: RNG): RNG
+}
+~~~
+
+As an exercise, try implementing a generalized version of `genStringFn`.
+
+~~~ Scala
+def fn[A,B](in: Cogen[A])(out: Gen[B]): Gen[A => B]
+~~~
+
+You can pattern the implementation after `genStringFn`. Just follow the types!
+
+One problem with this approach is reporting test case failures back to the user. In the event of a failure, all the user will see is that for some opaque function, the property failed, which isn't very enlightening. There's been work in the Haskell library [QuickCheck](http://www.cse.chalmers.se/~rjmh/QuickCheck/manual.html) to be able to report back to the user and even _shrink_ down the generated functions to the simplest form that still falsifies the property. See [this talk on shrinking and showing functions](https://www.youtube.com/watch?v=CH8UQJiv9Q4).
