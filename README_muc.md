@@ -167,6 +167,7 @@ Can we come up with an elegant (Stream?!) solution in Scala that is somewhere in
 * [Property-based testing with ScalaCheck](http://www.nurkiewicz.com/2014/09/property-based-testing-with-scalacheck.html)
 (although [ScalaTests's docu](http://scalatest.org/user_guide/generator_driven_property_checks) is also quite ok).
 * [Object-Functional Programming – A Beautiful Unification or a Kitchen Sink?](https://speakerdeck.com/missingfaktor/object-functional-programming-a-beautiful-unification-or-a-kitchen-sink)
+* [The Scala Dreaded Underscore](http://de.slideshare.net/normation/scala-dreaded) and the respective [question on stackoverflow](http://stackoverflow.com/questions/8000903/what-are-all-the-uses-of-an-underscore-in-scala)
 
 #### Is Scala too complex?
 * http://lampwww.epfl.ch/~odersky/blogs/isscalacomplex.html
