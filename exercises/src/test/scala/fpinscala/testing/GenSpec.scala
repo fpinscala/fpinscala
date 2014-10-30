@@ -216,4 +216,10 @@ class GenSpec extends FlatSpec with PropertyChecks with BeforeAndAfterEach {
       assert(List.fill(n max 1)("X") == Gen.listOf1(Gen.unit("X")).forSize(n).get)
     }
   }
+
+  behavior of "8.14 Prop for List.sorted"
+  it should "work" in {
+    val result = ListSortedProp.listSortedProp.run(10, rng)
+    assert(result == Passed)
+  }
 }

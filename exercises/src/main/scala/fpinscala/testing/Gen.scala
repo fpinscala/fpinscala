@@ -61,6 +61,15 @@ object Prop {
   def forAll[A](gen: Gen[A])(f: A => Boolean): Prop = ???
 }
 
+object ListSortedProp {
+  // Exercise 8.14: Prop for List.sorted
+  lazy val intListGen: Gen[List[Int]] = ???
+  val listSortedProp: Prop =
+      Prop.forAll(intListGen) { l: List[Int] =>
+        ???
+      }
+}
+
 object Gen {
   def unit[A](a: => A): Gen[A] = ???
 
