@@ -217,9 +217,15 @@ class GenSpec extends FlatSpec with PropertyChecks with BeforeAndAfterEach {
     }
   }
 
-  behavior of "8.14 Prop for List.sorted"
+  behavior of "8.14 List.sorted Props"
   it should "work" in {
-    val result = ListSortedProp.listSortedProp.run(10, rng)
+    val result = ListProps.sortedProp.run(10, rng)
+    assert(result == Passed)
+  }
+
+  behavior of "8.18 List.takeWhile Props"
+  it should "work" in {
+    val result = ListProps.takeWhileProp.run(10, rng)
     assert(result == Passed)
   }
 }

@@ -69,6 +69,24 @@ object ListSortedProp {
         ???
       }
 }
+object ListProps {
+  // Exercise 8.14: Prop for List.sorted
+  lazy val intListGen: Gen[List[Int]] = ???
+  lazy val sortedProp: Prop =
+      Prop.forAll(intListGen) { l: List[Int] =>
+        ???
+      }
+
+  // Exercise 8.14: Prop for List.takeWhile
+  lazy val takeWhileProp: Prop = {
+    val f = (_: Int) <= 0
+    val p1 = Prop.forAll(intListGen) { l: List[Int] =>
+      l.takeWhile(f).forall(f) == true
+    }
+    val p2: Prop = ???
+    p1 && p2
+  }
+}
 
 object Gen {
   def unit[A](a: => A): Gen[A] = ???
