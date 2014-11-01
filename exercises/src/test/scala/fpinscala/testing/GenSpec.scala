@@ -2,12 +2,12 @@ package fpinscala.testing
 
 import org.junit.runner.RunWith
 import org.scalacheck.{Gen => SCGen}
-import org.scalacheck.{Prop => SCProp}
 import org.scalatest.FlatSpec
 import org.scalatest.prop.PropertyChecks
 import fpinscala.state.RNG
 import org.scalatest.BeforeAndAfterEach
 import Prop._
+import fpinscala.parallelism.Par
 
 @RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class GenSpec extends FlatSpec with PropertyChecks with BeforeAndAfterEach {
@@ -34,16 +34,16 @@ class GenSpec extends FlatSpec with PropertyChecks with BeforeAndAfterEach {
 
   behavior of "8.1 List.sum"
   it should "obey some laws" in {
-    val prop: SCProp = ???
-//      SCProp.forAll(intListGen) {ints => sys.error("todo")}
-    prop.check
+      forAll(intListGen) { ints =>
+        ???
+      }
   }
 
   behavior of "8.2 List.max"
   it should "obey some laws" in {
-    val prop: SCProp = ???
-//      SCProp.forAll(intListGen) {ints => sys.error("todo")}
-    prop.check
+      forAll(intListGen) { ints =>
+        ???
+      }
   }
 
   behavior of "8.3 Prop0.&&"
@@ -68,7 +68,8 @@ class GenSpec extends FlatSpec with PropertyChecks with BeforeAndAfterEach {
     forAll(startInts label "start") { start =>
       forAll(SCGen.choose(start + 1, start + 101) label "stopExclusive") { stopExclusive =>
         val i = Gen.choose(start, stopExclusive).get
-        assert(i >= start && i < stopExclusive)
+//        println(s"start=$start,stopExclusive=$stopExclusive,i=$i")
+        assert(i >= start && i < stopExclusive)//, s"$i >= $start && $i < $stopExclusive")
       }
     }
   }
@@ -93,8 +94,7 @@ class GenSpec extends FlatSpec with PropertyChecks with BeforeAndAfterEach {
     }
   }
 
-  behavior of "8.6.0 Gen.map"
-
+  behavior of "8.6.1 Gen.map"
   it should "work" in {
     forAll("a") { a: Int =>
       assert(a.toString == Gen.unit(a).map(_.toString).get)
@@ -221,6 +221,30 @@ class GenSpec extends FlatSpec with PropertyChecks with BeforeAndAfterEach {
   it should "work" in {
     val result = ListProps.sortedProp.run(10, rng)
     assert(result == Passed)
+  }
+
+  behavior of "8.16 Richer Generator for Par[Int]"
+  it should "work" in {
+    import java.util.concurrent._
+    import java.util.concurrent.atomic.AtomicInteger
+
+    val asyncThreadCount = new AtomicInteger(0)
+    val threadFactory: ThreadFactory =
+      new ThreadFactory {
+        override def newThread(r: Runnable) = {
+          asyncThreadCount.incrementAndGet
+          Executors.defaultThreadFactory.newThread(r)
+        }
+      }
+    val executorService: ExecutorService = Executors.newCachedThreadPool(threadFactory)
+    val SampleCount = 100
+    try {
+      val genFutureInt: Gen[Future[Int]] = Gen.parInt map (Par.run(executorService)(_))
+      val genList = Gen.listOfN(SampleCount, genFutureInt)
+      val (futureInts, _) = genList.sample.run(RNG.Simple(42))
+      val ints = futureInts map (_.get)
+      assert(asyncThreadCount.get / SampleCount.toDouble > 2)
+    } finally executorService.shutdown
   }
 
   behavior of "8.18 List.takeWhile Props"

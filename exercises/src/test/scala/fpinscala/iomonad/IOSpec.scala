@@ -7,6 +7,8 @@ import IO3._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 
 @RunWith(classOf[org.scalatest.junit.JUnitRunner])
 class IOSpec extends FlatSpec with PropertyChecks {
@@ -94,5 +96,30 @@ class IOSpec extends FlatSpec with PropertyChecks {
       val translation = translate(fo)(optionToList)
       assert(evalFreeList(translation) == evalFreeList(fl))
     }
+  }
+
+  behavior of "13.4.2 runConsole"
+  it should "work" in {
+    import Console._
+    import scala.Console._
+
+    val inputLines = Seq("Hold the Line", "Cold as Ice")
+    val in = new ByteArrayInputStream(inputLines.mkString("\n").getBytes)
+    val out = new ByteArrayOutputStream
+    val (Some(line1), Some(line2)) =
+      withIn(in) {
+        withOut(out) {
+          val consoleProgram = for {
+            _ <- printLn("Toto")
+            l1 <- readLn
+            _ <- printLn("Foreigner")
+            l2 <- readLn
+          } yield (l1, l2)
+          runConsole(consoleProgram)
+        }
+      }
+    assert(Seq(line1, line2) == inputLines)
+    val printLines = out.toString.split("\n").toSeq
+    assert(printLines == Seq("Toto", "Foreigner"))
   }
 }

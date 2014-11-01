@@ -108,6 +108,8 @@ object Gen {
   def listOf[A](g: Gen[A]): SGen[List[A]] = ???
 
   def listOf1[A](g: Gen[A]): SGen[List[A]] = ???
+
+  lazy val parInt: Gen[Par[Int]] = ???
 }
 
 case class Gen[+A](sample: State[RNG,A]) {
