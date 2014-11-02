@@ -1,7 +1,7 @@
 package fpinscala.testing
 
 import org.junit.runner.RunWith
-import org.scalacheck.{Gen => SCGen}
+import org.scalacheck.{Gen => SCGen, Prop => SCProp, Test => SCTest}
 import org.scalatest.FlatSpec
 import org.scalatest.prop.PropertyChecks
 import fpinscala.state.RNG
@@ -32,18 +32,27 @@ class GenSpec extends FlatSpec with PropertyChecks with BeforeAndAfterEach {
   private val between0And100 = SCGen.chooseNum(0, 100) label "n"
   private val intListGen = SCGen.listOf(between0And100) label "ints"
 
+  private def checkProp(prop: SCProp) = {
+    val result = SCTest.check(SCTest.Parameters.default, prop)
+    assert(result.passed)
+  }
+
   behavior of "8.1 List.sum"
   it should "obey some laws" in {
-      forAll(intListGen) { ints =>
-        ???
-      }
+    val ints = SCGen.choose(0, 100)
+    val intList = SCGen.listOf(ints)
+    val prop: SCProp =
+      SCProp.forAll(intList) { l: List[Int] => ???}
+    checkProp(prop)
   }
 
   behavior of "8.2 List.max"
   it should "obey some laws" in {
-      forAll(intListGen) { ints =>
-        ???
-      }
+    val ints = SCGen.choose(0, 100)
+    val intList = SCGen.listOf1(ints)
+    val prop: SCProp =
+      SCProp.forAll(intList) { l: List[Int] => ??? }
+    checkProp(prop)
   }
 
   behavior of "8.3 Prop0.&&"
