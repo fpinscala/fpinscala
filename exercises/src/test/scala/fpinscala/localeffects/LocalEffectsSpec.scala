@@ -10,7 +10,7 @@ class LocalEffectsSpec extends FlatSpec with PropertyChecks {
   behavior of "14.1 STArray.fill"
   it should "work" in {
     forAll("ints") { ints: List[Int] =>
-      val intMap = ints.zipWithIndex.map {case (a,i) => (i,a)}.toMap
+      val intMap = ints.zipWithIndex.map(_.swap).toMap
       val runnableST  = new RunnableST[List[Int]] {
         override def apply[S] = for {
           array <- STArray[S, Int](ints.size, 0)
