@@ -36,7 +36,14 @@ sealed trait Option[+A] {
     case _ => this
   }
   
-  def filter(f: A => Boolean): Option[A] = this match {
+  def filter(f: A => Boolean): Option[A] = {
+    if (map(f).getOrElse(false))
+      this
+    else
+      None
+  }
+
+  def filter_1(f: A => Boolean): Option[A] = this match {
     case Some(a) if f(a) => this
     case _ => None
   }
