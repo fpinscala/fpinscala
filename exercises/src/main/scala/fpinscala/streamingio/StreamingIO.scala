@@ -346,7 +346,11 @@ object SimpleStreamTransducers {
      *
      * See definition on `Process` above.
      */
+    def zipWithIndex[I,O](p: Process[I,O]): Process[I,(O,Int)] = ???
 
+    def zip[A,B,C](p1: Process[A,B], p2: Process[A,C]): Process[A,(B,C)] = ???
+
+    def meanViaZip: Process[Double,Double] = ???
     /*
      * Exercise 8: Implement `exists`
      *
@@ -386,6 +390,7 @@ object SimpleStreamTransducers {
      * Exercise 9: Write a program that reads degrees fahrenheit as `Double` values from a file,
      * converts each temperature to celsius, and writes results to another file.
      */
+    def convertFahrenheit: Process[String,String] = ???
 
     def toCelsius(fahrenheit: Double): Double =
       (5.0 / 9.0) * (fahrenheit - 32.0)
@@ -691,7 +696,7 @@ object GeneralizedStreamTransducers {
      */
 
     import java.io.{BufferedReader,FileReader}
-    val p: Process[IO, String] =
+    lazy val p: Process[IO, String] =
       await(IO(new BufferedReader(new FileReader("lines.txt")))) {
         case Right(b) =>
           lazy val next: Process[IO,String] = await(IO(b.readLine)) {
@@ -914,7 +919,7 @@ object GeneralizedStreamTransducers {
 
     import fpinscala.iomonad.IO0.fahrenheitToCelsius
 
-    val converter: Process[IO,Unit] =
+    lazy val converter: Process[IO,Unit] =
       lines("fahrenheit.txt").
       filter(line => !line.startsWith("#") && !line.trim.isEmpty).
       map(line => fahrenheitToCelsius(line.toDouble).toString).
@@ -974,7 +979,7 @@ object GeneralizedStreamTransducers {
      * it promptly.
      */
 
-    val convertAll: Process[IO,Unit] = (for {
+    lazy val convertAll: Process[IO,Unit] = (for {
       out <- fileW("celsius.txt").once
       file <- lines("fahrenheits.txt")
       _ <- lines(file).
@@ -986,7 +991,7 @@ object GeneralizedStreamTransducers {
      * Just by switching the order of the `flatMap` calls, we can output
      * to multiple files.
      */
-    val convertMultisink: Process[IO,Unit] = (for {
+    lazy val convertMultisink: Process[IO,Unit] = (for {
       file <- lines("fahrenheits.txt")
       _ <- lines(file).
            map(line => fahrenheitToCelsius(line.toDouble)).
@@ -998,7 +1003,7 @@ object GeneralizedStreamTransducers {
      * We can attach filters or other transformations at any point in the
      * program, for example:
      */
-    val convertMultisink2: Process[IO,Unit] = (for {
+    lazy val convertMultisink2: Process[IO,Unit] = (for {
       file <- lines("fahrenheits.txt")
       _ <- lines(file).
            filter(!_.startsWith("#")).
