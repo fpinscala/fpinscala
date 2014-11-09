@@ -67,4 +67,62 @@ class LocalEffectsSpec extends FlatSpec with PropertyChecks {
       assert(result == ints.sorted)
     }
   }
+
+  behavior of "14.3 STMap"
+  it should "work with STMap.empty" in {
+    val runnableST = new RunnableST[(Int, Option[String], Int, Option[String], String, Int, Option[String])] {
+      override def apply[S] = for {
+        map <- STMap.empty[S, Int, String]
+        size0 <- map.size
+        get0 <- map.get(0)
+        _ <- map += (0 -> "a")
+        size1 <- map.size
+        get1 <- map.get(0)
+        apply0 <- map(0)
+        _ <- map -= 0
+        size2 <- map.size
+        get2 <- map.get(0)
+      } yield (size0, get0, size1, get1, apply0, size2, get2)
+    }
+    val (size0, get0, size1, get1, apply0, size2, get2) = ST.runST(runnableST)
+    assert(size0 == 0)
+    assert(get0 == None)
+    assert(size1 == 1)
+    assert(get1 == Option("a"))
+    assert(apply0 == "a")
+    assert(get2 == None)
+  }
+
+  it should "work with STMap.fromMap" in {
+    val smap = Map(0 -> "A")
+    val runnableST = new RunnableST[(Int, Option[String], Option[String], String, Option[String])] {
+      override def apply[S] = for {
+        map <- STMap.fromMap[S, Int, String](smap)
+        size0 <- map.size
+        get0 <- map.get(0)
+        _ <- map += (0 -> "a")
+        get1 <- map.get(0)
+        apply0 <- map(0)
+        _ <- map -= 0
+        get2 <- map.get(0)
+      } yield (size0, get0, get1, apply0, get2)
+    }
+    val (size0, get0, get1, apply0, get2) = ST.runST(runnableST)
+    assert(size0 == 1)
+    assert(get0 == Option("A"))
+    assert(apply0 == "a")
+    assert(get2 == None)
+  }
+
+  it should "throw a NoSuchElementException if applied to unknown key" in {
+    val runnableST = new RunnableST[String] {
+      override def apply[S] = for {
+        map <- STMap.empty[S, Int, String]
+        apply0 <- map(0)
+      } yield apply0
+    }
+    intercept[NoSuchElementException] {
+      ST.runST(runnableST)
+    }
+  }
 }

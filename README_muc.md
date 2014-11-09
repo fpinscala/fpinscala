@@ -54,6 +54,7 @@ See also https://github.com/mpeltonen/sbt-idea/
 ## In the Beginning - Scala
 * [Scala Coding guidelines:](http://twitter.github.io/effectivescala/) (see also the Learning Scala links in the Intro section there)
 * [Scala Best Practices](https://github.com/alexandru/scala-best-practices/)
+* [Scala for people who are happy with Java](https://www.youtube.com/watch?v=QF4uYJ5HnOQ&list=UUNq3ohzE6_rYhI6wADiBvAw)
 
 ## Chapter 1: What is functional programming?
 ### Additional links

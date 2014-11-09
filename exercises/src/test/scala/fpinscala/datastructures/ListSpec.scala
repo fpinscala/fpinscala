@@ -424,7 +424,7 @@ class ListSpec extends FlatSpec with PropertyChecks {
       assertResult(expected)(addPairwise(l1, l2))
 
     val tests = Table(
-      ("l1", "l2", "filter(l1,l2)"),
+      ("l1", "l2", "addPairwise(l1,l2)"),
       (Nil, Nil, Nil),
       (List(1, 2, 3), List(4, 5, 6), List(5, 7, 9)),
       (List(1,2,3), List(4,5), List(5,7)))
