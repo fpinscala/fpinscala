@@ -250,4 +250,15 @@ class StreamingIOSpec extends FlatSpec with PropertyChecks {
       assert(result == oi.map(_ => IndexedSeq()))
     }
   }
+
+  behavior of "15.12 Process.join"
+  it should "work" in {
+    forAll("oi") { oi: Option[Int] =>
+      val ppoi: Process[Option,Process[Option,Int]] = eval(Some(eval(oi)))
+      val p: Process[Option,Int] = join(ppoi)
+      val result: Option[IndexedSeq[Int]] = p.runLog
+      val or: Option[Int] = result map {_(0)}
+      assert(or == oi)
+    }
+  }
 }
