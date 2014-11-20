@@ -170,6 +170,7 @@ Can we come up with an elegant (Stream?!) solution in Scala that is somewhere in
 * [Object-Functional Programming – A Beautiful Unification or a Kitchen Sink?](https://speakerdeck.com/missingfaktor/object-functional-programming-a-beautiful-unification-or-a-kitchen-sink)
 * [The Scala Dreaded Underscore](http://de.slideshare.net/normation/scala-dreaded) and the respective [question on stackoverflow](http://stackoverflow.com/questions/8000903/what-are-all-the-uses-of-an-underscore-in-scala)
 * [assert and friends](http://stackoverflow.com/questions/8002835/what-is-the-meaning-of-an-assumption-in-scala-compared-to-an-assertion)
+* [flatMap that sh..](http://stackoverflow.com/questions/8559537/where-does-the-flatmap-that-s-idiomatic-expression-in-scala-come-from)
 
 #### Is Scala too complex?
 * http://lampwww.epfl.ch/~odersky/blogs/isscalacomplex.html
