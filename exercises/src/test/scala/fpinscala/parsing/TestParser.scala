@@ -45,7 +45,9 @@ private[parsing] object TestParser extends Parsers[TestParserTypes.Parser] {
       }
   }
   override def slice[A](p: Parser[A]): Parser[String] = {
-    def slice(loc: Location, n: Int) = loc.input.substring(loc.offset, loc.offset + n)
+    def slice(loc: Location, n: Int) = {
+      loc.input.substring(loc.offset, math.min(loc.offset + n, loc.input.length))
+    }
     in => p(in) match {
       case Right((a, in1)) => Right(slice(in, in1.offset), in1)
       case left @ Left(_) => left.asInstanceOf[ParseResult[String]]
@@ -61,7 +63,7 @@ private[parsing] object TestParser extends Parsers[TestParserTypes.Parser] {
       case Left(e) => Left(e.copy(stack = (s, msg) :: e.stack))
       case right => right
     }
-  override def attempt[A](p: Parser[A]): Parser[A] = sys.error("not implemented")
+  override def attempt[A](p: Parser[A]): Parser[A] = p
 
   private def input(loc: Location): String = loc.input.substring(loc.offset)
   def parseError[A](loc: Location, msg: String): ParseResult[A] = Left(ParseError(List((loc, msg))))
