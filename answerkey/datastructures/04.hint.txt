@@ -1,1 +1,5 @@
--
+What should the function do if the `n` argument is 0?
+What should it do if the list is empty?
+What if the list is not empty and `n` is nonzero?
+Consider all of these cases.
+Use pattern-matching and recursion.
