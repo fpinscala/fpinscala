@@ -10,7 +10,7 @@ Note: this implementation will not prevent repeated evaluation if multiple threa
 */
 case class Map2Future[A,B,C](a: Future[A], b: Future[B],
                              f: (A,B) => C) extends Future[C] {
-  var cache: Option[C] = None
+  @volatile var cache: Option[C] = None
   def isDone = cache.isDefined
   def isCancelled = a.isCancelled || b.isCancelled
   def cancel(evenIfRunning: Boolean) =
@@ -26,7 +26,8 @@ case class Map2Future[A,B,C](a: Future[A], b: Future[B],
       val ar = a.get(timeoutMs, TimeUnit.MILLISECONDS)
       val stop = System.currentTimeMillis; val at = stop-start
       val br = b.get(timeoutMs - at, TimeUnit.MILLISECONDS)
-      cache = Some(f(ar, br))
-      cache.get
+      val ret = f(ar, br)
+      cache = Some(ret)
+      ret
   }
 }
