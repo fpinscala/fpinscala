@@ -134,7 +134,7 @@ trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trai
     p <* eof
 
   case class ParserOps[A](p: Parser[A]) {
-    def |[B>:A](p2: Parser[B]): Parser[B] = self.or(p,p2) // use `self` to explicitly disambiguate reference to the `or` method on the `trait`
+    def |[B>:A](p2: => Parser[B]): Parser[B] = self.or(p,p2) // use `self` to explicitly disambiguate reference to the `or` method on the `trait`
     def or[B>:A](p2: => Parser[B]): Parser[B] = self.or(p,p2)
 
     def map[B](f: A => B): Parser[B] = self.map(p)(f)
