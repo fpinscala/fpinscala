@@ -43,31 +43,26 @@ trait Stream[+A] {
     go(this)
   }
 
-  
   /*
-  `take` first checks if n==0. In that case we need not look at the stream at all.
+    Create a new Stream[A] from taking the n first elements from this. We can achieve that by recursively
+    calling take on the invoked tail of a cons cell. We make sure that the tail is not invoked unless
+    we need to, by handling the special case where n == 1 separately. If n == 0, we can avoid looking
+    at the stream at all.
   */
-  def take(n: Int): Stream[A] =
-    if (n > 0) this match {
-      case Cons(h, t) if n == 1 => cons(h(), Stream.empty) // we can say Stream.empty
-      case Cons(h, t) => cons(h(), t().take(n-1))
-      case _ => Stream.empty
-    }
-    else Stream()            // or Stream()
+  def take(n: Int): Stream[A] = this match {
+    case Cons(h, t) if n > 1 => cons(h(), t().take(n - 1))
+    case Cons(h, _) if n == 1 => cons(h(), empty)
+    case _ => empty
+  }
 
-  /* 
-  Unlike `take`, `drop` is not incremental. That is, it doesn't generate the
-  answer lazily. It must traverse the first `n` elements of the stream eagerly.
+  /*
+    Create a new Stream[A] from this, but ignore the n first elements. This can be achieved by recursively calling
+    drop on the invoked tail of a cons cell. Note that the implementation is also tail recursive.
   */
-  def drop(n: Int): Stream[A] = {
-    @annotation.tailrec
-    def go(s: Stream[A], n: Int): Stream[A] =
-      if (n <= 0) s
-      else s match {
-        case Cons(h,t) => go(t(), n-1) 
-        case _ => Stream()
-      }
-    go(this, n)
+  @annotation.tailrec
+  final def drop(n: Int): Stream[A] = this match {
+    case Cons(h, t) if n > 0 => t().drop(n - 1)
+    case _ => this
   }
 
   /*
