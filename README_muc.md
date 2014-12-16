@@ -171,6 +171,7 @@ Can we come up with an elegant (Stream?!) solution in Scala that is somewhere in
 * [The Scala Dreaded Underscore](http://de.slideshare.net/normation/scala-dreaded) and the respective [question on stackoverflow](http://stackoverflow.com/questions/8000903/what-are-all-the-uses-of-an-underscore-in-scala)
 * [assert and friends](http://stackoverflow.com/questions/8002835/what-is-the-meaning-of-an-assumption-in-scala-compared-to-an-assertion)
 * [flatMap that sh..](http://stackoverflow.com/questions/8559537/where-does-the-flatmap-that-s-idiomatic-expression-in-scala-come-from)
+* [Ten Things I Hate About Object-Oriented Programming](http://blog.jot.fm/2010/08/26/ten-things-i-hate-about-object-oriented-programming/)
 
 #### Is Scala too complex?
 * http://lampwww.epfl.ch/~odersky/blogs/isscalacomplex.html
