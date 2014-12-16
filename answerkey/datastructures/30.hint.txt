@@ -1,1 +1,0 @@
-The signature is `def fold[A,B](t: Tree[A])(l: A => B)(b: (B,B) => B): B`. See if you can define this function, then reimplement the functions you've already written for `Tree`.

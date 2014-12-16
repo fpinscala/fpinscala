@@ -30,12 +30,14 @@ def orElse_1[B>:A](ob: => Option[B]): Option[B] = this match {
   case _ => this
 }
 
-def filter(f: A => Boolean): Option[A] = this match {
-  case Some(a) if f(a) => this
-  case _ => None
-}
 /*
 This can also be defined in terms of `flatMap`.
 */
 def filter_1(f: A => Boolean): Option[A] =
   flatMap(a => if (f(a)) Some(a) else None)
+
+/* Or via explicit pattern matching. */  
+def filter(f: A => Boolean): Option[A] = this match {
+  case Some(a) if f(a) => this
+  case _ => None
+}

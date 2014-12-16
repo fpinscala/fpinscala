@@ -1,1 +1,2 @@
-Look at the program trace from the previous example. Based on the trace, is it possible the function supplied could choose to terminate the recursion early?
+Look at the program trace from the previous example. Based on the trace,
+is it possible the function supplied could choose to terminate the recursion early?

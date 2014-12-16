@@ -1,0 +1,8 @@
+language: scala
+scala:
+  - 2.11.4
+jdk:
+  - oraclejdk7
+  - openjdk7
+notifications:
+  email: false
