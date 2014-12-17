@@ -56,6 +56,9 @@ See also https://github.com/mpeltonen/sbt-idea/
 * [Scala Best Practices](https://github.com/alexandru/scala-best-practices/)
 * [Scala for people who are happy with Java](https://www.youtube.com/watch?v=QF4uYJ5HnOQ&list=UUNq3ohzE6_rYhI6wADiBvAw)
 
+## Interview with the Book Authors
+* [Functional Programming in Scala Review and Q&A with the Authors](http://www.infoq.com/articles/functional-programming-scala-review)
+
 ## Chapter 1: What is functional programming?
 ### Additional links
 * http://www.youtube.com/watch?v=1gZAqJA2pEk This video by Paul Chiusano is about an earlier version (with a different example) of the first chapter. It gives a nice intro & summary what the book is up to.
