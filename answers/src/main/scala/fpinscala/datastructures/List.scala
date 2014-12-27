@@ -257,15 +257,16 @@ object List { // `List` companion object. Contains functions for creating and wo
   like this from simpler components, without giving up the efficiency
   of having the resulting functions work in one pass over the data.
   */
+  @annotation.tailrec
   def startsWith[A](l: List[A], prefix: List[A]): Boolean = (l,prefix) match {
     case (_,Nil) => true
     case (Cons(h,t),Cons(h2,t2)) if h == h2 => startsWith(t, t2)
     case _ => false
   }
   @annotation.tailrec
-  def hasSubsequence[A](l: List[A], sub: List[A]): Boolean = l match {
+  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = sup match {
     case Nil => false
-    case Cons(h,t) if startsWith(l, sub) => true
-    case Cons(h,t) => hasSubsequence(t, sub)  
+    case _ if startsWith(sup, sub) => true
+    case Cons(h,t) => hasSubsequence(t, sub)
   }
 }
