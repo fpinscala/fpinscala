@@ -40,7 +40,7 @@ object MyModule {
 
   // This definition and `formatAbs` are very similar..
   private def formatFactorial(n: Int) = {
-    val msg = "The absolute value of %d is %d."
+    val msg = "The factorial of %d is %d."
     msg.format(n, factorial(n))
   }
 
