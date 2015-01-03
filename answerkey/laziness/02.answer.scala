@@ -15,7 +15,7 @@ answer lazily. It must traverse the first `n` elements of the stream eagerly.
 */
 @annotation.tailrec
 final def drop(n: Int): Stream[A] = this match {
-  case Cons(h, t) if n > 0 => t().drop(n - 1)
+  case Cons(_, t) if n > 0 => t().drop(n - 1)
   case _ => this
 }
 
