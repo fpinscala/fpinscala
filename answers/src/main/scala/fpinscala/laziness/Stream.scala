@@ -115,11 +115,11 @@ trait Stream[+A] {
       case Cons(h,t) => Some((f(h()), t()))
       case _ => None
     }
-  
-  def takeViaUnfold(n: Int): Stream[A] = 
-    unfold((this,n)) { 
-      case (Cons(h,t), n) if n == 1 => Some((h(), (empty, n-1)))
-      case (Cons(h,t), n) if n > 0 => Some((h(), (t(), n-1)))
+
+  def takeViaUnfold(n: Int): Stream[A] =
+    unfold((this,n)) {
+      case (Cons(h,t), 1) => Some((h(), (empty, 0)))
+      case (Cons(h,t), n) if n > 1 => Some((h(), (t(), n-1)))
       case _ => None
     }
 
