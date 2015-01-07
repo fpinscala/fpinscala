@@ -1,1 +1,2 @@
-You know the array is not sorted as soon as you encounter two adjacent elements for which `gt` returns false.
+You know the array is not sorted as soon as you encounter two adjacent elements for which `gt(first, second)`
+returns true (note that equal adjacent elements are in order).
