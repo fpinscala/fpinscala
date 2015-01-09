@@ -15,7 +15,7 @@ trait Applicative[F[_]] extends Functor[F] {
   //   2. An argument `x` to that function
   // and it simply applies `f` to `x`.
   def apply[A,B](fab: F[A => B])(fa: F[A]): F[B] =
-    map2(fa, fab)(_(_))
+    map2(fab, fa)(_(_))
   def unit[A](a: => A): F[A]
   
   def map[A,B](fa: F[A])(f: A => B): F[B] =
