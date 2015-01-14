@@ -7,3 +7,6 @@ project/boot
 project.vim
 *.old
 .idea
+.project
+.classpath
+.metadata/
