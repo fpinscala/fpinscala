@@ -50,17 +50,17 @@ object ReferenceTypes {
   case class Success[+A](get: A, length: Int) extends Result[A]
   case class Failure(get: ParseError, isCommitted: Boolean) extends Result[Nothing]
 
-  /** Returns -1 if s.startsWith(s2), otherwise returns the
+  /** Returns -1 if s1.startsWith(s2), otherwise returns the
     * first index where the two strings differed. If s2 is
-    * longer than s1, returns s.length. */
-  def firstNonmatchingIndex(s: String, s2: String, offset: Int): Int = {
+    * longer than s1, returns s1.length. */
+  def firstNonmatchingIndex(s1: String, s2: String, offset: Int): Int = {
     var i = 0
-    while (i < s.length && i < s2.length) {
-      if (s.charAt(i+offset) != s2.charAt(i)) return i
+    while (i < s1.length && i < s2.length) {
+      if (s1.charAt(i+offset) != s2.charAt(i)) return i
       i += 1
     }
-    if (s.length-offset >= s2.length) -1
-    else s.length-offset
+    if (s1.length-offset >= s2.length) -1
+    else s1.length-offset
   }
 }
 
