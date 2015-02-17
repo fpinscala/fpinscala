@@ -5,7 +5,7 @@ import SliceableTypes._
 import scala.util.matching.Regex
 
 /*
-This implementation is a bit trickier than the one in `Basic.scala`.
+This implementation is a bit trickier than the one in `Reference.scala`.
 The main change is to add another piece of state to `ParseState`,
 an `isSliced` flag, and an additional `Slice` constructor to `Result`.
 If the `isSliced` flag is set, parsers avoid building a meaningful
