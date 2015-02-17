@@ -8,7 +8,7 @@ trait Stream[+A] {
     case Cons(h,t) => h() :: t().toListRecursive
     case _ => List()
   }
-  
+
   /*
   The above solution will stack overflow for large streams, since it's
   not tail-recursive. Here is a tail-recursive implementation. At each
@@ -24,15 +24,15 @@ trait Stream[+A] {
     }
     go(this, List()).reverse
   }
-  
-  /* 
+
+  /*
   In order to avoid the `reverse` at the end, we could write it using a
   mutable list buffer and an explicit loop instead. Note that the mutable
   list buffer never escapes our `toList` method, so this function is
   still _pure_.
   */
   def toListFast: List[A] = {
-    val buf = new collection.mutable.ListBuffer[A] 
+    val buf = new collection.mutable.ListBuffer[A]
     @annotation.tailrec
     def go(s: Stream[A]): List[A] = s match {
       case Cons(h,t) =>
@@ -61,16 +61,16 @@ trait Stream[+A] {
   */
   @annotation.tailrec
   final def drop(n: Int): Stream[A] = this match {
-    case Cons(h, t) if n > 0 => t().drop(n - 1)
+    case Cons(_, t) if n > 0 => t().drop(n - 1)
     case _ => this
   }
 
   /*
-  It's a common Scala style to write method calls without `.` notation, as in `t() takeWhile f`.  
+  It's a common Scala style to write method calls without `.` notation, as in `t() takeWhile f`.
   */
-  def takeWhile(f: A => Boolean): Stream[A] = this match { 
+  def takeWhile(f: A => Boolean): Stream[A] = this match {
     case Cons(h,t) if f(h()) => cons(h(), t() takeWhile f)
-    case _ => empty 
+    case _ => empty
   }
 
   def foldRight[B](z: => B)(f: (A, => B) => B): B = // The arrow `=>` in front of the argument type `B` means that the function `f` takes its second argument by name and may choose not to evaluate it.
@@ -79,17 +79,17 @@ trait Stream[+A] {
       case _ => z
     }
 
-  def exists(p: A => Boolean): Boolean = 
+  def exists(p: A => Boolean): Boolean =
     foldRight(false)((a, b) => p(a) || b) // Here `b` is the unevaluated recursive step that folds the tail of the stream. If `p(a)` returns `true`, `b` will never be evaluated and the computation terminates early.
 
-  /* 
-  Since `&&` is non-strict in its second argument, this terminates the traversal as soon as a nonmatching element is found. 
+  /*
+  Since `&&` is non-strict in its second argument, this terminates the traversal as soon as a nonmatching element is found.
   */
   def forAll(f: A => Boolean): Boolean =
     foldRight(true)((a,b) => f(a) && b)
 
   def takeWhile_1(f: A => Boolean): Stream[A] =
-    foldRight(empty[A])((h,t) => 
+    foldRight(empty[A])((h,t) =>
       if (f(h)) cons(h,t)
       else      empty)
 
@@ -97,53 +97,53 @@ trait Stream[+A] {
     foldRight(None: Option[A])((h,_) => Some(h))
 
   def map[B](f: A => B): Stream[B] =
-    foldRight(empty[B])((h,t) => cons(f(h), t)) 
-  
+    foldRight(empty[B])((h,t) => cons(f(h), t))
+
   def filter(f: A => Boolean): Stream[A] =
-    foldRight(empty[A])((h,t) => 
+    foldRight(empty[A])((h,t) =>
       if (f(h)) cons(h, t)
-      else t) 
-  
-  def append[B>:A](s: => Stream[B]): Stream[B] = 
+      else t)
+
+  def append[B>:A](s: => Stream[B]): Stream[B] =
     foldRight(s)((h,t) => cons(h,t))
-  
-  def flatMap[B](f: A => Stream[B]): Stream[B] = 
+
+  def flatMap[B](f: A => Stream[B]): Stream[B] =
     foldRight(empty[B])((h,t) => f(h) append t)
 
-  def mapViaUnfold[B](f: A => B): Stream[B] = 
-    unfold(this) { 
+  def mapViaUnfold[B](f: A => B): Stream[B] =
+    unfold(this) {
       case Cons(h,t) => Some((f(h()), t()))
       case _ => None
     }
-  
-  def takeViaUnfold(n: Int): Stream[A] = 
-    unfold((this,n)) { 
-      case (Cons(h,t), n) if n == 1 => Some((h(), (empty, n-1)))
-      case (Cons(h,t), n) if n > 0 => Some((h(), (t(), n-1)))
+
+  def takeViaUnfold(n: Int): Stream[A] =
+    unfold((this,n)) {
+      case (Cons(h,t), 1) => Some((h(), (empty, 0)))
+      case (Cons(h,t), n) if n > 1 => Some((h(), (t(), n-1)))
       case _ => None
     }
-  
-  def takeWhileViaUnfold(f: A => Boolean): Stream[A] = 
-    unfold(this) { 
+
+  def takeWhileViaUnfold(f: A => Boolean): Stream[A] =
+    unfold(this) {
       case Cons(h,t) if f(h()) => Some((h(), t()))
       case _ => None
     }
-  
-  def zipWith[B,C](s2: Stream[B])(f: (A,B) => C): Stream[C] = 
+
+  def zipWith[B,C](s2: Stream[B])(f: (A,B) => C): Stream[C] =
     unfold((this, s2)) {
-      case (Cons(h1,t1), Cons(h2,t2)) => 
+      case (Cons(h1,t1), Cons(h2,t2)) =>
         Some((f(h1(), h2()), (t1(), t2())))
       case _ => None
     }
-  
+
   // special case of `zip`
-  def zip[B](s2: Stream[B]): Stream[(A,B)] = 
+  def zip[B](s2: Stream[B]): Stream[(A,B)] =
     zipWith(s2)((_,_))
-  
-  
-  def zipAll[B](s2: Stream[B]): Stream[(Option[A],Option[B])] = 
+
+
+  def zipAll[B](s2: Stream[B]): Stream[(Option[A],Option[B])] =
     zipWithAll(s2)((_,_))
-  
+
   def zipWithAll[B, C](s2: Stream[B])(f: (Option[A], Option[B]) => C): Stream[C] =
     Stream.unfold((this, s2)) {
       case (Empty, Empty) => None
@@ -152,10 +152,10 @@ trait Stream[+A] {
       case (Cons(h1, t1), Cons(h2, t2)) => Some(f(Some(h1()), Some(h2())) -> (t1() -> t2()))
     }
 
-  /* 
+  /*
   `s startsWith s2` when corresponding elements of `s` and `s2` are all equal, until the point that `s2` is exhausted. If `s` is exhausted first, or we find an element that doesn't match, we terminate early. Using non-strictness, we can compose these three separate logical steps--the zipping, the termination when the second stream is exhausted, and the termination if a nonmatching element is found or the first stream is exhausted.
   */
-  def startsWith[A](s: Stream[A]): Boolean = 
+  def startsWith[A](s: Stream[A]): Boolean =
     zipAll(s).takeWhile(!_._2.isEmpty) forAll {
       case (h,h2) => h == h2
     }
@@ -163,18 +163,18 @@ trait Stream[+A] {
   /*
   The last element of `tails` is always the empty `Stream`, so we handle this as a special case, by appending it to the output.
   */
-  def tails: Stream[Stream[A]] = 
-    unfold(this) { 
+  def tails: Stream[Stream[A]] =
+    unfold(this) {
       case Empty => None
       case s => Some((s, s drop 1))
-    } append (Stream(empty))
+    } append Stream(empty)
 
   def hasSubsequence[A](s: Stream[A]): Boolean =
     tails exists (_ startsWith s)
 
   /*
   The function can't be implemented using `unfold`, since `unfold` generates elements of the `Stream` from left to right. It can be implemented using `foldRight` though.
-  
+
   The implementation is just a `foldRight` that keeps the accumulated value and the stream of intermediate results, which we `cons` onto during each iteration. When writing folds, it's common to have more state in the fold than is needed to compute the result. Here, we simply extract the accumulated list once finished.
   */
   def scanRight[B](z: B)(f: (A, => B) => B): Stream[B] =
@@ -204,7 +204,7 @@ object Stream {
   def empty[A]: Stream[A] = Empty
 
   def apply[A](as: A*): Stream[A] =
-    if (as.isEmpty) empty 
+    if (as.isEmpty) empty
     else cons(as.head, apply(as.tail: _*))
 
   val ones: Stream[Int] = Stream.cons(1, ones)
@@ -212,7 +212,7 @@ object Stream {
   // This is more efficient than `cons(a, constant(a))` since it's just
   // one object referencing itself.
   def constant[A](a: A): Stream[A] = {
-    lazy val tail: Stream[A] = Cons(() => a, () => tail) 
+    lazy val tail: Stream[A] = Cons(() => a, () => tail)
     tail
   }
 
@@ -220,7 +220,7 @@ object Stream {
     cons(n, from(n+1))
 
   val fibs = {
-    def go(f0: Int, f1: Int): Stream[Int] = 
+    def go(f0: Int, f1: Int): Stream[Int] =
       cons(f0, go(f1, f0+f1))
     go(0, 1)
   }
@@ -243,15 +243,15 @@ object Stream {
   /*
   Scala provides shorter syntax when the first action of a function literal is to match on an expression.  The function passed to `unfold` in `fibsViaUnfold` is equivalent to `p => p match { case (f0,f1) => ... }`, but we avoid having to choose a name for `p`, only to pattern match on it.
   */
-  val fibsViaUnfold = 
+  val fibsViaUnfold =
     unfold((0,1)) { case (f0,f1) => Some((f0,(f1,f0+f1))) }
-  
-  def fromViaUnfold(n: Int) = 
+
+  def fromViaUnfold(n: Int) =
     unfold(n)(n => Some((n,n+1)))
-  
-  def constantViaUnfold[A](a: A) = 
+
+  def constantViaUnfold[A](a: A) =
     unfold(a)(_ => Some((a,a)))
-  
+
   // could also of course be implemented as constant(1)
   val onesViaUnfold = unfold(1)(_ => Some((1,1)))
 }
