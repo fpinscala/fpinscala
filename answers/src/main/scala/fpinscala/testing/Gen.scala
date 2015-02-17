@@ -261,7 +261,7 @@ object Gen {
   // or has no two consecutive elements `(a,b)` such that `a` is greater than `b`.
   val sortedProp = forAll(listOf(smallInt)) { l =>
     val ls = l.sorted
-    l.isEmpty || ls.tail.isEmpty || !l.zip(ls.tail).exists { case (a,b) => a > b }
+    l.isEmpty || ls.tail.isEmpty || !ls.zip(ls.tail).exists { case (a,b) => a > b }
   }
 
   object ** {
