@@ -29,7 +29,7 @@ object Par {
     })
 
   def asyncF[A,B](f: A => B): A => Par[B] =
-    a => fork(unit(f(a)))
+    a => lazyUnit(f(a))
 
   def map[A,B](pa: Par[A])(f: A => B): Par[B] =
     map2(pa, unit(()))((a,_) => f(a))
