@@ -1,3 +1,4 @@
-def sequenceMap[F[_],K,V](ofa: Map[K,F[V]]): F[Map[K,V]] =
-  ofa.foldLeft(unit(Map()))((acc, (k, fv)) =>
-    apply(map(acc)(m => n => m ++ n))(map(fv)(Map(k -> _))))
+def sequenceMap[K,V](ofa: Map[K,F[V]]): F[Map[K,V]] =
+    (ofa foldLeft unit(Map.empty[K,V])) { case (acc, (k, fv)) =>
+      map2(acc, fv)((m, v) => m + (k -> v))
+    }
