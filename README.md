@@ -29,7 +29,7 @@ To build the code for the first time, if on windows:
 
     $ .\sbt.cmd
 
-If on mac/linux, first make sure you have not checked out the code onto an encrypted file system, otherwise you will get compile errors regarding too long file names:
+If on mac/linux, first make sure you have not checked out the code onto an encrypted file system, otherwise you will get compile errors regarding too long file names (one solution is to put the fpinscala repo on a unencrypted usb key, and symlink it into your preferred code location).
 
     $ chmod a+x ./sbt
     $ ./sbt
