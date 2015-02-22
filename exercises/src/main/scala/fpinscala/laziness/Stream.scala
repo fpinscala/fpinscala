@@ -25,6 +25,8 @@ trait Stream[+A] {
 
   def forAll(p: A => Boolean): Boolean = sys.error("todo")
 
+  def headOption: Option[A] = sys.error("todo")
+
   def startsWith[B](s: Stream[B]): Boolean = sys.error("todo")
 }
 case object Empty extends Stream[Nothing]
