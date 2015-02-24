@@ -1,1 +1,2 @@
--
+Chapter two discussed writing loops functionally, using a recursive
+helper function - how would that apply here?
