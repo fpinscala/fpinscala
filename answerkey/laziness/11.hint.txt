@@ -1,1 +1,1 @@
--
+In exercise 4.1, what techniques did you use for working with 'Option'?
