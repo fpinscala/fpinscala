@@ -257,10 +257,6 @@ object List { // `List` companion object. Contains functions for creating and wo
   like this from simpler components, without giving up the efficiency
   of having the resulting functions work in one pass over the data.
   */
-  def isEmpty[A](l: List[A]): Boolean = l match {
-    case Nil => true
-    case _   => false
-  } 
   @annotation.tailrec
   def startsWith[A](l: List[A], prefix: List[A]): Boolean = (l,prefix) match {
     case (_,Nil) => true
