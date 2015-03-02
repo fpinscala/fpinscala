@@ -1,7 +1,7 @@
 Use the specialized functions for `Rand` as inspiration.
 
 For a function `foo` in our class State, you can lift a lambda
-that takes an `s:S` and returns a tuple `(s2:S,b:B)` using the
+that takes an `s:S` and returns a tuple `(a2:A,s2:S)` using the
 following syntax:
 
 ```
@@ -9,6 +9,6 @@ def foo[B](f: A => State[S, B]): State[S, B] =
     State(s => {
       ...
       ...
-      (s2,b)
+      (a2,s2)
     })
 ```
