@@ -1,1 +1,12 @@
--
+
+It's good to specify some properties about these functions up front. For example, do you expect these expressions to be true?
+
+
+```
+(xs append ys) startsWith xs
+xs startsWith Nil
+(xs append ys append zs) hasSubsequence ys
+xs hasSubsequence Nil
+```
+
+You will find that if the answer to any one of these is "yes", then that implies something about the answer to the rest of them.
