@@ -70,6 +70,7 @@ trait Stream[+A] {
     case Cons(head, tail) => head() :: tail().toList
   }
 }
+
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
 
@@ -86,8 +87,18 @@ object Stream {
     if (as.isEmpty) empty 
     else cons(as.head, apply(as.tail: _*))
 
-  val ones: Stream[Int] = Stream.cons(1, ones)
-  def from(n: Int): Stream[Int] = sys.error("todo")
+  def constants[A](a: A): Stream[A] = cons(a, constants(a))
+
+  val ones: Stream[Int] = constants(1)
+
+  def from(n: Int): Stream[Int] = cons(n, from(n + 1))
+
+  def fibs: Stream[Int] =
+    from(0).map { n =>
+      if (n == 0) 0
+      else if (n == 1) 1
+      else fibs.drop(n - 2).take(2).foldRight(0)(_ + _) // fibs(n - 2) + fibs(n - 1)
+    }
 
   def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = sys.error("todo")
 }
