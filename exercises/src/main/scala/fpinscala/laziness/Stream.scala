@@ -17,20 +17,40 @@ trait Stream[+A] {
     case Empty => None
     case Cons(h, t) => if (f(h())) Some(h()) else t().find(f)
   }
-  def take(n: Int): Stream[A] = sys.error("todo")
+  def take(n: Int): Stream[A] = this match {
+    case _ if n <= 0 => Empty
+    case Empty => Empty
+    case Cons(head, tail) => Stream.cons(head(), tail().take(n - 1))
+  }
 
-  def drop(n: Int): Stream[A] = sys.error("todo")
+  @annotation.tailrec
+  final def drop(n: Int): Stream[A] = this match {
+    case _ if n <= 0 => this
+    case Empty => Empty
+    case Cons(head, tail) => tail().drop(n - 1)
+  }
 
-  def takeWhile(p: A => Boolean): Stream[A] = sys.error("todo")
+  def takeWhile(p: A => Boolean): Stream[A] = this match {
+    case Cons(head, tail) if p(head()) => Stream.cons(head(), tail().takeWhile(p))
+    case _ => Empty
+  }
 
   def forAll(p: A => Boolean): Boolean = sys.error("todo")
 
-  def headOption: Option[A] = sys.error("todo")
+  def headOption: Option[A] = this match {
+    case Empty => None
+    case Cons(h, t) => Some(h())
+  }
 
   // 5.7 map, filter, append, flatmap using foldRight. Part of the exercise is
   // writing your own function signatures.
 
   def startsWith[B](s: Stream[B]): Boolean = sys.error("todo")
+
+  def toList: List[A] = this match {
+    case Empty => Nil
+    case Cons(head, tail) => head() :: tail().toList
+  }
 }
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
