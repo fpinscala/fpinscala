@@ -87,18 +87,25 @@ object Stream {
     if (as.isEmpty) empty 
     else cons(as.head, apply(as.tail: _*))
 
-  def constants[A](a: A): Stream[A] = cons(a, constants(a))
+  // def constants[A](a: A): Stream[A] = cons(a, constants(a))
+  def constants[A](a: A): Stream[A] = unfold(a) { _ => Some((a, a)) }
 
   val ones: Stream[Int] = constants(1)
 
-  def from(n: Int): Stream[Int] = cons(n, from(n + 1))
+  //def from(n: Int): Stream[Int] = cons(n, from(n + 1))
+  def from(n: Int): Stream[Int] = unfold(n) { next => Some(next, next + 1) }
 
-  def fibs: Stream[Int] =
-    from(0).map { n =>
-      if (n == 0) 0
-      else if (n == 1) 1
-      else fibs.drop(n - 2).take(2).foldRight(0)(_ + _) // fibs(n - 2) + fibs(n - 1)
+  // def fibs: Stream[Int] =
+  //   from(0).map { n =>
+  //     if (n == 0) 0
+  //     else if (n == 1) 1
+  //     else fibs.drop(n - 2).take(2).foldRight(0)(_ + _) // fibs(n - 2) + fibs(n - 1)
+  //   }
+  def fibs: Stream[Int] = Stream(0, 1) append unfold((0, 1)) { case (a, b) => Some(a + b, (b, a + b)) }
+
+  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = {
+    f(z).fold(empty[A]) { case (next, state) =>
+      cons(next, unfold(state)(f))
     }
-
-  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = sys.error("todo")
+  }
 }
