@@ -78,7 +78,20 @@ trait Stream[+A] {
     Stream.cons(a, b)
   }
 
-  def startsWith[B](s: Stream[B]): Boolean = sys.error("todo")
+  def startsWith[B](that: Stream[B]): Boolean = (this, that) match {
+    case (_, Empty) => true
+    case (Cons(h1, t1), Cons(h2, t2)) if h1() == h2() => t1() startsWith t2()
+    case _ => false
+  }
+
+  def startsWithZipAllFoldRight[B](that: Stream[B]): Boolean = (this zipAll that).foldRight(true) { (pair, acc) =>
+    pair match {
+      case (None, Some(_)) => false
+      case (Some(a), Some(b)) if a != b => false
+      case (_, None) => true
+      case _ => acc
+    }
+  }
 
   def toList: List[A] = this match {
     case Empty => Nil
@@ -96,6 +109,28 @@ trait Stream[+A] {
     case (Empty, Cons(h2, t2)) => Some(((None, Some(h2())), Empty -> t2()))
     case _ => None
   }
+
+  def tails: Stream[Stream[A]] = unfold(this) {
+    case stream @ Cons(_, tail) => Some(stream -> tail())
+    case Empty => None
+  }
+
+  // unfold cannot be used while incrementially computing values
+  // since it generate values from head to tail, but it needs to be
+  // done from tail to head, since the head require the tail of the 
+  // original stream.
+  def scanRight0[B](z: B)(f: (A, => B) => B): Stream[B] = unfold(this) {
+    case stream @ Cons(_, tail) => Some(stream.foldRight(z)(f) -> tail())
+    case Empty => None
+  } append Stream(z)
+
+  def scanRight[B](z: B)(f: (A, => B) => B): Stream[B] = foldRight(z -> Stream(z)) { (a, pair) =>
+      lazy val (acc, tail) = pair
+      val head = f(a, acc)
+      head -> cons(head, tail)
+  }._2
+
+  def tailsWithScanRight: Stream[Stream[A]] = scanRight(Stream.empty[A])(Stream.cons(_, _))
 }
 
 case object Empty extends Stream[Nothing]
