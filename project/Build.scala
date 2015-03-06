@@ -4,7 +4,12 @@ import Keys._
 object FPInScalaBuild extends Build {
   val opts = Project.defaultSettings ++ Seq(
     scalaVersion := "2.11.5",
-    resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
+    resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
+    libraryDependencies ++= Seq(
+      "org.specs2" %% "specs2-core" % "3.0" % "test",
+      "org.specs2" %% "specs2-scalacheck" % "3.0" % "test",
+      "org.scalacheck" %% "scalacheck" % "1.12.2" % "test"
+    )
   )
 
   lazy val root =
