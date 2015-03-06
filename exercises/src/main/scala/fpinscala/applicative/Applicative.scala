@@ -151,9 +151,9 @@ object Traverse {
 // them here
 object StateUtil {
 
-  def get[S]: State[S, S] =
-    State(s => (s, s))
+  // def get[S]: State[S, S] =
+  //   State(s => (s, s))
 
-  def set[S](s: S): State[S, Unit] =
-    State(_ => ((), s))
+  // def set[S](s: S): State[S, Unit] =
+  //   State(_ => ((), s))
 }

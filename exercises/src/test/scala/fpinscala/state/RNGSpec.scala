@@ -69,4 +69,18 @@ class RNGSpec extends Specification with ScalaCheck {
       }
     }
   }
+
+  "simulateMachine" should {
+    "operate the machine based on the inputs" in {
+      val container = State.simulateMachine(List(
+        Coin, Turn,
+        Coin, Turn,
+        Coin, Turn,
+        Coin, Turn
+      ))
+      val ((candies, coins), _) = container.run(Machine(true, 5, 10))
+      coins === 14
+      candies === 1
+    }
+  }
 }

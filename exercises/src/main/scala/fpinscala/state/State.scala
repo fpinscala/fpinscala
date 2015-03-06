@@ -85,11 +85,18 @@ object RNG {
 
 case class State[S,+A](run: S => (A, S)) {
   def map[B](f: A => B): State[S, B] =
-    sys.error("todo")
+    flatMap { a => State.unit[S, B](f(a)) }
+
   def map2[B,C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
-    sys.error("todo")
-  def flatMap[B](f: A => State[S, B]): State[S, B] =
-    sys.error("todo")
+    for {
+      a <- this
+      b <- sb
+    } yield f(a, b)
+
+  def flatMap[B](f: A => State[S, B]): State[S, B] = State { s1 =>
+    val (a, s2) = run(s1)
+    f(a).run(s2)
+  }
 }
 
 sealed trait Input
@@ -100,5 +107,46 @@ case class Machine(locked: Boolean, candies: Int, coins: Int)
 
 object State {
   type Rand[A] = State[RNG, A]
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
+
+  def unit[S, A](a: A): State[S, A] =
+    State(s => (a, s))
+
+  def sequence[A, S](fs: List[State[S, A]]): State[S, List[A]] =
+    fs.foldRight(unit[S, List[A]](Nil)) {
+      case (ra, rtail) =>
+        for {
+          a <- ra
+          tail <- rtail
+        } yield {
+          a :: tail
+        }
+    }
+
+  def get[S]: State[S, S] = State(s => (s, s))
+  def set[S](s: S): State[S, Unit] = State(_ => ((), s))
+
+  def modify[S](f: S => S): State[S, Unit] = for {
+    s <- get
+    _ <- set(f(s))
+  } yield ()
+
+  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = {
+
+    val steps = for (input <- inputs) yield modify { (m: Machine) =>
+      (input, m) match {
+        case (_, Machine(_, 0, coins)) =>  m
+        case (Coin, Machine(true, candies, coins)) => 
+          m.copy(locked = false, coins = coins + 1)
+        case (Turn, Machine(false, candies, coins)) => 
+          m.copy(locked = true, candies = candies - 1)
+        case _ => m
+      }
+    }
+    for {
+      _ <- sequence(steps)
+      m <- get
+    } yield (m.candies, m.coins)
+  }
+
+
 }
