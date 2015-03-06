@@ -75,6 +75,9 @@ class StreamSpec extends Specification {
     "return false is any element doesn't match the predicate" in {
       Stream(1, 4, 5, 12).forAll(_ % 2 == 1) should beFalse
     }
+    "return true for empty" in {
+      Empty.forAll(_ => false) === true
+    }
   }
 
   testTakeWhile("takeWhile_foldRight", _.takeWhile_foldRight)
