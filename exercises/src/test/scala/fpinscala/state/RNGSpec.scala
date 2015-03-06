@@ -22,21 +22,19 @@ class RNGSpec extends Specification with ScalaCheck {
   }
 
   "intDouble" should {
-    "return a non-negative values paired with a value between 0 and 1" in {
+    "return a random int paired with a value between 0 and 1" in {
       prop { (seed: Int) =>
         val ((d, i), _) = RNG.doubleInt(RNG.Simple(seed))
-        i must be beGreaterThanOrEqualTo 0
         d must beBetween(0.0, 1.0).excludingEnd
       }
     }
   }
 
   "intDouble" should {
-    "return a non-negative values paired with a value between 0 and 1" in {
+    "return a random int paired with a value between 0 and 1" in {
       prop { (seed: Int) =>
         val ((i, d), _) = RNG.intDouble(RNG.Simple(seed))
         d must beBetween(0.0, 1.0).excludingEnd
-        i must be beGreaterThanOrEqualTo 0
       }
     }
   }
@@ -56,8 +54,19 @@ class RNGSpec extends Specification with ScalaCheck {
     "return random values" in {
       prop { (seed: Int, count: Int) =>
         val (values, _) = RNG.ints(count)(RNG.Simple(seed))
-        values must contain(be_>=(0)).forall
+        if (count > 2)
+          values.distinct must have size(be_>(1))
+        values must have size count
       }.setGen2(Gen.posNum[Int])
+    }
+  }
+
+  "nonNegativeLessThan" should {
+    "return values less than n" in {
+      prop { (seed: Int) =>
+        val (value, _) = RNG.nonNegativeLessThan(6)(RNG.Simple(seed))
+        value must beBetween(0, 5)
+      }
     }
   }
 }
