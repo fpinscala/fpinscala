@@ -92,14 +92,14 @@ object List { // `List` companion object. Contains functions for creating and wo
       case Cons(h,t) => foldLeft(t, f(z,h))(f)
     }
   }
-  def sum3(ns: List[Int]) = 
+  def sumViaFoldLeft(ns: List[Int]) = 
     foldLeft(ns, 0)((x,y) => x + y)
   
-  def product3(ns: List[Double]) = 
+  def productViaFoldLeft(ns: List[Double]) = 
     foldLeft(ns, 1.0)(_ * _) // `_ * _` is more concise notation for `(x,y) => x * y`; see sidebar
 
   
-  def length2[A](l: List[A]): Int = 
+  def lengthViaFoldLeft[A](l: List[A]): Int = 
     foldLeft(l, 0)((a:Int, x) => a+1)
     
   
@@ -117,10 +117,10 @@ object List { // `List` companion object. Contains functions for creating and wo
     foldRightViaFoldLeft(ll, Nil:List[A])(append2)
   }
   
-  def addone(li: List[Int]) = 
+  def add1(li: List[Int]) = 
     foldLeft(li, Nil:List[Int])((t,h) => Cons(h+1,t))
    
-  def dlist2strlst(ld: List[Double]):List[String] =
+  def doubleToString(ld: List[Double]):List[String] =
     foldLeft(ld, Nil:List[String])((t,d) => Cons(d.toString, t))
 
   def map[A,B](l: List[A])(f: A => B): List[B] = 
@@ -165,4 +165,11 @@ object List { // `List` companion object. Contains functions for creating and wo
     }
     go(sup,sub)
   }
+  
+  def appendViaFoldRight[A](l1: List[A], l2: List[A]): List[A] = sys.error("todo")
+
+  def appendViaFoldLeft[A](a1: List[A], a2: List[A]): List[A] = sys.error("todo")
+
+  def addPairwise(a: List[Int], b: List[Int]): List[Int] = zipWith(a,b)(_+_)
+
 }

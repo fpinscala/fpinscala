@@ -40,15 +40,19 @@ trait Monad[M[_]] extends Functor[M] {
 
   def replicateM[A](n: Int, ma: M[A]): M[List[A]] = ???
 
+  def filterM[A](la: List[A])(f: A => M[Boolean]): M[List[A]] = ???
+
   def compose[A,B,C](f: A => M[B], g: B => M[C]): A => M[C] = ???
 
+  def composeViaJoinAndMap[A,B,C](f: A => M[B], g: B => M[C]): A => M[C] = ???
+
   // Implement in terms of `compose`:
-  def _flatMap[A,B](ma: M[A])(f: A => M[B]): M[B] = ???
+  def flatMapViaCompose[A,B](ma: M[A])(f: A => M[B]): M[B] = ???
 
   def join[A](mma: M[M[A]]): M[A] = ???
 
   // Implement in terms of `join`:
-  def __flatMap[A,B](ma: M[A])(f: A => M[B]): M[B] = ???
+  def flatMapViaJoinAndMap[A,B](ma: M[A])(f: A => M[B]): M[B] = ???
 }
 
 case class Reader[R, A](run: R => A)
@@ -60,21 +64,24 @@ object Monad {
       ma flatMap f
   }
 
-  val parMonad: Monad[Par] = ???
+  lazy val parMonad: Monad[Par] = ???
 
   def parserMonad[P[+_]](p: Parsers[P]): Monad[P] = ???
 
-  val optionMonad: Monad[Option] = ???
+  lazy val optionMonad: Monad[Option] = ???
 
-  val streamMonad: Monad[Stream] = ???
+  lazy val streamMonad: Monad[Stream] = ???
 
-  val listMonad: Monad[List] = ???
+  lazy val listMonad: Monad[List] = ???
 
-  def stateMonad[S] = ???
+  def stateMonad[S]: Monad[({type lambda[x] = State[S, x]})#lambda] = ???
 
-  val idMonad: Monad[Id] = ???
+  lazy val idMonad: Monad[Id] = ???
 
-  def readerMonad[R] = ???
+  def getState[S]: State[S,S] = State(s => (s,s))
+  def setState[S](s: S): State[S,Unit] = State(_ => ((),s))
+
+  def readerMonad[R]: Monad[({type f[x] = Reader[R,x]})#f] = ???
 }
 
 case class Id[A](value: A) {

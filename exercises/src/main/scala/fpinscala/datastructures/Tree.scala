@@ -1,5 +1,4 @@
 package fpinscala.datastructures
-import org.scalatest._
 
 sealed trait Tree[+A]
 case class Leaf[A](value: A) extends Tree[A]
@@ -26,6 +25,15 @@ object Tree {
     case Leaf(l) => Leaf(f(l))
     case Branch(l,r) => Branch(map(l)(f), map(r)(f))
   }
+
+  def fold[A,B](t: Tree[A])(f: A => B)(g: (B,B) => B): B = sys.error("todo")
+
+  def sizeViaFold[A](t: Tree[A]): Int = 
+    fold(t)(a => 1)(1 + _ + _)
+
+  def maximumViaFold[T](t: Tree[T])(implicit ev: Numeric[T]): T = sys.error("todo")
+
+  def depthViaFold[A](t: Tree[A]): Int = sys.error("todo")
   
 }
 

@@ -141,3 +141,27 @@ object Immutable {
 
 import scala.collection.mutable.HashMap
 
+
+sealed trait STMap[S,K,V] {
+  protected def table: HashMap[K,V]
+
+  def size: ST[S,Int] = ???
+
+  // Get the value under a key
+  def apply(k: K): ST[S,V] = ???
+
+  // Get the value under a key, or None if the key does not exist
+  def get(k: K): ST[S, Option[V]] = ???
+
+  // Add a value under a key
+  def +=(kv: (K, V)): ST[S,Unit] = ???
+
+  // Remove a key
+  def -=(k: K): ST[S,Unit] = ???
+}
+
+object STMap {
+  def empty[S,K,V]: ST[S, STMap[S,K,V]] = ???
+
+  def fromMap[S,K,V](m: Map[K,V]): ST[S, STMap[S,K,V]] = ???
+}
