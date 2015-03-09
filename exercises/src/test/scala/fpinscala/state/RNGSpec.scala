@@ -79,8 +79,29 @@ class RNGSpec extends Specification with ScalaCheck {
         Coin, Turn
       ))
       val ((candies, coins), _) = container.run(Machine(true, 5, 10))
-      coins === 14
       candies === 1
+      coins === 14
+    }
+    "support empty inputs" in {
+      val container = State.simulateMachine(Nil)
+      val ((candies, coins), _) = container.run(Machine(true, 5, 10))
+      candies === 5
+      coins === 10
+    }
+    "ignore wrong order of input" in {
+      val container = State.simulateMachine(List(
+        Turn, Coin
+      ))
+      val ((candies, coins), _) = container.run(Machine(true, 5, 10))
+      candies === 5
+      coins === 11
+    }
+    "ignore inputs when it's out of candies" in {
+      val tenCoinTurns = List.fill(10)(List(Coin, Turn)).flatten
+      val container = State.simulateMachine(tenCoinTurns)
+      val ((candies, coins), _) = container.run(Machine(true, 5, 10))
+      candies === 0
+      coins === 15
     }
   }
 }
