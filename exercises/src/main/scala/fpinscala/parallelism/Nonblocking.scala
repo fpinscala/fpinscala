@@ -146,44 +146,68 @@ object Nonblocking {
      * through the implementation. What is the type of `p(es)`? What
      * about `t(es)`? What about `t(es)(cb)`?
      */
-//    def choice[A](p: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
-//      es => new Future[A] {
-//        def apply(cb: A => Unit): Unit =
-//          p(es) { b =>
-//            if (b) eval(es) { t(es)(cb) }
-//            else eval(es) { f(es)(cb) }
-//          }
-//      }
+    def choice[A](p: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+      es => new Future[A] {
+        def apply(cb: Try[A] => Unit): Unit =
+          p(es) { bTry =>
+            bTry.map { b =>
+              if (b) eval(es) { t(es)(cb) }
+              else eval(es) { f(es)(cb) }
+            }
+          }
+      }
 
-    def choiceN[A](p: Par[Int])(ps: List[Par[A]]): Par[A] = ???
+    def choiceN[A](p: Par[Int])(ps: List[Par[A]]): Par[A] =
+      es => new Future[A] {
+        def apply(cb: Try[A] => Unit): Unit =
+          p(es) { bTry =>
+            bTry.map { index =>
+              eval(es) { ps(index)(es)(cb) }
+            }
+          }
+      }
 
     def choiceViaChoiceN[A](a: Par[Boolean])(ifTrue: Par[A], ifFalse: Par[A]): Par[A] =
-      ???
+      choiceN(a.map(b => if (b) 0 else 1))(List(ifTrue, ifFalse))
 
     def choiceMap[K,V](p: Par[K])(ps: Map[K,Par[V]]): Par[V] =
-      ???
+      p.flatMap(ps(_))
 
     // see `Nonblocking.scala` answers file. This function is usually called something else!
     def chooser[A,B](p: Par[A])(f: A => Par[B]): Par[B] =
-      ???
+      p flatMap f
 
-    def flatMap[A,B](p: Par[A])(f: A => Par[B]): Par[B] =
-      ???
+    def flatMap[A, B](p: Par[A])(f: A => Par[B]): Par[B] =
+      es => new Future[B] {
+        def apply(cb: Try[B] => Unit): Unit =
+          p(es) {
+            _.map { a =>
+              eval(es) { f(a)(es)(cb) }
+            }
+          }
+      }
 
-    def choiceViaChooser[A](p: Par[Boolean])(f: Par[A], t: Par[A]): Par[A] =
-      ???
+    def choiceViaChooser[A](p: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+      p.flatMap { if (_) t else f }
 
     def choiceNChooser[A](p: Par[Int])(choices: List[Par[A]]): Par[A] =
-      ???
+      p.flatMap(choices(_))
 
     def join[A](p: Par[Par[A]]): Par[A] =
-      ???
+      es => new Future[A] {
+        def apply(cb: Try[A] => Unit): Unit =
+          p(es) {
+            _.map { a =>
+              eval(es) { a(es)(cb) }
+            }
+          }
+      }
 
     def joinViaFlatMap[A](a: Par[Par[A]]): Par[A] =
-      ???
+      a.flatten
 
     def flatMapViaJoin[A,B](p: Par[A])(f: A => Par[B]): Par[B] =
-      ???
+      p.map(f).flatten
 
     def parMap[A, B](ps: List[A])(f: A => B): Par[List[B]] = fork {
       sequence(ps.map(asyncF(f)))
@@ -194,9 +218,25 @@ object Nonblocking {
 
     // infix versions of `map`, `map2`
     implicit class ParOps[A](val p: Par[A]) extends AnyVal {
-      def map[B](f: A => B): Par[B] = Par.map(p)(f)
+      def map[B](f: A => B): Par[B] = p.flatMap { a => unit(f(a)) }
+
       def map2[B,C](b: Par[B])(f: (A,B) => C): Par[C] = Par.map2(p,b)(f)
+
+      def map2ViaFlatMap[B,C](pb: Par[B])(f: (A, B) => C): Par[C] =
+        for {
+          a <- p
+          b <- pb
+        } yield f(a, b)
+
+
       def zip[B](b: Par[B]): Par[(A,B)] = p.map2(b)((_,_))
+
+      def flatMap[B](f: A => Par[B]): Par[B] =
+        Par.flatMap(p)(f)
+    }
+
+    implicit class ParListParOps[A](val p: Par[Par[A]]) extends AnyVal {
+      def flatten: Par[A] = p.flatMap(identity)
     }
   }
 }
