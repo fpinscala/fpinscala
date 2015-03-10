@@ -3,10 +3,13 @@ package fpinscala.parallelism
 import java.util.concurrent.{Callable, CountDownLatch, ExecutorService}
 import java.util.concurrent.atomic.AtomicReference
 
+import scala.util.control.NonFatal
+import scala.util.{Failure, Success, Try}
+
 object Nonblocking {
 
   trait Future[+A] {
-    private[parallelism] def apply(k: A => Unit): Unit
+    private[parallelism] def apply(f: Try[A] => Unit): Unit
   }
 
   type Par[+A] = ExecutorService => Future[A]
@@ -14,30 +17,40 @@ object Nonblocking {
   object Par {
 
     def run[A](es: ExecutorService)(p: Par[A]): A = {
-      val ref = new java.util.concurrent.atomic.AtomicReference[A] // A mutable, threadsafe reference, to use for storing the result
+      val ref = new java.util.concurrent.atomic.AtomicReference[Try[A]] // A mutable, threadsafe reference, to use for storing the result
       val latch = new CountDownLatch(1) // A latch which, when decremented, implies that `ref` has the result
       p(es) { a => ref.set(a); latch.countDown } // Asynchronously set the result, and decrement the latch
       latch.await // Block until the `latch.countDown` is invoked asynchronously
-      ref.get // Once we've passed the latch, we know `ref` has been set, and return its value
+      ref.get.get // Once we've passed the latch, we know `ref` has been set, and return its value
     }
 
-    def unit[A](a: A): Par[A] =
+    def unit[A](a: A): Par[A] = fromTry(Success(a))
+    def failure[A](ex: Throwable): Par[A] = fromTry(Failure(ex))
+
+    def fromTry[A](a: Try[A]): Par[A] =
       es => new Future[A] {
-        def apply(cb: A => Unit): Unit =
+        def apply(cb: Try[A] => Unit): Unit =
           cb(a)
       }
 
     /** A non-strict version of `unit` */
     def delay[A](a: => A): Par[A] =
       es => new Future[A] {
-        def apply(cb: A => Unit): Unit =
-          cb(a)
+        def apply(cb: Try[A] => Unit): Unit =
+          cb(Try(a))
       }
 
     def fork[A](a: => Par[A]): Par[A] =
       es => new Future[A] {
-        def apply(cb: A => Unit): Unit =
-          eval(es)(a(es)(cb))
+        def apply(cb: Try[A] => Unit): Unit = {
+          val sa =
+            try a
+            catch {
+              case NonFatal(e) => failure(e)
+            }
+
+          eval(es)(sa(es)(cb))
+        }
       }
 
     /**
@@ -45,7 +58,7 @@ object Nonblocking {
      * This will come in handy in Chapter 13.
      */
     def async[A](f: (A => Unit) => Unit): Par[A] = es => new Future[A] {
-      def apply(k: A => Unit) = f(k)
+      def apply(k: Try[A] => Unit) = ??? ///f(k)
     }
 
     /**
@@ -56,17 +69,29 @@ object Nonblocking {
       es.submit(new Callable[Unit] { def call = r })
 
 
-    def map2[A,B,C](p: Par[A], p2: Par[B])(f: (A,B) => C): Par[C] =
+    def map2[A,B,C](p: Par[A], p2: Par[B])(f: (A, B) => C): Par[C] =
       es => new Future[C] {
-        def apply(cb: C => Unit): Unit = {
-          var ar: Option[A] = None
-          var br: Option[B] = None
-          val combiner = Actor[Either[A,B]](es) {
+
+        def apply(cb: Try[C] => Unit): Unit = {
+
+          def call(tryA: Try[A], tryB: Try[B]): Unit = {
+            val tryC = for {
+              a <- tryA
+              b <- tryB
+            } yield {
+              f(a, b)
+            }
+            eval(es)(cb(tryC))
+          }
+
+          var ar: Option[Try[A]] = None
+          var br: Option[Try[B]] = None
+          val combiner = Actor[Either[Try[A], Try[B]]](es) {
             case Left(a) =>
-              if (br.isDefined) eval(es)(cb(f(a,br.get)))
+              if (br.isDefined) call(a, br.get)
               else ar = Some(a)
             case Right(b) =>
-              if (ar.isDefined) eval(es)(cb(f(ar.get,b)))
+              if (ar.isDefined) call(ar.get, b)
               else br = Some(b)
           }
           p(es)(a => combiner ! Left(a))
@@ -77,8 +102,8 @@ object Nonblocking {
     // specialized version of `map`
     def map[A,B](p: Par[A])(f: A => B): Par[B] =
       es => new Future[B] {
-        def apply(cb: B => Unit): Unit =
-          p(es)(a => eval(es) { cb(f(a)) })
+        def apply(cb: Try[B] => Unit): Unit =
+          p(es)(a => eval(es) { cb(a map f) })
       }
 
     def lazyUnit[A](a: => A): Par[A] =
@@ -121,14 +146,14 @@ object Nonblocking {
      * through the implementation. What is the type of `p(es)`? What
      * about `t(es)`? What about `t(es)(cb)`?
      */
-    def choice[A](p: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
-      es => new Future[A] {
-        def apply(cb: A => Unit): Unit =
-          p(es) { b =>
-            if (b) eval(es) { t(es)(cb) }
-            else eval(es) { f(es)(cb) }
-          }
-      }
+//    def choice[A](p: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+//      es => new Future[A] {
+//        def apply(cb: A => Unit): Unit =
+//          p(es) { b =>
+//            if (b) eval(es) { t(es)(cb) }
+//            else eval(es) { f(es)(cb) }
+//          }
+//      }
 
     def choiceN[A](p: Par[Int])(ps: List[Par[A]]): Par[A] = ???
 
@@ -160,11 +185,15 @@ object Nonblocking {
     def flatMapViaJoin[A,B](p: Par[A])(f: A => Par[B]): Par[B] =
       ???
 
+    def parMap[A, B](ps: List[A])(f: A => B): Par[List[B]] = fork {
+      sequence(ps.map(asyncF(f)))
+    }
+
     /* Gives us infix syntax for `Par`. */
-    implicit def toParOps[A](p: Par[A]): ParOps[A] = new ParOps(p)
+    //implicit def toParOps[A](p: Par[A]): ParOps[A] = new ParOps(p)
 
     // infix versions of `map`, `map2`
-    class ParOps[A](p: Par[A]) {
+    implicit class ParOps[A](val p: Par[A]) extends AnyVal {
       def map[B](f: A => B): Par[B] = Par.map(p)(f)
       def map2[B,C](b: Par[B])(f: (A,B) => C): Par[C] = Par.map2(p,b)(f)
       def zip[B](b: Par[B]): Par[(A,B)] = p.map2(b)((_,_))
