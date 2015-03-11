@@ -45,13 +45,51 @@ class ScalaCheckGenSpec extends Specification
       }.setGen2(org.scalacheck.Gen.posNum[Int])
     }
     "return a list of the different items when combined with choose" in {
-      prop { (seed: Int, size: Int, element: Int) =>
+      prop { (seed: Int, size: Int) =>
         val gen = Gen.listOfN(size, Gen.choose(100, 200))
         val list = gen.get(seed)
         list must have size(size)
         list must contain(beBetween(100, 200).excludingEnd)
       }.setGen2(org.scalacheck.Gen.posNum[Int])
     }
+    "return a list of the different size if requested." in {
+      prop { (seed: Int) =>
+        val gen = Gen.choose(100, 200).listOfN(Gen.choose(300, 400))
+        val list = gen.get(seed)
+        list.length must beBetween(300, 400).excludingEnd
+        list must contain(beBetween(100, 200).excludingEnd)
+      }
+    }
   }
 
+  "union" should {
+    "merge two generators" in {
+      val seed = 0
+      val size = 10000
+      val genItem = Gen.unit("abc") union Gen.unit("def")
+      val genList = genItem.listOfN(size)
+
+      val list = genList.get(seed)
+      val map = list.groupBy(identity).mapValues(_.length).toMap
+
+      map.keys === Set("abc", "def")
+      map.values must contain(be ~((size / 2) +/- 100)).forall
+    }
+  }
+
+  "weighted" should {
+    "merge two generators according to weight" in {
+      val seed = 0
+      val size = 100000
+      val genItem = Gen.unit("abc") -> 0.1 union Gen.unit("def") -> 0.9
+      val genList = genItem.listOfN(size)
+
+      val list = genList.get(seed)
+      val map = list.groupBy(identity).mapValues(_.length).toMap
+
+      map.keys === Set("abc", "def")
+      map("abc") must be ~(10000 +/- 100)
+      map("def") must be ~(90000 +/- 100)
+    }
+  }
 }
