@@ -21,10 +21,22 @@ object Prop {
 }
 
 object Gen {
-  def unit[A](a: => A): Gen[A] = ???
+  def unit[A](a: => A): Gen[A] = Gen(State.unit(a))
+
+  def choose(start: Int, stopExclusive: Int): Gen[Int] =
+    Gen(State(RNG.nonNegativeLessThan(stopExclusive - start)).map(_ + start))
+
+  def boolean: Gen[Boolean] = Gen(State(RNG.int).map(_ % 2 == 0))
+
+  def listOfN[A](n: Int, g: Gen[A]): Gen[List[A]] = Gen(State { initialRng =>
+    (0 until n).foldRight(List.empty[A] -> initialRng) {
+      case (_, (tail, rng)) =>
+        g.sample.map(_ :: tail).run(rng)
+    }
+  })
 }
 
-trait Gen[A] {
+case class Gen[A](sample: State[RNG, A]) {
   def map[A,B](f: A => B): Gen[B] = ???
   def flatMap[A,B](f: A => Gen[B]): Gen[B] = ???
 }
