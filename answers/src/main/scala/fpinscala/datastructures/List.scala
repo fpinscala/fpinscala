@@ -272,10 +272,9 @@ object List { // `List` companion object. Contains functions for creating and wo
     case (Cons(h,t),Cons(h2,t2)) if h == h2 => startsWith(t, t2)
     case _ => false
   }
-  @annotation.tailrec
+
   def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = sup match {
     case Nil => sub == Nil
     case _ => startsWith(sup, sub)
-    case Cons(h,t) => hasSubsequence(t, sub)
   }
 }
