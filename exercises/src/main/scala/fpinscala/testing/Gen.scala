@@ -8,16 +8,73 @@ import Gen._
 import Prop._
 import java.util.concurrent.{Executors,ExecutorService}
 
+import scala.util.control.NonFatal
+
 /*
 The library developed in this chapter goes through several iterations. This file is just the
 shell, which you can fill in and modify while working through the chapter.
 */
 
-trait Prop {
+sealed trait Result {
+  def isFalsified: Boolean
 }
 
-object Prop {
-  def forAll[A](gen: Gen[A])(f: A => Boolean): Prop = ???
+case object Passed extends Result {
+  override def isFalsified = false
+}
+
+case class Falsified(label: Option[String], failure: FailedCase, successes: SuccessCount) extends Result {
+  override def isFalsified = true
+}
+
+case class Prop(run: (TestCases, RNG) => Result) {
+  def &&(that: Prop): Prop = Prop { (n, rng) =>
+    run(n, rng) match {
+      case Passed => that.run(n, rng)
+      case falsified => falsified
+    }
+  }
+
+  def ||(that: Prop): Prop = Prop { (n, rng) =>
+    run(n, rng) match {
+      case Passed => Passed
+      case _ => that.run(n, rng)
+    }
+  }
+}
+
+class PropBuilder(label: Option[String]) {
+
+  def forAll[A](as: Gen[A])(f: A => Boolean): Prop = Prop { (n, rng) =>
+    randomStream(as)(rng).zip(Stream.from(0)).take(n).map {
+      case (a, i) =>
+        try {
+          if (f(a)) Passed else Falsified(label, a.toString, i)
+        } catch {
+          case NonFatal(e) => Falsified(label, buildMsg(a, e), i)
+        }
+    }.find(_.isFalsified).getOrElse(Passed)
+  }
+}
+
+object Prop extends PropBuilder(None) {
+
+  type FailedCase = String
+  type SuccessCount = Int
+  type TestCases = Int
+
+  def apply(label: String): PropBuilder = new PropBuilder(Some(label))
+
+  def randomStream[A](g: Gen[A])(rng1: RNG): Stream[A] =
+    Stream.unfold(rng1) { rng2 => Some(g.sample.run(rng2)) }
+
+  def buildMsg[A](s: A, e: Throwable): String =
+    s"""
+       |test case: $s
+       |generated an exception: ${e.getMessage}
+       |stack trace:
+       |${e.getStackTrace.mkString("\n")}
+     """.stripMargin
 }
 
 object Gen {

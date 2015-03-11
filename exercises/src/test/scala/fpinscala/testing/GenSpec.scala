@@ -3,7 +3,7 @@ package fpinscala.testing
 import fpinscala.state.RNG
 import org.specs2.mutable._
 
-object ScalaCheckGenSpec {
+object GenSpec {
   implicit class GenOps[A](val gen: Gen[A]) extends AnyVal {
     def get(seed: Int): A =
       gen.sample.run(RNG.Simple(seed))._1
@@ -11,10 +11,10 @@ object ScalaCheckGenSpec {
   }
 }
 
-class ScalaCheckGenSpec extends Specification
-  with org.specs2.ScalaCheck {
+class GenSpec extends Specification
+with org.specs2.ScalaCheck {
 
-  import ScalaCheckGenSpec._
+  import GenSpec._
 
   "choose" should {
     "generate numbers in a range" in {
