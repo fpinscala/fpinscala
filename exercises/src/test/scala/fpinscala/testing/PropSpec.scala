@@ -25,7 +25,7 @@ class PropSpec extends Specification {
       val result = props.quickRun
 
       result match {
-        case Passed => failure("The check shouldn't have been successful.")
+        case Passed | Proved => failure("The check shouldn't have been successful.")
         case Falsified(label, failedCase, successes) =>
           failedCase.toInt must beBetween(20, 25).excludingEnd
           label must be none
@@ -53,7 +53,7 @@ class PropSpec extends Specification {
       val result = props.quickRun
 
       result match {
-        case Passed => failure("The check shouldn't have been successful.")
+        case Passed | Proved => failure("The check shouldn't have been successful.")
         case Falsified(label, failedCase, successes) =>
           failedCase.toInt must beBetween(20, 25).excludingEnd
           label must be some "first"
@@ -69,7 +69,7 @@ class PropSpec extends Specification {
       val result = props.quickRun
 
       result match {
-        case Passed => failure("The check shouldn't have been successful.")
+        case Passed | Proved => failure("The check shouldn't have been successful.")
         case Falsified(label, failedCase, successes) =>
           failedCase.toInt must beBetween(200, 250).excludingEnd
           label must be some "second"
@@ -114,7 +114,7 @@ class PropSpec extends Specification {
       val result = props.quickRun
 
       result match {
-        case Passed => failure("The check shouldn't have been successful.")
+        case Passed | Proved => failure("The check shouldn't have been successful.")
         case Falsified(label, failedCase, successes) =>
           failedCase.toInt must beBetween(200, 250).excludingEnd
           label must be some "second"
@@ -131,7 +131,7 @@ class PropSpec extends Specification {
       }
 
       maxProp.quickRun match {
-        case Passed => success
+        case Passed | Proved => success
         case Falsified(label, message, n) =>
           failure(s"Falsified after $n passed tests: $message")
       }
@@ -143,7 +143,7 @@ class PropSpec extends Specification {
       }
 
       maxProp.quickRun match {
-        case Passed => success
+        case Passed | Proved => success
         case Falsified(label, message, n) =>
           failure(s"Falsified after $n passed tests: $message")
       }

@@ -23,6 +23,10 @@ case object Passed extends Result {
   override def isFalsified = false
 }
 
+case object Proved extends Result {
+  override def isFalsified = false
+}
+
 case class Falsified(label: Option[String], failure: FailedCase, successes: SuccessCount) extends Result {
   override def isFalsified = true
 }
@@ -30,15 +34,15 @@ case class Falsified(label: Option[String], failure: FailedCase, successes: Succ
 case class Prop(run: (MaxSize, TestCases, RNG) => Result) {
   def &&(that: Prop): Prop = Prop { (max, n, rng) =>
     run(max, n, rng) match {
-      case Passed => that.run(max, n, rng)
-      case falsified => falsified
+      case Passed | Proved => that.run(max, n, rng)
+      case f @ Falsified(_, _, _) => f
     }
   }
 
   def ||(that: Prop): Prop = Prop { (max, n, rng) =>
     run(max, n, rng) match {
-      case Passed => Passed
-      case _ => that.run(max, n, rng)
+      case Passed | Proved => Passed
+      case Falsified(_, _, _) => that.run(max, n, rng)
     }
   }
 }
@@ -67,6 +71,10 @@ class PropBuilder(label: Option[String]) {
       Prop { (max, _, rng) => p.run(max, casesPerSize, rng) }
     }.toList.reduce(_ && _)
     prop.run(max, n, rng)
+  }
+
+  def check(p: => Boolean): Prop = Prop { (_, _, _) =>
+    if (p) Proved else Falsified(label, "()", 0)
   }
 }
 
