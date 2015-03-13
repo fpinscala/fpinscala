@@ -40,6 +40,8 @@ object Nonblocking {
           cb(Try(a))
       }
 
+    def forkValue[A](a: => A): Par[A] = fork(lazyUnit(a))
+
     def fork[A](a: => Par[A]): Par[A] =
       es => new Future[A] {
         def apply(cb: Try[A] => Unit): Unit = {
@@ -233,6 +235,9 @@ object Nonblocking {
 
       def flatMap[B](f: A => Par[B]): Par[B] =
         Par.flatMap(p)(f)
+
+      def willEqual[B](that: Par[B]): Par[Boolean] =
+        map2(that)(_ == _)
     }
 
     implicit class ParListParOps[A](val p: Par[Par[A]]) extends AnyVal {
