@@ -1,15 +1,20 @@
 package fpinscala.testing.exhaustive
 
+import java.util.concurrent.Executors
+
+import fpinscala.parallelism.Nonblocking.Par
+import fpinscala.parallelism.Nonblocking.Par.ParOps
 import org.specs2.mutable._
 import Prop._
 import Gen._
+import org.specs2.specification.AfterAll
 
 object PropSpec {
   implicit class PropOps(val p: Prop) extends AnyVal {
     def quickRun = p.run(100, 100, RNG.Simple(0))
   }
 }
-class PropSpec extends Specification {
+class PropSpec extends Specification with AfterAll {
 
   import PropSpec._
 
@@ -149,11 +154,25 @@ class PropSpec extends Specification {
 
   "forAll#DomainGen" should {
     "Exhaustively check a domain" in {
-      forAll(DomainGen(1 to 100)) { i => i < 1 || i > 100 } quickRun match {
+      forAll(DomainGen(1 to 100)) { i => i >= 1 && i <= 100 } quickRun match {
         case Proved => success
-        case _ => failure
+        case result => failure(result.toString)
       }
     }
   }
 
+  val es = Executors.newCachedThreadPool
+
+  override def afterAll(): Unit = es.shutdown()
+
+  "Exercise 8.17" should {
+    "express fork properties" in {
+      val forkProp = forAll(Gen.pint) { p =>
+        Par.run(es) {
+          Par.fork(p) willEqual p
+        }
+      }
+      forkProp.quickRun === Passed
+    }
+  }
 }

@@ -1,5 +1,8 @@
 package fpinscala.testing.exhaustive
 
+import fpinscala.parallelism.Nonblocking.Par
+import fpinscala.parallelism.Nonblocking.Par.ParOps
+
 sealed trait Gen[+A] {
   def stream(rng: RNG): Stream[A]
 
@@ -36,6 +39,15 @@ object Gen {
       else g2._1
     }
   }
+
+  def pint: Gen[Par[Int]] =
+    for {
+      list <- choose(-10, 10).listOfN(Gen.choose(100, 200))
+    } yield for {
+      sorted <- Par.forkValue(list.sorted)
+      parSorted = sorted.map(Par.unit)
+      reSorted <- Par.fork(Par.sequence(parSorted))
+    } yield reSorted.headOption.getOrElse(0)
 
   implicit class GenWeightOps[A](val gen: (SampleGen[A], Double)) {
     def union[B >: A](other: (SampleGen[B], Double)): SampleGen[B] = Gen.weighted(gen, other)

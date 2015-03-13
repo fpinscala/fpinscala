@@ -1,5 +1,7 @@
 package fpinscala.testing.exhaustive
 
+import fpinscala.parallelism.Nonblocking.Par
+
 import scala.util.control.NonFatal
 
 sealed trait Result {
