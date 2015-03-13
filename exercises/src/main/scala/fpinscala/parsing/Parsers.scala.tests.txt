@@ -1,0 +1,75 @@
+package fpinscala.parsing
+
+import java.util.regex._
+import scala.util.matching.Regex
+import fpinscala.testing._
+import fpinscala.testing.Prop._
+
+trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trait
+
+  def run[A](p: Parser[A])(input: String): Either[ParseError,A]
+
+  def char(c: Char): Parser[Char]
+  implicit def string(s: String): Parser[String]
+  implicit def asStringParser[A](a: A)(implicit f: A => Parser[String]): ParserOps[String] = f(a)
+  implicit def pairToString(p: Parser[(String, String)]): Parser[String] = p ^^ { _ + _ }
+
+  def or[A](s1: Parser[A], s2: Parser[A]): Parser[A]
+
+  def listOfN[A](n: Int, p: Parser[A]): Parser[List[A]]
+
+  def count(p: Parser[_]): Parser[Int]
+
+  def concat[A, B](s1: Parser[A], s2: Parser[B]): Parser[(A, B)]
+
+  def rep[A](p: Parser[A]): Parser[List[A]]
+
+  implicit class ParserOps[A](val p: Parser[A]) {
+    def |[B>:A](p2: Parser[B]): Parser[B] = self.or(p,p2)
+    def or[B>:A](p2: => Parser[B]): Parser[B] = self.or(p,p2)
+    def listOfN(n: Int): Parser[List[A]] = self.listOfN(n, p)
+
+    def ~[B](p2: Parser[B]): Parser[(A, B)] =
+      self.concat(p, p2)
+
+    def map[B](f: A => B): Parser[B] = ???
+    def ^[B](f: A => B): Parser[B] = map(f)
+  }
+
+  implicit class PairParserOps[A, B](p: Parser[(A, B)]) {
+    def ^^[C](f: (A, B) => C): Parser[C] = ???
+  }
+
+  object Tests {
+    run(listOfN(3, "ab" | "cad"))("ababcad") == Right("ababcad")
+    run("abc" ~ "def")("abcdef") == Right(("abc", "def"))
+
+    val concat: Parser[String] = "abc" ~ "def"
+    run(concat)("abcdef") == Right(("abc", "def"))
+
+    val pair: Parser[(Int, Int)] = (rep(char('a')) ~ rep(char('b'))) ^^ { _.length -> _.length }
+    run(pair)("aaaab") == Right((4, 1))
+
+    (c: Char) => run(char(c))(c.toString) == Right(c)
+  }
+}
+
+case class Location(input: String, offset: Int = 0) {
+
+  lazy val line = input.slice(0,offset+1).count(_ == '\n') + 1
+  lazy val col = input.slice(0,offset+1).reverse.indexOf('\n')
+
+  def toError(msg: String): ParseError =
+    ParseError(List((this, msg)))
+
+  def advanceBy(n: Int) = copy(offset = offset+n)
+
+  /* Returns the line corresponding to this location */
+  def currentLine: String = 
+    if (input.length > 1) input.lines.drop(line-1).next
+    else ""
+}
+
+case class ParseError(stack: List[(Location,String)] = List(),
+                      otherFailures: List[ParseError] = List()) {
+}
