@@ -12,23 +12,33 @@ class PropSpec extends Specification {
 
   import PropSpec._
 
+  def validProperty1 = Prop("validProperty1")
+    .forAll(Gen.choose(10, 20)) { i => i >= 10 && i < 20 }
+
+  def validProperty2 = Prop("validProperty2")
+    .forAll(Gen.choose(100, 200)) { i => i >= 100 && i < 200 }
+
+  def invalidProperty1 = Prop("invalidProperty1")
+    .forAll(Gen.choose(20, 30)) { i => i >= 10 && i < 20 }
+
+  def invalidProperty2 = Prop("invalidProperty2")
+    .forAll(Gen.choose(150, 250)) { i => i >= 100 && i < 200 }
+
   "forAll" should {
     "execute property checks with success" in {
-      val props = Prop.forAll(Gen.choose(10, 20)) { i => i >= 10 && i < 20 }
-      val result = props.quickRun
+      val result = validProperty1.quickRun
 
       result.isFalsified must beFalse
     }
 
     "execute property checks with failure" in {
-      val props = Prop.forAll(Gen.choose(15, 25)) { i => i >= 10 && i < 20 }
-      val result = props.quickRun
+      val result = invalidProperty1.quickRun
 
       result match {
         case Passed | Proved => failure("The check shouldn't have been successful.")
         case Falsified(label, failedCase, successes) =>
-          failedCase.toInt must beBetween(20, 25).excludingEnd
-          label must be none
+          failedCase.toInt must beBetween(20, 30).excludingEnd
+          label must be some "invalidProperty1"
       }
       success
     }
@@ -36,43 +46,35 @@ class PropSpec extends Specification {
 
   "&&" should {
     "combine two property checks" in {
-      val props =
-        Prop.forAll(Gen.choose(10, 20)) { i => i >= 10 && i < 20 } &&
-        Prop.forAll(Gen.choose(100, 200)) { i => i >= 100 && i < 200 }
-
+      val props = validProperty1 && validProperty2
       val result = props.quickRun
 
       result.isFalsified must beFalse
     }
 
     "combine report failure for the first side that failed" in {
-      val props =
-        Prop("first").forAll(Gen.choose(15, 25)) { i => i >= 10 && i < 20 } &&
-        Prop("second").forAll(Gen.choose(100, 200)) { i => i >= 100 && i < 200 }
+      val props = invalidProperty1 && validProperty1
 
       val result = props.quickRun
 
       result match {
         case Passed | Proved => failure("The check shouldn't have been successful.")
         case Falsified(label, failedCase, successes) =>
-          failedCase.toInt must beBetween(20, 25).excludingEnd
-          label must be some "first"
+          failedCase.toInt must beBetween(20, 30).excludingEnd
+          label must be some "invalidProperty1"
       }
       success
     }
 
     "combine report failure for the second if it failed" in {
-      val props =
-        Prop("first").forAll(Gen.choose(10, 20)) { i => i >= 10 && i < 20 } &&
-        Prop("second").forAll(Gen.choose(150, 250)) { i => i >= 100 && i < 200 }
-
+      val props = validProperty1 && invalidProperty1
       val result = props.quickRun
 
       result match {
         case Passed | Proved => failure("The check shouldn't have been successful.")
         case Falsified(label, failedCase, successes) =>
-          failedCase.toInt must beBetween(200, 250).excludingEnd
-          label must be some "second"
+          failedCase.toInt must beBetween(20, 30).excludingEnd
+          label must be some "invalidProperty1"
       }
       success
     }
@@ -80,36 +82,25 @@ class PropSpec extends Specification {
 
   "||" should {
     "pass even if the first test fails" in {
-      val props =
-        Prop.forAll(Gen.choose(20, 30)) { i => i >= 10 && i < 20 } ||
-        Prop.forAll(Gen.choose(100, 200)) { i => i >= 100 && i < 200 }
-
+      val props = invalidProperty1 || validProperty1
       val result = props.quickRun
 
       result.isFalsified must beFalse
     }
     "pass even if the second test fails" in {
-      val props =
-        Prop.forAll(Gen.choose(10, 20)) { i => i >= 10 && i < 20 } ||
-        Prop.forAll(Gen.choose(200, 300)) { i => i >= 100 && i < 200 }
-
+      val props = validProperty1 || invalidProperty1
       val result = props.quickRun
 
       result.isFalsified must beFalse
     }
-    "pass even if both tests pass" in {
-      val props =
-        Prop.forAll(Gen.choose(10, 20)) { i => i >= 10 && i < 20 } ||
-        Prop.forAll(Gen.choose(100, 200)) { i => i >= 100 && i < 200 }
-
+    "pass if both tests pass" in {
+      val props = validProperty1 || validProperty2
       val result = props.quickRun
 
       result.isFalsified must beFalse
     }
     "fail if both tests fail" in {
-      val props =
-        Prop("first").forAll(Gen.choose(20, 30)) { i => i >= 10 && i < 20 } ||
-        Prop("second").forAll(Gen.choose(150, 250)) { i => i >= 100 && i < 200 }
+      val props = invalidProperty1 || invalidProperty2
 
       val result = props.quickRun
 
@@ -117,7 +108,7 @@ class PropSpec extends Specification {
         case Passed | Proved => failure("The check shouldn't have been successful.")
         case Falsified(label, failedCase, successes) =>
           failedCase.toInt must beBetween(200, 250).excludingEnd
-          label must be some "second"
+          label must be some "invalidProperty2"
       }
       success
     }
@@ -150,3 +141,4 @@ class PropSpec extends Specification {
     }
   }
 }
+
