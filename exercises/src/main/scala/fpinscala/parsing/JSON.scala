@@ -11,13 +11,19 @@ object Json {
   case class JsArray(get: IndexedSeq[Json]) extends Json
   case class JsObject(get: Map[JsString, Json]) extends Json
 
+  object JsObject {
+    val empty = JsObject()
+
+    def apply(pairs: (String, Json)*): JsObject = JsObject(pairs.toMap.map { case (key, value) => JsString(key) -> value })
+  }
+
   def jsonParser[Parser[+_]](P: Parsers[Parser]): Parser[Json] = {
     import P._
 
-    val whitespaces = raw"\s".r.slice
+    val whitespaces: Parser[Unit] = raw"\s".r.many map { _ => () }
 
     val escapes: Parser[Char] =
-      (char('\\') ** raw"[\dA-Fa-F]{4}".r) map { case (_, hex) => ??? } // \u0000
+      (char('\\') ** raw"\p{XDigit}{4}".r) map { case (_, hex) => ??? } // \u0000
       Map(
         '"' -> '"',
         '\\' -> '\\',
@@ -36,10 +42,7 @@ object Json {
     def item[A](p: Parser[A]): Parser[A] = p <** whitespaces ** "," ** whitespaces
     def items[A](p: Parser[A]): Parser[List[A]] = (many(item(p)) map2 p)(_ :+ _) | succeed(Nil)
 
-    def arrayItem: Parser[Json] = item(jsValue)
-    def arrayItems: Parser[List[Json]] = items(arrayItem)
-
-    lazy val pair: Parser[(JsString, Json)] = item((jsString <** whitespaces ** char(':') ** whitespaces) ** jsValue)
+    lazy val pair: Parser[(JsString, Json)] = (jsString <** whitespaces ** char(':') ** whitespaces) ** jsValue <** whitespaces
     lazy val pairs: Parser[Map[JsString, Json]] = items(pair).map(_.toMap)
 
     lazy val jsNull: Parser[JsNull.type] = string("null") map { _ => JsNull }
@@ -49,13 +52,14 @@ object Json {
       case chars => JsString(chars.mkString)
     }
     lazy val jsArray: Parser[JsArray] =
-      (char('[') ** whitespaces **> arrayItems <** whitespaces ** char(']')) map {
+      (char('[') ** whitespaces **> items(jsValue) <** whitespaces ** char(']')) map {
         case items => JsArray(items.toVector)
       }
-    lazy val jsObject: Parser[JsObject] = char('{') ** whitespaces **> pairs.map(JsObject) <** whitespaces ** char('}')
+    lazy val jsObject: Parser[JsObject] = char('{') ** whitespaces **> pairs.map(JsObject(_)) <** whitespaces ** char('}')
 
     lazy val jsValue: Parser[Json] = jsNull | jsBoolean | jsNumber | jsString | jsArray | jsObject
 
     whitespaces **> (jsArray | jsObject) <** whitespaces
+
   }
 }

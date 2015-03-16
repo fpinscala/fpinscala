@@ -1,9 +1,58 @@
 package fpinscala.parsing
 
 import java.util.regex._
+
 import scala.util.matching.Regex
 import fpinscala.testing.exhaustive._
 import fpinscala.testing.exhaustive.Prop._
+
+object Parser extends Parsers[Parser] {
+
+  override def run[A](p: Parser[A])(input: String): Either[ParseError, A] =
+    p(Location(input, 0)).right.flatMap {
+      case (a, loc) => if (loc.tail.isEmpty) Right(a) else Left(loc.toError("Trailing text."))
+    }
+
+  override def count(p: Parser[_]): Parser[Int] = { s1 =>
+    p(s1) match {
+      case Left(_) => Right(0 -> s1)
+      case Right((_, s2)) => count(p)(s2).right.map {
+        case (count, s3) => (count + 1) -> s3
+      }
+    }
+  }
+
+  override def or[A](s1: Parser[A], s2: => Parser[A]): Parser[A] = { loc =>
+    s1(loc).left.flatMap { error =>
+      s2(loc) // TODO How to know we're committed and merge errors?
+    }
+  }
+
+  override def succeed[A](a: A): Parser[A] = { s => Right(a -> s) }
+
+  override implicit def string(text: String): Parser[String] = { loc =>
+    if (loc.tail.startsWith(text)) {
+      Right(text -> loc.advanceBy(text.length))
+    } else {
+      Left(loc.toError("Expected: " + text))
+    }
+  }
+
+  override implicit def regex(r: Regex): Parser[String] = { loc =>
+    r.findPrefixOf(loc.tail) match {
+      case Some(head) => Right(head -> loc.advanceBy(head.length))
+      case None => Left(loc.toError("Expected regex: " + r))
+    }
+  }
+
+  override def flatMap[A, B](p: Parser[A])(f: A => Parser[B]): Parser[B] = { loc1 =>
+    p(loc1).right.flatMap {
+      case (a, loc2) => f(a)(loc2)
+    }
+  }
+
+  override def slice[A](p: Parser[A]): Parser[String] = ???
+}
 
 trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trait
 
@@ -20,13 +69,13 @@ trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trai
 
   def count(p: Parser[_]): Parser[Int]
 
-  def product[A, B](s1: Parser[A], s2: Parser[B]): Parser[(A, B)] =
+  def product[A, B](s1: Parser[A], s2: => Parser[B]): Parser[(A, B)] =
     for {
       a <- s1
       b <- s2
     } yield (a, b)
 
-  def slice[A](p: Parser[A]): Parser[String] = ???
+  def slice[A](p: Parser[A]): Parser[String]
 
   def many[A](p: Parser[A]): Parser[List[A]] = many1(p) or succeed(Nil)
 
@@ -39,6 +88,8 @@ trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trai
   }
 
   implicit def regex(r: Regex): Parser[String]
+
+  def flatMap[A, B](p: Parser[A])(f: A => Parser[B]): Parser[B]
 
   implicit class ParserOps[A](val p: Parser[A]) {
     def |[B>:A](p2: => Parser[B]): Parser[B] = self.or(p,p2)
@@ -57,8 +108,7 @@ trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trai
     def map2[B, C](p2: => Parser[B])(f: (A, B) => C): Parser[C] =
       p ** p2 map { case (a, b) => f(a, b) }
 
-    def flatMap[B](f: A => Parser[B]): Parser[B] = ???
-
+    def flatMap[B](f: A => Parser[B]): Parser[B] = self.flatMap(p)(f)
 
     def slice: Parser[String] = self.slice(p)
     def many: Parser[List[A]] = self.many(p)
@@ -96,6 +146,8 @@ case class Location(input: String, offset: Int = 0) {
   def currentLine: String = 
     if (input.length > 1) input.lines.drop(line-1).next
     else ""
+
+  def tail = input.drop(offset)
 }
 
 case class ParseError(stack: List[(Location,String)] = List(),
