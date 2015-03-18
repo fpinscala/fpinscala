@@ -1,1 +1,0 @@
-If we are just looking at the random case, one way to have the generated `Int` depend on the `String` might be to set the seed of a new random number generator to be equal to the `hashCode` of the given input `String`.

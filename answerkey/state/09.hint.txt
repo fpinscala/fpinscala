@@ -1,1 +1,3 @@
--
+`_map`- your solution will be similar to `nonNegativeLessThan`.
+
+`_map2` - your solution to `map2` for the `Option` data type should give you some ideas.
