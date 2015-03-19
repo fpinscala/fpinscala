@@ -1,1 +1,0 @@
-Use the specialized functions for `Rand` as inspiration.
