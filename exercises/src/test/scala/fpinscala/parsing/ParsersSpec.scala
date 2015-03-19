@@ -41,14 +41,14 @@ class ParsersSpec extends Specification {
     "parse a trivial object" in {
 
       val expected = JsObject(
-          "key1" -> JsNumber(1),
-          "key2" -> JsString("value")
+        "key1" -> JsNumber(1),
+        "key2" -> JsString("value")
       )
 
       val text =
         """
           |{
-          |  "key1": 1,
+          |  "key1" : 1 ,
           |  "key2": "value"
           |}
         """.stripMargin
@@ -70,8 +70,37 @@ class ParsersSpec extends Specification {
 
       run(parser)(text) === Right(expected)
     }
-  }
 
+
+    "parse a more complex mix" in {
+
+      val expected = JsArray(Vector(
+        JsNumber(1),
+        JsString("value"),
+        JsNull,
+        JsObject(
+          "key1" -> JsBoolean(true),
+          "key2" -> JsBoolean(false)
+        )
+      ))
+
+      val text =
+        """
+          |[
+          |  1,
+          |  "value",
+          |  null,
+          |  {
+          |    "key1": true,
+          |    "key2": false
+          |  }
+          |]
+        """.stripMargin
+
+      run(parser)(text) === Right(expected)
+    }
+
+  }
 
 }
 
