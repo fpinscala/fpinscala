@@ -1,6 +1,7 @@
 language: scala
+sudo: false
 scala:
-  - 2.11.4
+  - 2.11.5
 jdk:
   - oraclejdk7
   - openjdk7

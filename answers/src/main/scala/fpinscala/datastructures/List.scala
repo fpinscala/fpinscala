@@ -321,7 +321,7 @@ object List { // `List` companion object. Contains functions for creating and wo
   @annotation.tailrec
   def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = sup match {
     case Nil => sub == Nil
-    case _ => startsWith(sup, sub)
+    case _ if startsWith(sup, sub) => true
     case Cons(h,t) => hasSubsequence(t, sub)
   }
 }

@@ -64,6 +64,17 @@ object FormatAbsAndFactorial {
   }
 }
 
+object TestFib {
+
+  import MyModule._
+
+  // test implementation of `fib`
+  def main(args: Array[String]): Unit = {
+    println("Expected: 0, 1, 1, 2, 3, 5, 8")
+    println("Actual:   %d, %d, %d, %d, %d, %d, %d".format(fib(0), fib(1), fib(2), fib(3), fib(4), fib(5), fib(6)))
+  }
+}
+
 // Functions get passed around so often in FP that it's
 // convenient to have syntax for constructing a function
 // *without* having to give it a name
