@@ -2,7 +2,10 @@ package fpinscala.datastructures
 
 sealed trait List[+A] // `List` data type, parameterized on a type, `A`
 case object Nil extends List[Nothing] // A `List` data constructor representing the empty list
-case class Cons[+A](head: A, tail: List[A]) extends List[A] // Another data constructor, representing nonempty lists. Note that `tail` is another `List[A]`, which may be `Nil` or another `Cons`.
+/* Another data constructor, representing nonempty lists. Note that `tail` is another `List[A]`,
+which may be `Nil` or another `Cons`.
+ */
+case class Cons[+A](head: A, tail: List[A]) extends List[A]
 
 object List { // `List` companion object. Contains functions for creating and working with lists.
   def sum(ints: List[Int]): Int = ints match { // A function that uses pattern matching to add up a list of integers
