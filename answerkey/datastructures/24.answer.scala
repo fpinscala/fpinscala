@@ -26,6 +26,6 @@ def startsWith[A](l: List[A], prefix: List[A]): Boolean = (l,prefix) match {
 @annotation.tailrec
 def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = sup match {
   case Nil => sub == Nil
-  case _ => startsWith(sup, sub)
-  case Cons(h,t) => hasSubsequence(t, sub)
+  case _ if startsWith(sup, sub) => true
+  case Cons(_,t) => hasSubsequence(t, sub)
 }
