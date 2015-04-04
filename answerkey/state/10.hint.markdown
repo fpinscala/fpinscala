@@ -1,0 +1,17 @@
+Use the specialized functions for `Rand` as inspiration.
+
+Recall that if you have a `f : S => (A,S)`, you can create a `State[S,A]` just by writing `State(f)`. The function can also be declared inline with a lambda:
+
+```Scala
+State { (s: S) => 
+  ... 
+  (a,s2) 
+}
+// or
+State ((s: S) => { 
+  ... 
+  (a,s2) 
+})
+```
+
+We usually use the first form just to avoid an extra level of parentheses and braces.

@@ -1,7 +1,7 @@
 package fpinscala.errorhandling
 
-
-import scala.{Option => _, Either => _, _} // hide std library `Option` and `Either`, since we are writing our own in this chapter
+//hide std library `Option` and `Either`, since we are writing our own in this chapter
+import scala.{Option => _, Either => _, _}
 
 sealed trait Option[+A] {
   def map[B](f: A => B): Option[B] = this match {
@@ -51,18 +51,22 @@ case object None extends Option[Nothing]
 
 object Option {
   def failingFn(i: Int): Int = {
-    val y: Int = throw new Exception("fail!") // `val y: Int = ...` declares `y` as having type `Int`, and sets it equal to the right hand side of the `=`.
+    // `val y: Int = ...` declares `y` as having type `Int`, and sets it equal to the right hand side of the `=`.
+    val y: Int = throw new Exception("fail!")
     try {
       val x = 42 + 5
       x + y
     }
-    catch { case e: Exception => 43 } // A `catch` block is just a pattern matching block like the ones we've seen. `case e: Exception` is a pattern that matches any `Exception`, and it binds this value to the identifier `e`. The match returns the value 43.
+    // A `catch` block is just a pattern matching block like the ones we've seen. `case e: Exception` is a pattern
+    // that matches any `Exception`, and it binds this value to the identifier `e`. The match returns the value 43.
+    catch { case e: Exception => 43 }
   }
 
   def failingFn2(i: Int): Int = {
     try {
       val x = 42 + 5
-      x + ((throw new Exception("fail!")): Int) // A thrown Exception can be given any type; here we're annotating it with the type `Int`
+      // A thrown Exception can be given any type; here we're annotating it with the type `Int`
+      x + ((throw new Exception("fail!")): Int)
     }
     catch { case e: Exception => 43 }
   }
@@ -88,7 +92,9 @@ object Option {
       case h :: t => h flatMap (hh => sequence(t) map (hh :: _))
     }
   /*
-  It can also be implemented using `foldRight` and `map2`. The type annotation on `foldRight` is needed here; otherwise Scala wrongly infers the result type of the fold as `Some[Nil.type]` and reports a type error (try it!). This is an unfortunate consequence of Scala using subtyping to encode algebraic data types.
+  It can also be implemented using `foldRight` and `map2`. The type annotation on `foldRight` is needed here; otherwise
+  Scala wrongly infers the result type of the fold as `Some[Nil.type]` and reports a type error (try it!). This is an
+  unfortunate consequence of Scala using subtyping to encode algebraic data types.
   */
   def sequence_1[A](a: List[Option[A]]): Option[List[A]] =
     a.foldRight[Option[List[A]]](Some(Nil))((x,y) => map2(x,y)(_ :: _))

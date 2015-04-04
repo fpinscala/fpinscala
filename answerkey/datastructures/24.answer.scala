@@ -8,6 +8,14 @@ implementation we need special purpose logic to break out of our
 loops early. In Chapter 5 we'll discuss ways of composing functions
 like this from simpler components, without giving up the efficiency
 of having the resulting functions work in one pass over the data.
+
+It's good to specify some properties about these functions.
+For example, do you expect these expressions to be true?
+
+(xs append ys) startsWith xs
+xs startsWith Nil
+(xs append ys append zs) hasSubsequence ys
+xs hasSubsequence Nil
 */
 @annotation.tailrec
 def startsWith[A](l: List[A], prefix: List[A]): Boolean = (l,prefix) match {
@@ -17,7 +25,7 @@ def startsWith[A](l: List[A], prefix: List[A]): Boolean = (l,prefix) match {
 }
 @annotation.tailrec
 def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = sup match {
-  case Nil => false
+  case Nil => sub == Nil
   case _ if startsWith(sup, sub) => true
-  case Cons(h,t) => hasSubsequence(t, sub)
+  case Cons(_,t) => hasSubsequence(t, sub)
 }
