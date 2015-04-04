@@ -3,7 +3,7 @@ import Keys._
 
 object FPInScalaBuild extends Build {
   val opts = Project.defaultSettings ++ Seq(
-    scalaVersion := "2.11.5",
+    scalaVersion := "2.11.6",
     resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
     libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.4" % "test",
     libraryDependencies += "junit" % "junit" % "4.12" % "test",
