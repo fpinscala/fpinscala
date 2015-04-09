@@ -84,5 +84,14 @@ class PolymorphicFunctionsSpec extends Specification {
       curriedF(3)(2) mustEqual 9
     }
   }
+
+  "uncurry" >> {
+    "uncurries a function of a -> b -> c into (a, b) -> c" >> {
+      val f = PolymorphicFunctions.curry(Math.pow)
+      val uncurriedF = PolymorphicFunctions.uncurry(f)
+
+      uncurriedF(3, 2) mustEqual 9
+    }
+  }
 }
 
