@@ -75,5 +75,14 @@ class PolymorphicFunctionsSpec extends Specification {
       }
     }
   }
+
+  "curry" >> {
+    "curries a function of (a, b) -> c into a -> b -> c" >> {
+      val f = Math.pow _
+      val curriedF = PolymorphicFunctions.curry(f)
+
+      curriedF(3)(2) mustEqual 9
+    }
+  }
 }
 
