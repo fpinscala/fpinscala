@@ -93,5 +93,15 @@ class PolymorphicFunctionsSpec extends Specification {
       uncurriedF(3, 2) mustEqual 9
     }
   }
+
+  "compose" >> {
+    "builds function of a -> c that sequentially carries out functions of a -> b and b -> c" >> {
+      def f(i: Int) = i + 1
+      def g(i: Int) = i - 1
+      val x = 1
+
+      (PolymorphicFunctions.compose(f, g))(x) mustEqual x
+    }
+  }
 }
 
