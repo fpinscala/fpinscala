@@ -1,10 +1,5 @@
 package fpinscala.answers.parsing
 
-import scala.language.implicitConversions
-// import scala.language.postfixOps
-import scala.language.higherKinds
-
-
 import java.util.regex._
 import scala.util.matching.Regex
 import fpinscala.answers.testing._

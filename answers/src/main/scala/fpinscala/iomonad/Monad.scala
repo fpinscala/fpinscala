@@ -1,5 +1,5 @@
 package fpinscala.answers.iomonad
-import scala.language.implicitConversions
+
 import language.higherKinds // Disable warnings for type constructor polymorphism
 
 trait Functor[F[_]] {

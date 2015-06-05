@@ -1,7 +1,5 @@
 package fpinscala.answers.monads
 
-import scala.language.higherKinds
-
 import fpinscala.answers.parsing._
 import fpinscala.answers.testing._
 import fpinscala.answers.parallelism._

@@ -1,7 +1,4 @@
 package fpinscala.answers
-import scala.language.implicitConversions
-import scala.language.postfixOps
-import scala.language.higherKinds
 
 package object iomonad {
   import fpinscala.answers.parallelism.Nonblocking._

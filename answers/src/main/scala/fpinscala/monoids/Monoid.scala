@@ -3,9 +3,6 @@ package fpinscala.answers.monoids
 import fpinscala.answers.parallelism.Nonblocking._
 import fpinscala.answers.parallelism.Nonblocking.Par.toParOps // infix syntax for `Par.map`, `Par.flatMap`, etc
 
-import fpinscala.answers.parallelism.Nonblocking._
-import fpinscala.answers.parallelism.Nonblocking.Par.toParOps // infix syntax for `Par.map`, `Par.flatMap`, etc
-
 trait Monoid[A] {
   def op(a1: A, a2: A): A
   def zero: A
