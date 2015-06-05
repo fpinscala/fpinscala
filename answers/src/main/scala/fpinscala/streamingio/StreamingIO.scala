@@ -1,6 +1,6 @@
-package fpinscala.streamingio
+package fpinscala.answers.streamingio
 
-import fpinscala.iomonad.{IO,Monad,Free,unsafePerformIO}
+import fpinscala.answers.iomonad.{IO,Monad,Free,unsafePerformIO}
 
 object ImperativeAndLazyIO {
 
@@ -244,7 +244,7 @@ object SimpleStreamTransducers {
 
     // Process forms a monad, and we provide monad syntax for it
 
-    import fpinscala.iomonad.Monad
+    import fpinscala.answers.iomonad.Monad
 
     def monad[I]: Monad[({ type f[x] = Process[I,x]})#f] =
       new Monad[({ type f[x] = Process[I,x]})#f] {
@@ -745,7 +745,7 @@ object GeneralizedStreamTransducers {
 
     /* Our generalized `Process` type can represent sources! */
 
-    import fpinscala.iomonad.IO
+    import fpinscala.answers.iomonad.IO
 
     /* Special exception indicating normal termination */
     case object End extends Exception
@@ -774,7 +774,7 @@ object GeneralizedStreamTransducers {
           case Halt(err) => throw err
           case Await(req,recv) =>
             val next =
-              try recv(Right(fpinscala.iomonad.unsafePerformIO(req)(E)))
+              try recv(Right(fpinscala.answers.iomonad.unsafePerformIO(req)(E)))
               catch { case err: Throwable => recv(Left(err)) }
             go(next, acc)
         }
@@ -1015,7 +1015,7 @@ object GeneralizedStreamTransducers {
      * convert the lines of a file from fahrenheit to celsius.
      */
 
-    import fpinscala.iomonad.IO0.fahrenheitToCelsius
+    import fpinscala.answers.iomonad.IO0.fahrenheitToCelsius
 
     val converter: Process[IO,Unit] =
       lines("fahrenheit.txt").
@@ -1115,7 +1115,7 @@ object GeneralizedStreamTransducers {
 
 object ProcessTest extends App {
   import GeneralizedStreamTransducers._
-  import fpinscala.iomonad.IO
+  import fpinscala.answers.iomonad.IO
   import Process._
 
   val p = eval(IO { println("woot"); 1 }).repeat

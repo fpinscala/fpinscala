@@ -1,4 +1,4 @@
-package fpinscala.state
+package fpinscala.answers.state
 
 
 trait RNG {

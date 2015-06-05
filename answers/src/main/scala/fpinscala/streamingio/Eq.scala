@@ -1,4 +1,4 @@
-package fpinscala.streamingio
+package fpinscala.answers.streamingio
 
 /* 
  * `Eq[A,B]` provides evidence that types `A` and `B` are equal. 

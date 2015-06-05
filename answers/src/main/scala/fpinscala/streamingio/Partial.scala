@@ -1,4 +1,4 @@
-package fpinscala.streamingio
+package fpinscala.answers.streamingio
 
 /* 
  * A context in which exceptions can be caught and

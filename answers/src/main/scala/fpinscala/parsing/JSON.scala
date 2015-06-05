@@ -1,4 +1,4 @@
-package fpinscala.parsing
+package fpinscala.answers.parsing
 
 trait JSON
 
@@ -63,8 +63,8 @@ object JSONExample extends App {
 ]
 """
 
-  val P = fpinscala.parsing.Reference
-  import fpinscala.parsing.ReferenceTypes.Parser
+  val P = fpinscala.answers.parsing.Reference
+  import fpinscala.answers.parsing.ReferenceTypes.Parser
 
   def printResult[E](e: Either[E,JSON]) =
     e.fold(println, println)

@@ -1,4 +1,4 @@
-package fpinscala.testing.exhaustive
+package fpinscala.answers.testing.exhaustive
 
 /*
 This source file contains the answers to the last two exercises in the section
@@ -7,10 +7,11 @@ This source file contains the answers to the last two exercises in the section
 The Gen data type in this file incorporates exhaustive checking of finite domains.
 */
 
-import fpinscala.laziness.{Stream,Cons,Empty}
-import fpinscala.state._
-import fpinscala.parallelism._
-import fpinscala.parallelism.Par.Par
+
+import fpinscala.answers.laziness.{Stream,Cons,Empty}
+import fpinscala.answers.state._
+import fpinscala.answers.parallelism._
+import fpinscala.answers.parallelism.Par.Par
 import Gen._
 import Prop._
 import Status._

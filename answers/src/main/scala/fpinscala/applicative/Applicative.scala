@@ -1,10 +1,9 @@
-package fpinscala
-package applicative
+package fpinscala.answers.applicative
 
-import monads.Functor
-import state._
-import State._
-import monoids._
+import fpinscala.answers.monads.Functor
+import fpinscala.answers.state._
+import fpinscala.answers.state.State._
+import fpinscala.answers.monoids._
 
 trait Applicative[F[_]] extends Functor[F] {
   // `map2` is implemented by first currying `f` so we get a function

@@ -1,11 +1,12 @@
-package fpinscala
-package monads
+package fpinscala.answers.monads
 
-import parsing._
-import testing._
-import parallelism._
-import state._
-import parallelism.Par._
+import scala.language.higherKinds
+
+import fpinscala.answers.parsing._
+import fpinscala.answers.testing._
+import fpinscala.answers.parallelism._
+import fpinscala.answers.state._
+import fpinscala.answers.parallelism.Par._
 
 trait Functor[F[_]] {
   def map[A,B](fa: F[A])(f: A => B): F[B]

@@ -1,4 +1,4 @@
-package fpinscala.iomonad
+package fpinscala.answers.iomonad
 
 object BindTest extends App {
 
@@ -22,7 +22,7 @@ object BindTest extends App {
     }}
   }
 
-  import fpinscala.parallelism.Nonblocking._
+  import fpinscala.answers.parallelism.Nonblocking._
 
   object ParMonad extends Monad[Par] {
     def unit[A](a: => A) = Par.unit(a)

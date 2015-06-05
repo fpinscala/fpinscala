@@ -1,6 +1,7 @@
-package fpinscala.streamingio
+package fpinscala.answers.streamingio
 
-import fpinscala.iomonad._
+import fpinscala.answers.monads.Monad
+import fpinscala.answers.iomonad.Task
 
 /*
  * A context in which exceptions can be caught and
@@ -14,7 +15,7 @@ trait MonadCatch[F[_]] extends Monad[F] {
 object MonadCatch {
   implicit def task = new MonadCatch[Task] {
     def unit[A](a: => A): Task[A] = Task.unit(a)
-    def flatMap[A,B](a: Task[A])(f: A => Task[B]): Task[B] = a flatMap f
+    override def flatMap[A,B](a: Task[A])(f: A => Task[B]): Task[B] = a flatMap f
     def attempt[A](a: Task[A]): Task[Either[Throwable,A]] = a.attempt
     def fail[A](err: Throwable): Task[A] = Task.fail(err)
   }

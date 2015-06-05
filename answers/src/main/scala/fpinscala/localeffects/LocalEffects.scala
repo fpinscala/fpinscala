@@ -1,6 +1,6 @@
-package fpinscala.localeffects
+package fpinscala.answers.localeffects
 
-import fpinscala.monads._
+import fpinscala.answers.monads._
 
 object Mutable {
   def quicksort(xs: List[Int]): List[Int] = if (xs.isEmpty) xs else {

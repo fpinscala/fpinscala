@@ -1,5 +1,4 @@
-package fpinscala
-package parsing
+package fpinscala.answers.parsing
 
 import SliceableTypes._
 import scala.util.matching.Regex

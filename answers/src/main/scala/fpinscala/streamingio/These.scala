@@ -1,4 +1,4 @@
-package fpinscala.streamingio
+package fpinscala.answers.streamingio
 
 /* Data type representing either A, B, or both A and B. */
 trait These[+A,+B] {

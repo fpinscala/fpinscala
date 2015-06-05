@@ -1,6 +1,6 @@
-package fpinscala.iomonad
+package fpinscala.answers.iomonad
 
-import fpinscala.parallelism.Nonblocking._
+import fpinscala.answers.parallelism.Nonblocking._
 import java.util.concurrent.ExecutorService
 
 /*

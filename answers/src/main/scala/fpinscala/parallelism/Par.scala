@@ -1,4 +1,4 @@
-package fpinscala.parallelism
+package fpinscala.answers.parallelism
 
 import java.util.concurrent._
 
