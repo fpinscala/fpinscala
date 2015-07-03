@@ -175,6 +175,9 @@ object IO2a {
   object IO extends Monad[IO] { // Notice that none of these operations DO anything
     def unit[A](a: => A): IO[A] = Return(a)
     def flatMap[A,B](a: IO[A])(f: A => IO[B]): IO[B] = a flatMap f
+    def suspend[A](a: => IO[A]) =
+      Suspend(() => ()).flatMap { _ => a }
+
   }
 
   def printLine(s: String): IO[Unit] =
@@ -202,6 +205,44 @@ object IO2a {
   }
 }
 
+object IO2aTests {
+  import IO2a._
+
+  /*
+  Pg 240: REPL session has a typo, should be:
+
+  val g = List.fill(100000)(f).foldLeft(f) {
+    (a, b) => x => Suspend(() => ()).flatMap { _ => a(x).flatMap(b)}
+  }
+
+  Note: we could write a little helper function to make this nicer:
+
+  def suspend[A](a: => IO[A]) = Suspend(() => ()).flatMap { _ => a }
+
+  val g = List.fill(100000)(f).foldLeft(f) {
+    (a, b) => x => suspend { a(x).flatMap(b) }
+  }
+   */
+
+  val f: Int => IO[Int] = (i: Int) => Return(i)
+
+  val g: Int => IO[Int] =
+    List.fill(10000)(f).foldLeft(f){
+      (a: Function1[Int, IO[Int]],
+        b: Function1[Int, IO[Int]]) => {
+        (x: Int) => IO.suspend(a(x).flatMap(b))
+      }
+    }
+
+  def main(args: Array[String]): Unit = {
+    val gFortyTwo = g(42)
+    println("g(42) = " + gFortyTwo)
+    println("run(g(42)) = " + run(gFortyTwo))
+  }
+}
+
+
+
 object IO2b {
 
   /*
@@ -225,6 +266,9 @@ object IO2b {
   object TailRec extends Monad[TailRec] {
     def unit[A](a: => A): TailRec[A] = Return(a)
     def flatMap[A,B](a: TailRec[A])(f: A => TailRec[B]): TailRec[B] = a flatMap f
+    def suspend[A](a: => TailRec[A]) =
+      Suspend(() => ()).flatMap { _ => a }
+
   }
 
   @annotation.tailrec def run[A](t: TailRec[A]): A = t match {
@@ -237,6 +281,27 @@ object IO2b {
     }
   }
 }
+
+object IO2bTests {
+  import IO2b._
+
+  val f: Int => TailRec[Int] = (i: Int) => Return(i)
+
+  val g: Int => TailRec[Int] =
+    List.fill(10000)(f).foldLeft(f){
+      (a: Function1[Int, TailRec[Int]],
+        b: Function1[Int, TailRec[Int]]) => {
+        (x: Int) => TailRec.suspend(a(x).flatMap(b))
+      }
+    }
+
+  def main(args: Array[String]): Unit = {
+    val gFortyTwo = g(42)
+    println("g(42) = " + gFortyTwo)
+    println("run(g(42)) = " + run(gFortyTwo))
+  }
+}
+
 
 object IO2c {
 
