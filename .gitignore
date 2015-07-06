@@ -6,7 +6,14 @@ project/boot
 .history
 project.vim
 *.old
-.idea
-.project
+
+#Eclipse stuff
 .classpath
-.metadata/
+.cache
+.project
+*.sc
+.worksheet
+
+.idea
+.idea_modules
+*.orig
