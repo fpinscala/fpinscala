@@ -64,6 +64,9 @@ object List { // `List` companion object. Contains functions for creating and wo
   /* 3.6 */
   def init[A](l: List[A]): List[A] = ???
 
+  /* 3.7 */
+  def productUsingFoldRight(ns: List[Double]) : Double = ???
+
   /* 3.9 */
   def length[A](l: List[A]): Int = ???
 
@@ -115,4 +118,22 @@ object List { // `List` companion object. Contains functions for creating and wo
 
   /* 3.24 */
   def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = ???
+}
+
+object ListDemo extends App {
+  import List.{sum, foldRight}
+
+  /* 3.1 */
+  val x = List(1,2,3,4,5) match {
+    case Cons(x, Cons(2, Cons(4, _))) => x
+    case Nil => 42
+    case Cons(x, Cons(y, Cons(3, Cons(4, _)))) => x + y case Cons(h, t) => h + sum(t)
+    case _ => 101
+  }
+  println(x)
+
+  /* 3.8 */
+  val y = foldRight(List(1,2,3), Nil:List[Int])(Cons(_,_))
+  println(y)
+  
 }
