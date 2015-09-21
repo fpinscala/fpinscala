@@ -1,5 +1,7 @@
 package fpinscala.gettingstarted
 
+import scala.annotation.tailrec
+
 // A comment!
 /* Another comment */
 /** A documentation comment */
@@ -13,8 +15,15 @@ object MyModule {
     msg.format(x, abs(x))
   }
 
-  def main(args: Array[String]): Unit =
+  def main(args: Array[String]): Unit = {
     println(formatAbs(-42))
+    println("Fibonachi of 0 is " + fib(0))
+    println("Fibonachi of 3 is " + fib(3))
+    println("Fibonachi of 5 is " + fib(5))
+    println("Fibonachi of 6 is " + fib(6))
+    println("Fibonachi of 10 is " + fib(10))
+    println("Fibonachi of 20 is " + fib(20))
+  }
 
   // A definition of factorial, using a local, tail recursive function
   def factorial(n: Int): Int = {
@@ -34,9 +43,26 @@ object MyModule {
     acc
   }
 
+  /*
+  Fibonachi of 0 is 0
+  Fibonachi of 2 is 1
+  Fibonachi of 4 is 3
+  Fibonachi of 5 is 5
+  Fibonachi of 10 is 55
+   */
+
   // Exercise 1: Write a function to compute the nth fibonacci number
 
-  def fib(n: Int): Int = ???
+  // 0, 1, 2, 3, 4, 5 idx
+  // 0, 1, 1, 2, 3, 5
+  def fib(n: Int): Int = {
+    @tailrec
+    def loop(curr: Int, next: Int, next2: Int, idx: Int): Int = {
+      if (idx == n) curr
+      else loop(next, curr + next, next + next2, idx + 1)
+    }
+    loop(0, 1, 1, 0)
+  }
 
   // This definition and `formatAbs` are very similar..
   private def formatFactorial(n: Int) = {
@@ -140,7 +166,19 @@ object PolymorphicFunctions {
 
   // Exercise 2: Implement a polymorphic function to check whether
   // an `Array[A]` is sorted
-  def isSorted[A](as: Array[A], gt: (A,A) => Boolean): Boolean = ???
+  def isSorted[A](as: Array[A], gt: (A,A) => Boolean): Boolean = {
+    if (as.size < 2) true
+    else if (gt(as(0), as(1))) false
+    else isSorted(as.drop(1), gt)
+  }
+
+  def main(args: Array[String]): Unit = {
+    println("is sorted 1,2,3 ", isSorted(Array(1,2,3), (x: Int, y: Int) => x > y))
+    println("is sorted 1,3,2 ", isSorted[Int](Array(1,3,2), (x: Int, y: Int) => x > y))
+    println("is sorted 1 ",     isSorted[Int](Array(1), (x, y) => x > y))
+    println("is sorted 1,2 ",   isSorted[Int](Array(1,2), _ > _))
+    println("is sorted 2,1 ",   isSorted(Array(2,1),   (x: Int, y: Int) => x > y))
+  }
 
   // Polymorphic functions are often so constrained by their type
   // that they only have one implementation! Here's an example:
