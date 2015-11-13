@@ -1,5 +1,8 @@
 package fpinscala.iomonad
 
+import language.higherKinds
+import language.postfixOps
+
 object BindTest extends App {
 
   def timeit(n: Int)(task: => Unit): Unit = {

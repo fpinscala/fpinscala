@@ -2,6 +2,8 @@ package fpinscala.streamingio
 
 import fpinscala.iomonad._
 
+import language.higherKinds
+
 /*
  * A context in which exceptions can be caught and
  * thrown.

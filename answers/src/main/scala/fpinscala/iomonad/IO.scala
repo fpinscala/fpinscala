@@ -1,5 +1,9 @@
 package fpinscala.iomonad
 
+import scala.io.StdIn.readLine
+import language.higherKinds
+import language.postfixOps
+
 object IO0 {
                             /*
 

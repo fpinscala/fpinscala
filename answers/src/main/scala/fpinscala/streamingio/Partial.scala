@@ -1,5 +1,7 @@
 package fpinscala.streamingio
 
+import language.higherKinds
+
 /* 
  * A context in which exceptions can be caught and
  * thrown. 

@@ -1,5 +1,8 @@
 package fpinscala.testing.exhaustive
 
+import language.implicitConversions
+import language.postfixOps
+
 /*
 This source file contains the answers to the last two exercises in the section
 "Test Case Minimization" of chapter 8 on property-based testing.

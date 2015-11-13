@@ -4,6 +4,8 @@ import java.util.regex._
 import scala.util.matching.Regex
 import fpinscala.testing._
 import fpinscala.testing.Prop._
+import language.higherKinds
+import language.implicitConversions
 
 trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trait
   def run[A](p: Parser[A])(input: String): Either[ParseError,A]

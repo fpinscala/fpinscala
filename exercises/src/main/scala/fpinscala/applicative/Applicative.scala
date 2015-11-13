@@ -6,6 +6,8 @@ import state._
 import State._
 import StateUtil._ // defined at bottom of this file
 import monoids._
+import language.higherKinds
+import language.implicitConversions
 
 trait Applicative[F[_]] extends Functor[F] {
 

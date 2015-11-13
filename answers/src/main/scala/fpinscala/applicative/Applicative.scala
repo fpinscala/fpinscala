@@ -5,6 +5,9 @@ import monads.Functor
 import state._
 import State._
 import monoids._
+import language.higherKinds
+import language.implicitConversions
+
 
 trait Applicative[F[_]] extends Functor[F] {
   // `map2` is implemented by first currying `f` so we get a function
