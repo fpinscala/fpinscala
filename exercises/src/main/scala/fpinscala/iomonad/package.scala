@@ -1,5 +1,7 @@
 package fpinscala
 
+import language.higherKinds
+
 package object iomonad {
   import fpinscala.parallelism.Nonblocking._
 

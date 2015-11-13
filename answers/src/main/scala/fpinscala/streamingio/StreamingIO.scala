@@ -1,6 +1,9 @@
 package fpinscala.streamingio
 
 import fpinscala.iomonad.{IO,Monad,Free,unsafePerformIO}
+import language.implicitConversions
+import language.higherKinds
+import language.postfixOps
 
 object ImperativeAndLazyIO {
 

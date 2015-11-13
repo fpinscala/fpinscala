@@ -1,5 +1,7 @@
 package fpinscala.streamingio
 
+import language.postfixOps
+
 /* Data type representing either A, B, or both A and B. */
 trait These[+A,+B] {
   import These._
