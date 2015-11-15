@@ -16,24 +16,38 @@ object FPInScalaBuild extends Build {
   lazy val chapterCode =
     Project(id = "chapter-code",
             base = file("chaptercode"),
-            settings = opts)
+            settings = opts).settings(appScalariformSettings: _*)
   lazy val exercises =
     Project(id = "exercises",
             base = file("exercises"),
-            settings = opts)
+            settings = opts).settings(appScalariformSettings: _*)
   lazy val answers =
     Project(id = "answers",
             base = file("answers"),
-            settings = opts)
+            settings = opts).settings(appScalariformSettings: _*)
 
   def nio2check(): String = {
     val cls = "java.nio.channels.AsynchronousFileChannel"
     try {Class.forName(cls); ""}
     catch {case _: ClassNotFoundException =>
-      ("\nWARNING: JSR-203 \"NIO.2\" (" + cls + ") not found.\n" +
-       "You are probably running Java < 1.7; answers will not compile.\n" +
-       "You seem to be running " + System.getProperty("java.version") + ".\n" +
-       "Try `project exercises' before compile, or upgrading your JDK.")
+      "\nWARNING: JSR-203 \"NIO.2\" (" + cls + ") not found.\n" +
+        "You are probably running Java < 1.7; answers will not compile.\n" +
+        "You seem to be running " + System.getProperty("java.version") + ".\n" +
+        "Try `project exercises' before compile, or upgrading your JDK."
     }
+  }
+
+  private lazy val appScalariformSettings = {
+    import com.typesafe.sbt.SbtScalariform
+    import scalariform.formatter.preferences._
+
+    SbtScalariform.scalariformSettings ++ Seq(
+      SbtScalariform.ScalariformKeys.preferences := FormattingPreferences()
+        .setPreference(IndentWithTabs, false)
+        .setPreference(DoubleIndentClassDeclaration, true)
+        .setPreference(PreserveDanglingCloseParenthesis, true)
+        .setPreference(AlignSingleLineCaseStatements, true)
+        .setPreference(RewriteArrowSymbols, true)
+    )
   }
 }

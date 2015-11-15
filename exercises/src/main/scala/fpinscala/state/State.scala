@@ -1,6 +1,5 @@
 package fpinscala.state
 
-
 trait RNG {
   def nextInt: (Int, RNG) // Should generate a random `Int`. We'll later define other functions in terms of `nextInt`.
 }
@@ -17,15 +16,15 @@ object RNG {
     }
   }
 
-  type Rand[+A] = RNG => (A, RNG)
+  type Rand[+A] = RNG ⇒ (A, RNG)
 
   val int: Rand[Int] = _.nextInt
 
   def unit[A](a: A): Rand[A] =
-    rng => (a, rng)
+    rng ⇒ (a, rng)
 
-  def map[A,B](s: Rand[A])(f: A => B): Rand[B] =
-    rng => {
+  def map[A, B](s: Rand[A])(f: A ⇒ B): Rand[B] =
+    rng ⇒ {
       val (a, rng2) = s(rng)
       (f(a), rng2)
     }
@@ -34,27 +33,27 @@ object RNG {
 
   def double(rng: RNG): (Double, RNG) = ???
 
-  def intDouble(rng: RNG): ((Int,Double), RNG) = ???
+  def intDouble(rng: RNG): ((Int, Double), RNG) = ???
 
-  def doubleInt(rng: RNG): ((Double,Int), RNG) = ???
+  def doubleInt(rng: RNG): ((Double, Int), RNG) = ???
 
-  def double3(rng: RNG): ((Double,Double,Double), RNG) = ???
+  def double3(rng: RNG): ((Double, Double, Double), RNG) = ???
 
   def ints(count: Int)(rng: RNG): (List[Int], RNG) = ???
 
-  def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = ???
+  def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) ⇒ C): Rand[C] = ???
 
   def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = ???
 
-  def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] = ???
+  def flatMap[A, B](f: Rand[A])(g: A ⇒ Rand[B]): Rand[B] = ???
 }
 
-case class State[S,+A](run: S => (A, S)) {
-  def map[B](f: A => B): State[S, B] =
+case class State[S, +A](run: S ⇒ (A, S)) {
+  def map[B](f: A ⇒ B): State[S, B] =
     sys.error("todo")
-  def map2[B,C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
+  def map2[B, C](sb: State[S, B])(f: (A, B) ⇒ C): State[S, C] =
     sys.error("todo")
-  def flatMap[B](f: A => State[S, B]): State[S, B] =
+  def flatMap[B](f: A ⇒ State[S, B]): State[S, B] =
     sys.error("todo")
 }
 

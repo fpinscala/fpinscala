@@ -10,7 +10,7 @@ package fpinscala.streamingio
  * called =:=[A,B] (and usually written infix as `A =:= B`) but
  * we include a version here just to show that it is not magic.
  */
-case class Eq[A,B] private(to: A => B, from: B => A)
+case class Eq[A, B] private (to: A ⇒ B, from: B ⇒ A)
 
-object Eq { def refl[A]: Eq[A,A] = Eq(identity, identity) } 
+object Eq { def refl[A]: Eq[A, A] = Eq(identity, identity) }
 

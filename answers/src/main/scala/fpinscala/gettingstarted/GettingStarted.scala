@@ -21,7 +21,7 @@ object MyModule {
     @annotation.tailrec
     def go(n: Int, acc: Int): Int =
       if (n <= 0) acc
-      else go(n-1, n*acc)
+      else go(n - 1, n * acc)
 
     go(n, 1)
   }
@@ -55,7 +55,7 @@ object MyModule {
 
   // We can generalize `formatAbs` and `formatFactorial` to
   // accept a _function_ as a parameter
-  def formatResult(name: String, n: Int, f: Int => Int) = {
+  def formatResult(name: String, n: Int, f: Int ⇒ Int) = {
     val msg = "The %s of %d is %d."
     msg.format(name, n, f(n))
   }
@@ -83,11 +83,11 @@ object AnonymousFunctions {
   def main(args: Array[String]): Unit = {
     println(formatResult("absolute value", -42, abs))
     println(formatResult("factorial", 7, factorial))
-    println(formatResult("increment", 7, (x: Int) => x + 1))
-    println(formatResult("increment2", 7, (x) => x + 1))
-    println(formatResult("increment3", 7, x => x + 1))
+    println(formatResult("increment", 7, (x: Int) ⇒ x + 1))
+    println(formatResult("increment2", 7, (x) ⇒ x + 1))
+    println(formatResult("increment3", 7, x ⇒ x + 1))
     println(formatResult("increment4", 7, _ + 1))
-    println(formatResult("increment5", 7, x => { val r = x + 1; r }))
+    println(formatResult("increment5", 7, x ⇒ { val r = x + 1; r }))
   }
 }
 
@@ -119,7 +119,7 @@ object PolymorphicFunctions {
   // Instead of hard-coding `String`, we take a type `A` as a parameter.
   // And instead of hard-coding an equality check for a given key,
   // we take a function with which to test each element of the array.
-  def findFirst[A](as: Array[A], p: A => Boolean): Int = {
+  def findFirst[A](as: Array[A], p: A ⇒ Boolean): Int = {
     @annotation.tailrec
     def loop(n: Int): Int =
       if (n >= as.length) -1
@@ -131,15 +131,14 @@ object PolymorphicFunctions {
     loop(0)
   }
 
-
   // Exercise 2: Implement a polymorphic function to check whether
   // an `Array[A]` is sorted
-  def isSorted[A](as: Array[A], gt: (A,A) => Boolean): Boolean = {
+  def isSorted[A](as: Array[A], gt: (A, A) ⇒ Boolean): Boolean = {
     @annotation.tailrec
     def go(n: Int): Boolean =
-      if (n >= as.length-1) true
-      else if (gt(as(n), as(n+1))) false
-      else go(n+1)
+      if (n >= as.length - 1) true
+      else if (gt(as(n), as(n + 1))) false
+      else go(n + 1)
 
     go(0)
   }
@@ -147,21 +146,21 @@ object PolymorphicFunctions {
   // Polymorphic functions are often so constrained by their type
   // that they only have one implementation! Here's an example:
 
-  def partial1[A,B,C](a: A, f: (A,B) => C): B => C =
-    (b: B) => f(a, b)
+  def partial1[A, B, C](a: A, f: (A, B) ⇒ C): B ⇒ C =
+    (b: B) ⇒ f(a, b)
 
   // Exercise 3: Implement `curry`.
 
   // Note that `=>` associates to the right, so we could
   // write the return type as `A => B => C`
-  def curry[A,B,C](f: (A, B) => C): A => (B => C) =
-    a => b => f(a, b)
+  def curry[A, B, C](f: (A, B) ⇒ C): A ⇒ (B ⇒ C) =
+    a ⇒ b ⇒ f(a, b)
 
   // NB: The `Function2` trait has a `curried` method already
 
   // Exercise 4: Implement `uncurry`
-  def uncurry[A,B,C](f: A => B => C): (A, B) => C =
-    (a, b) => f(a)(b)
+  def uncurry[A, B, C](f: A ⇒ B ⇒ C): (A, B) ⇒ C =
+    (a, b) ⇒ f(a)(b)
 
   /*
   NB: There is a method on the `Function` object in the standard library,
@@ -175,6 +174,6 @@ object PolymorphicFunctions {
 
   // Exercise 5: Implement `compose`
 
-  def compose[A,B,C](f: B => C, g: A => B): A => C =
-    a => f(g(a))
+  def compose[A, B, C](f: B ⇒ C, g: A ⇒ B): A ⇒ C =
+    a ⇒ f(g(a))
 }
