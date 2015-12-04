@@ -1,7 +1,17 @@
 /*
-The implementation of `foldRight` in terms of `reverse` and `foldLeft` is a common trick for avoiding stack overflows when implementing a strict `foldRight` function as we've done in this chapter. (We'll revisit this in a later chapter, when we discuss laziness).
+The implementation of `foldRight` in terms of `reverse` and `foldLeft` is a
+common trick for avoiding stack overflows when implementing a strict
+`foldRight` function as we've done in this chapter.
+(We'll revisit this in a later chapter, when we discuss laziness).
 
-The other implementations build up a chain of functions which, when called, results in the operations being performed with the correct associativity. We are calling `foldRight` with the `B` type being instantiated to `B => B`, then calling the built up function with the `z` argument. Try expanding the definitions by substituting equals for equals using a simple example, like `foldLeft(List(1,2,3), 0)(_ + _)` if this isn't clear. Note these implementations are more of theoretical interest - they aren't stack-safe and won't work for large lists.
+The other implementations build up a chain of functions which, when called,
+results in the operations being performed with the correct associativity.
+We are calling `foldRight` with the `B` type being instantiated to `B => B`,
+then calling the built up function with the `z` argument.
+Try expanding the definitions by substituting equals for equals using a
+simple example, like `foldLeft(List(1,2,3), 0)(_ + _)` if this isn't clear.
+Note these implementations are more of theoretical interest - they aren't
+stack-safe and won't work for large lists.
 */
 def foldRightViaFoldLeft[A,B](l: List[A], z: B)(f: (A,B) => B): B = 
   foldLeft(reverse(l), z)((b,a) => f(a,b))
@@ -43,7 +53,7 @@ def foldLeftViaFoldRight_1[A,B](as: List[A], outerIdent: B)(combiner: (B, A) => 
 
   // Pass the original list 'as', plus the simple identity function and the
   // new combinerDelayer to foldRight.  This will create the functions for
-  // delayed evaluation with an combiner inside each one, but will not
+  // delayed evaluation with a combiner inside each one, but will not
   // apply any of those functions.
   def go:BtoB = foldRight(as, innerIdent)(combinerDelayer)
 
