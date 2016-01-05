@@ -73,6 +73,9 @@ object List { // `List` companion object. Contains functions for creating and wo
     assert( sum( List(1,2,3,4) ) == 10, "sum of list should be sum of its elements" )
   }
 
+  def test_sum(): Unit = test_sum(sum)
+  def test_sum2(): Unit = test_sum(sum2)
+
   def test_product(product: List[Double] => Double): Unit =
   {
     assert( product( Nil)                       ==  1.0,  "product of empty list should be 1.0" )
@@ -80,6 +83,9 @@ object List { // `List` companion object. Contains functions for creating and wo
     assert( product( List(1.0, 2.0, 3.0, 4.0) ) == 24.0,  "product of list should be product of its elements" )
     assert( product( List(1.0, 2.0, 0.0, 4.0) ) ==  0.0,  "product of list containing zero should be zero" )
   }
+
+  def test_product(): Unit = test_product(product)
+  def test_product2(): Unit = test_product(product2)
 
   def test_append(): Unit =
   {
@@ -154,13 +160,17 @@ object List { // `List` companion object. Contains functions for creating and wo
     assert( foldLeft(  List(1, 2, 3, 4, 5), 1) (_ * _) ==
       foldRight( List(1, 2, 3, 4, 5), 1) (_ * _),
       "foldLeft should compute the same product value as foldRight")
+
+    assert( foldLeft(  List("a", "b", "c"), "") (_ + _) ==
+      foldRight( List("a", "b", "c"), "") (_ + _),
+      "foldLeft should compute the same concatenation value as foldRight")
   }
 
   def test(): Unit = {
-    test_sum(sum)
-    test_sum(sum2)
-    test_product(product)
-    test_product(product2)
+    test_sum
+    test_sum2
+    test_product
+    test_product2
     test_append
     test_tail
     test_setHead
