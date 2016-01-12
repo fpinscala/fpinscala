@@ -91,7 +91,7 @@ object AnonymousFunctions {
   }
 }
 
-object MonomorphicBinarySearch {
+object MonomorphicSearchFunction {
 
   // First, a findFirst, specialized to `String`.
   // Ideally, we could generalize this to work for any `Array` type.
