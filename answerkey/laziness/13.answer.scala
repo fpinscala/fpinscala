@@ -24,7 +24,7 @@ def zipWith[B,C](s2: Stream[B])(f: (A,B) => C): Stream[C] =
     case _ => None
   }
 
-// special case of `zip`
+// special case of `zipWith`
 def zip[B](s2: Stream[B]): Stream[(A,B)] =
   zipWith(s2)((_,_))
 
