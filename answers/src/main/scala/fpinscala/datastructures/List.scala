@@ -84,6 +84,7 @@ object List { // `List` companion object. Contains functions for creating and wo
   length of the input list is unknown, and the number of elements to be dropped is being computed from something else.
   If `drop` threw an exception, we'd have to first compute or check the length and only drop up to that many elements.
   */
+  @annotation.tailrec
   def drop[A](l: List[A], n: Int): List[A] =
     if (n <= 0) l
     else l match {
@@ -96,6 +97,7 @@ object List { // `List` companion object. Contains functions for creating and wo
   satisfies our predicate, `f`. The syntax is to add `if <cond>` after the pattern, before the `=>`, where `<cond>` can
   use any of the variables introduced by the pattern.
   */
+  @annotation.tailrec
   def dropWhile[A](l: List[A], f: A => Boolean): List[A] =
     l match {
       case Cons(h,t) if f(h) => dropWhile(t, f)
