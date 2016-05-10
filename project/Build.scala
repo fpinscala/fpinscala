@@ -2,7 +2,7 @@ import sbt._
 import Keys._
 
 object FPInScalaBuild extends Build {
-  val opts = Project.defaultSettings ++ Seq(
+  val opts = Seq(
     scalaVersion := "2.11.7",
     resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
   )
