@@ -99,14 +99,7 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
   def sequence[G[_]:Applicative,A](fma: F[G[A]]): G[F[A]] =
     traverse(fma)(ma => ma)
 
-  type Id[A] = A
-  val idMonad = new Monad[Id] {
-    def unit[A](a: => A) = a
-    override def flatMap[A,B](a: A)(f: A => B): B = f(a)
-  }
-
-  def map[A,B](fa: F[A])(f: A => B): F[B] =
-    traverse[Id, A, B](fa)(f)(idMonad)
+  def map[A,B](fa: F[A])(f: A => B): F[B] = ???
 
   import Applicative._
 
