@@ -1,7 +1,7 @@
 import fpinscala.testing._
 import Prop._
 
-def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Prop =
+def monoidLaws[A](gen: Gen[A])(m: Monoid[A]): Prop =
   // Associativity
   forAll(for {
     x <- gen
