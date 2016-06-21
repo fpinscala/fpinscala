@@ -2,8 +2,8 @@ import sbt._
 import Keys._
 
 object FPInScalaBuild extends Build {
-  val opts = Project.defaultSettings ++ Seq(
-    scalaVersion := "2.11.7",
+  val opts = Defaults.coreDefaultSettings ++ Seq(
+    scalaVersion := "2.11.8",
     resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
   )
 
@@ -29,11 +29,11 @@ object FPInScalaBuild extends Build {
   def nio2check(): String = {
     val cls = "java.nio.channels.AsynchronousFileChannel"
     try {Class.forName(cls); ""}
-    catch {case _: ClassNotFoundException =>
-      ("\nWARNING: JSR-203 \"NIO.2\" (" + cls + ") not found.\n" +
-       "You are probably running Java < 1.7; answers will not compile.\n" +
-       "You seem to be running " + System.getProperty("java.version") + ".\n" +
-       "Try `project exercises' before compile, or upgrading your JDK.")
+    catch {case _: ClassNotFoundException => s"""
+      |WARNING: JSR-203 \"NIO.2\" (" + cls + ") not found.
+      |You are probably running Java < 1.7; answers will not compile.
+      |You seem to be running ${System.getProperty("java.version")}.
+      |Try `project exercises' before compile, or upgrading your JDK.""".stripMargin
     }
   }
 }

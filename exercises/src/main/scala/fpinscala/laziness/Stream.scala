@@ -9,7 +9,7 @@ trait Stream[+A] {
       case _ => z
     }
 
-  def exists(p: A => Boolean): Boolean = 
+  def exists(p: A => Boolean): Boolean =
     foldRight(false)((a, b) => p(a) || b) // Here `b` is the unevaluated recursive step that folds the tail of the stream. If `p(a)` returns `true`, `b` will never be evaluated and the computation terminates early.
 
   @annotation.tailrec
@@ -17,6 +17,9 @@ trait Stream[+A] {
     case Empty => None
     case Cons(h, t) => if (f(h())) Some(h()) else t().find(f)
   }
+
+  def toList: List[A] = sys.error("todo")
+
   def take(n: Int): Stream[A] = sys.error("todo")
 
   def drop(n: Int): Stream[A] = sys.error("todo")
@@ -27,10 +30,23 @@ trait Stream[+A] {
 
   def headOption: Option[A] = sys.error("todo")
 
-  // 5.7 map, filter, append, flatmap using foldRight. Part of the exercise is
-  // writing your own function signatures.
+  def map[B](f: A => B): Stream[B] = sys.error("todo")
+
+  def filter(p: A => Boolean): Stream[A] = sys.error("todo")
+
+  def append[B >: A](that: => Stream[B]): Stream[B] = sys.error("todo")
+
+  def flatMap[B](f: A => Stream[B]): Stream[B] = sys.error("todo")
+
+  def zipWith[B,C](s2: Stream[B])(f: (A,B) => C): Stream[C] = sys.error("todo")
+
+  def zipAll[B](s2: Stream[B]): Stream[(Option[A],Option[B])] = sys.error("todo")
 
   def startsWith[B](s: Stream[B]): Boolean = sys.error("todo")
+
+  def tails: Stream[Stream[A]] = sys.error("todo")
+
+  def scanRight[B](z: B)(f: (A, => B) => B): Stream[B] = sys.error("todo")
 }
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
@@ -45,11 +61,16 @@ object Stream {
   def empty[A]: Stream[A] = Empty
 
   def apply[A](as: A*): Stream[A] =
-    if (as.isEmpty) empty 
+    if (as.isEmpty) empty
     else cons(as.head, apply(as.tail: _*))
 
   val ones: Stream[Int] = Stream.cons(1, ones)
+
+  def constant[A](a: A): Stream[A] = sys.error("todo")
+
   def from(n: Int): Stream[Int] = sys.error("todo")
+
+  lazy val fibs: Stream[Int] = sys.error("todo")
 
   def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = sys.error("todo")
 }
