@@ -27,13 +27,13 @@ class StreamTest extends FunSpec {
   }
 
   describe("toList") {
-    it("should convert a stream to a list") {
+    ignore("should convert a stream to a list") {
       val testStream = Stream(1, 2, 3)
 
       assertResult(List(1,2,3))(testStream.toList)
     }
 
-    it("should instantly evaluate all elements of a stream") {
+    ignore("should instantly evaluate all elements of a stream") {
       new TestStream {
         val shortStream = testStream.take(3)
         shortStream.toList
@@ -42,13 +42,13 @@ class StreamTest extends FunSpec {
       }
     }
 
-    it("should work on an empty list") {
+    ignore("should work on an empty list") {
       assertResult(Nil)(Empty.toList)
     }
   }
 
   describe("take") {
-    it("should return the first n elements of a stream") {
+    ignore("should return the first n elements of a stream") {
       new TestStream {
         val shortStream = testStream.take(3)
 
@@ -56,7 +56,7 @@ class StreamTest extends FunSpec {
       }
     }
 
-    it("should not evaluate more than one element in the stream") {
+    ignore("should not evaluate more than one element in the stream") {
       new TestStream {
         val shortStream = testStream.take(3)
 
@@ -64,13 +64,13 @@ class StreamTest extends FunSpec {
       }
     }
 
-    it("should throw an exception if called on an empty stream") {
+    ignore("should throw an exception if called on an empty stream") {
       intercept[NoSuchElementException] {
         Empty.take(3)
       }
     }
 
-    it("should not throw an exception if called on a small stream") {
+    ignore("should not throw an exception if called on a small stream") {
       val testStream = Stream(1, 2, 3)
 
       assert(testStream.take(4).isInstanceOf[Stream[_]])
@@ -78,7 +78,7 @@ class StreamTest extends FunSpec {
   }
 
   describe("drop") {
-    it("should drop the first n elements of a stream") {
+    ignore("should drop the first n elements of a stream") {
       new TestStream {
         val shortStream = testStream.take(6)
 
@@ -86,7 +86,7 @@ class StreamTest extends FunSpec {
       }
     }
 
-    it("should not evaluate any element in the stream") {
+    ignore("should not evaluate any element in the stream") {
       new TestStream {
         val streamTail = testStream.drop(5)
 
@@ -94,11 +94,11 @@ class StreamTest extends FunSpec {
       }
     }
 
-    it("should return an empty stream if called on an empty stream") {
+    ignore("should return an empty stream if called on an empty stream") {
       assertResult(Empty)(Empty.drop(1))
     }
 
-    it("should return an empty stream if more than all elements in the stream are dropped") {
+    ignore("should return an empty stream if more than all elements in the stream are dropped") {
       val testStream = Stream(1, 2, 3)
 
       assertResult(Empty)(testStream.drop(4))
@@ -106,7 +106,7 @@ class StreamTest extends FunSpec {
   }
 
   describe("takeWhile") {
-    it("should return only elements that match the predicate") {
+    ignore("should return only elements that match the predicate") {
       new TestStream {
         val evens = testStream.takeWhile(_ < 5)
 
@@ -114,7 +114,7 @@ class StreamTest extends FunSpec {
       }
     }
 
-    it("should evaluate only one element in the stream") {
+    ignore("should evaluate only one element in the stream") {
       new TestStream {
         val odds = testStream.takeWhile(_ % 2 != 0)
 
@@ -122,25 +122,25 @@ class StreamTest extends FunSpec {
       }
     }
 
-    it("should return an empty stream if called on an empty stream") {
+    ignore("should return an empty stream if called on an empty stream") {
       assertResult(Empty)(Empty.takeWhile(_ => true))
     }
   }
 
   describe("forAll") {
-    it("should return true if the predicate is true for all elements") {
+    ignore("should return true if the predicate is true for all elements") {
       val testStream = Stream(1, 2, 3)
 
       assertResult(true)(testStream.forAll(_ < 5))
     }
 
-    it("should return false if the predicate is false for any element") {
+    ignore("should return false if the predicate is false for any element") {
       val testStream = Stream(1, 2, 3)
 
       assertResult(false)(testStream.forAll(_ != 3))
     }
 
-    it("should only evaluate elements until one fails the predicate") {
+    ignore("should only evaluate elements until one fails the predicate") {
       new TestStream {
         assertResult(false)(testStream.forAll(_ < 5))
         assertResult(5)(count)
@@ -149,17 +149,17 @@ class StreamTest extends FunSpec {
   }
 
   describe("headOption") {
-    it("should return Some() for a stream with elements") {
+    ignore("should return Some() for a stream with elements") {
       new TestStream {
         assertResult(Some(1))(testStream.headOption)
       }
     }
 
-    it("should return None for a stream with no elements") {
+    ignore("should return None for a stream with no elements") {
       assertResult(None)(Empty.headOption)
     }
 
-    it("should only evaluate one element of the stream") {
+    ignore("should only evaluate one element of the stream") {
       new TestStream {
         val _ = testStream.headOption
 
@@ -169,13 +169,13 @@ class StreamTest extends FunSpec {
   }
 
   describe("map") {
-    it("should create a new stream that has the function applied to each element") {
+    ignore("should create a new stream that has the function applied to each element") {
       new TestStream {
         assertResult(List(2, 4, 6))(testStream.map(_ * 2).take(3).toList)
       }
     }
 
-    it("should only evaluate one element of the stream") {
+    ignore("should only evaluate one element of the stream") {
       new TestStream {
         testStream.map(_ + 1)
         assertResult(1)(count)
@@ -184,19 +184,19 @@ class StreamTest extends FunSpec {
   }
 
   describe("filter") {
-    it("should create a new stream containing only those elements that match the predicate") {
+    ignore("should create a new stream containing only those elements that match the predicate") {
       new TestStream {
         assertResult(List(1, 2, 3, 4))(testStream.take(100).filter(_ < 5).toList)
       }
     }
 
-    it("should be able to return disjoint parts of a stream") {
+    ignore("should be able to return disjoint parts of a stream") {
       new TestStream {
         assertResult(List(2, 4, 6, 8, 10))(testStream.filter(_ % 2 == 0).take(5).toList)
       }
     }
 
-    it("should only evaluate one element of the stream") {
+    ignore("should only evaluate one element of the stream") {
       new TestStream {
         testStream.filter(_ > 0)
         assertResult(1)(count)
@@ -205,14 +205,14 @@ class StreamTest extends FunSpec {
   }
 
   describe("append") {
-    it("should create a new stream out of the two given streams") {
+    ignore("should create a new stream out of the two given streams") {
       val stream1 = Stream(1)
       val stream2 = Stream(2, 3)
 
       assertResult(List(1, 2, 3))(stream1.append(stream2).toList)
     }
 
-    it("should only evaluate one element of the stream") {
+    ignore("should only evaluate one element of the stream") {
       new TestStream {
         val newStream = testStream.append(testStream)
 
@@ -220,7 +220,7 @@ class StreamTest extends FunSpec {
       }
     }
 
-    it("should work for empty streams") {
+    ignore("should work for empty streams") {
       val fullStream = Stream(1, 2, 3)
 
       assertResult(List(1, 2, 3))(fullStream.append(Empty).toList)
@@ -229,7 +229,7 @@ class StreamTest extends FunSpec {
   }
 
   describe("flatMap") {
-    it("should create a new stream by applying the given function and flattening the results") {
+    ignore("should create a new stream by applying the given function and flattening the results") {
       new TestStream {
         val newStream = testStream.flatMap(n => Stream(n, n))
 
@@ -237,7 +237,7 @@ class StreamTest extends FunSpec {
       }
     }
 
-    it("should only evaluate one element of the stream") {
+    ignore("should only evaluate one element of the stream") {
       new TestStream {
         val newStream = testStream.flatMap(n => Stream(n.toString))
 
@@ -247,7 +247,7 @@ class StreamTest extends FunSpec {
   }
 
   describe("ones") {
-    it("should be an infinite stream of ones") {
+    ignore("should be an infinite stream of ones") {
       assert(Stream.ones.take(1000).forAll(_ == 1))
       intercept[StackOverflowError] {
         Stream.ones.toList
@@ -256,13 +256,13 @@ class StreamTest extends FunSpec {
   }
 
   describe("constant") {
-    it("should create a stream that repeats the same element") {
+    ignore("should create a stream that repeats the same element") {
       val constStream = Stream.constant(1)
 
       assert(constStream.take(1000).forAll(_ == 1))
     }
 
-    it("should work for any type") {
+    ignore("should work for any type") {
       val intStream = Stream.constant(7)
       val charStream = Stream.constant('f')
       val stringStream = Stream.constant("foobar")
@@ -283,13 +283,13 @@ class StreamTest extends FunSpec {
   }
 
   describe("from") {
-    it("should start at the integer specified") {
+    ignore("should start at the integer specified") {
       val fromSix = Stream.from(6)
 
       assert(fromSix.headOption.get == 6)
     }
 
-    it("should produce an infinite stream") {
+    ignore("should produce an infinite stream") {
       val fromTwelve = Stream.from(12)
 
       intercept[StackOverflowError] {
@@ -297,7 +297,7 @@ class StreamTest extends FunSpec {
       }
     }
 
-    it("should increase by one at each index") {
+    ignore("should increase by one at each index") {
       val fromNegativeFour = Stream.from(-4)
 
       assertResult(List(-4, -3, -2, -1, 0, 1, 2, 3, 4))(fromNegativeFour.take(9).toList)
@@ -305,11 +305,11 @@ class StreamTest extends FunSpec {
   }
 
   describe("fibs") {
-    it("should produce the fibonacci sequence") {
+    ignore("should produce the fibonacci sequence") {
       assertResult(List(0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610))(Stream.fibs.take(16).toList)
     }
 
-    it("should produce an infinite stream") {
+    ignore("should produce an infinite stream") {
       intercept[StackOverflowError] {
         Stream.fibs.toList
       }
@@ -317,7 +317,7 @@ class StreamTest extends FunSpec {
   }
 
   describe("unfold") {
-    it("should be able to produce an infinite stream from a state and a function") {
+    ignore("should be able to produce an infinite stream from a state and a function") {
       val fibs = Stream.unfold((0,1)) {
         case (first, second) => Some((first, (second, first + second)))
       }
@@ -328,7 +328,7 @@ class StreamTest extends FunSpec {
       }
     }
 
-    it("should be able to produce a finite stream if the function returns None") {
+    ignore("should be able to produce a finite stream if the function returns None") {
       val oneToTen = Stream.unfold(1) { n =>
         if (n <= 10) Some((n, n + 1))
         else None
@@ -337,14 +337,14 @@ class StreamTest extends FunSpec {
   }
 
   describe("zipWith") {
-    it("should apply a function to each corresponding element in the stream") {
+    ignore("should apply a function to each corresponding element in the stream") {
       val constStream = Stream.from(1)
 
       assertResult(List(2, 4, 6, 8, 10))(constStream.zipWith(constStream)(_ + _).take(5).toList)
       assertResult(List(1, 4, 9, 16, 25))(constStream.zipWith(constStream)(_ * _).take(5).toList)
     }
 
-    it("should terminate as soon as either stream terminates") {
+    ignore("should terminate as soon as either stream terminates") {
       new TestStream {
         val shortStream = Stream.from(1).take(5)
 
@@ -352,7 +352,7 @@ class StreamTest extends FunSpec {
       }
     }
 
-    it("should lazily evaluate") {
+    ignore("should lazily evaluate") {
       new TestStream {
         val stream2 = Stream.from(1)
 
@@ -363,7 +363,7 @@ class StreamTest extends FunSpec {
   }
 
   describe("zipAll") {
-    it("should generate tuples of the values in each stream") {
+    ignore("should generate tuples of the values in each stream") {
       val testStream = Stream.from(1)
 
       assertResult(List(
@@ -375,7 +375,7 @@ class StreamTest extends FunSpec {
       }
     }
 
-    it("should continue as long as either stream has values") {
+    ignore("should continue as long as either stream has values") {
       new TestStream {
         val threeStream = testStream.take(3)
         val fiveStream = testStream.take(5)
@@ -385,7 +385,7 @@ class StreamTest extends FunSpec {
       }
     }
 
-    it("should lazily evaluate") {
+    ignore("should lazily evaluate") {
       new TestStream {
         val constStream = Stream.from(1)
         val zippedStream = testStream zipAll constStream
@@ -396,7 +396,7 @@ class StreamTest extends FunSpec {
   }
 
   describe("startsWith") {
-    it("should return true if and only if this stream exactly matches another at the start") {
+    ignore("should return true if and only if this stream exactly matches another at the start") {
       new TestStream {
         val matchingStream = Stream.from(1).take(1000)
         val mismatchingStream = Stream(1, 2, 3, 4, 5, 6, 7, 8, 9, 0)
@@ -406,7 +406,7 @@ class StreamTest extends FunSpec {
       }
     }
 
-    it("should evaluate only what it needs to to determine the result") {
+    ignore("should evaluate only what it needs to to determine the result") {
       new TestStream {
         val other = Stream(1, 2, 3, 4, 6)
 
@@ -415,7 +415,7 @@ class StreamTest extends FunSpec {
       }
     }
 
-    it("should not be bidirectional") {
+    ignore("should not be bidirectional") {
       new TestStream {
         val mismatchingStream = Stream(1, 2, 3, 4, 5, 6, 7, 8, 9)
         assertResult(false)(mismatchingStream startsWith testStream.take(10))
@@ -424,7 +424,7 @@ class StreamTest extends FunSpec {
   }
 
   describe("tails") {
-    it("should return successive tails of a stream") {
+    ignore("should return successive tails of a stream") {
       val testStream = Stream(1, 2, 3, 4, 5)
 
       assertResult(List(List(1, 2, 3, 4, 5), List(2, 3, 4, 5), List(3, 4, 5), List(4, 5), List(5), Nil)) {
@@ -432,7 +432,7 @@ class StreamTest extends FunSpec {
       }
     }
 
-    it("should operate on infinite streams") {
+    ignore("should operate on infinite streams") {
       new TestStream {
         val tails = testStream.tails
 
@@ -442,13 +442,13 @@ class StreamTest extends FunSpec {
   }
 
   describe("scanRight") {
-    it("should give a list of all intermediate results of applying a function to a Stream") {
+    ignore("should give a list of all intermediate results of applying a function to a Stream") {
       val shortStream = Stream(1, 2, 3, 4, 5)
 
       assertResult(List(15, 14, 12, 9, 5, 0))(shortStream.scanRight(0)(_ + _).toList)
     }
 
-    it("should work on infinite streams, so long as the intermediate results terminate") {
+    ignore("should work on infinite streams, so long as the intermediate results terminate") {
       val stream = Stream.from(1)
 
       assertResult(List(false, false, false))(stream.scanRight(true)(_ > 5 && _).take(3).toList)

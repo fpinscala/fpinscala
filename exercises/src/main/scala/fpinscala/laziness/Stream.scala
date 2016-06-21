@@ -70,7 +70,7 @@ object Stream {
 
   def from(n: Int): Stream[Int] = sys.error("todo")
 
-  val fibs: Stream[Int] = sys.error("todo")
+  lazy val fibs: Stream[Int] = sys.error("todo")
 
   def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = sys.error("todo")
 }
