@@ -2,9 +2,12 @@ import sbt._
 import Keys._
 
 object FPInScalaBuild extends Build {
+  val scalaTest = "org.scalatest" %% "scalatest" % "3.0.0" % "test"
+  val scalactic = "org.scalactic" %% "scalactic" % "3.0.0"
   val opts = Project.defaultSettings ++ Seq(
     scalaVersion := "2.11.7",
-    resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
+    resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
+    libraryDependencies ++= Seq(scalactic, scalaTest)
   )
 
   lazy val root =
