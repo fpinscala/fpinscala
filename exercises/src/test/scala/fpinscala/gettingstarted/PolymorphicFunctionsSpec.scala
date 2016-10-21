@@ -5,7 +5,7 @@ import PolymorphicFunctions.isSorted
 
 class PolymorphicFunctionsSpec extends FunSpec with Matchers {
 
-  describe("isSorted()") {
+  describe("Exercise 2.2: isSorted()") {
     it("should return true for an empty Array") {
       val comparisonFn = (a: Int, b: Int) => a < b
       val given = Array()

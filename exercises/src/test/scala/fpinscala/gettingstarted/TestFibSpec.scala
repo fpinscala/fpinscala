@@ -5,7 +5,7 @@ import org.scalatest.{FunSpec, Matchers}
 import org.scalatest.prop.TableDrivenPropertyChecks._
 
 class TestFibSpec extends FunSpec with Matchers {
-  describe("fib()") {
+  describe("Exercise 2.1: fib()") {
     it("should generate valid fibonacci numbers") {
       val fibonacciAssertions = Table(
         ("given", "result"),
