@@ -3,7 +3,7 @@ package applicative
 
 import monads.Functor
 import state._
-import State._
+// import State._
 import StateUtil._ // defined at bottom of this file
 import monoids._
 import language.higherKinds
