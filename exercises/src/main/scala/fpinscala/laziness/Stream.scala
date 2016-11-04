@@ -120,7 +120,7 @@ trait Stream[+A] {
     foldRight(empty: Stream[A])((a, acc) => if (p(a)) cons(a, acc) else acc)
 
   def append[AA >: A](s: Stream[AA]): Stream[AA] =
-    foldRight(s)(cons)
+    foldRight(s)(cons(_, _))
 
   def flatMap[B](f: A => Stream[B]): Stream[B] =
     foldRight(empty: Stream[B])((a, acc) => f(a) append acc)
