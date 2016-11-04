@@ -229,7 +229,36 @@ object State {
     * simple candy dispenser. The machine has two types of input: you can insert a coin, or you can turn the knob to
     * dispense candy. It can be in one of two states: locked or unlocked. It also tracks how many candies are left and
     * how many coins it contains.
+    *
+    * The rules of the machine are as follows:
+    *
+    *   - Inserting a coin into a locked machine will cause it to unlock if there’s any candy left.
+    *   - Turning the knob on an unlocked machine will cause it to dispense candy and become locked.
+    *   - Turning the knob on a locked machine or inserting a coin into an unlocked machine does nothing.
+    *   - A machine that’s out of candy ignores all inputs.
+    *
+    * The method `simulateMachine` should operate the machine based on the list of inputs and return the number of coins
+    * and candies left in the machine at the end. For example, if the input `Machine` has 10 coins and 5 candies, and a
+    * total of 4 candies are successfully bought, the output should be `(14, 1)`.
+    *
+    * Note the approach here is to map the list of inputs to transitions of the candy machine's state using the `modify`
+    * method. This method expects a function `Machine => Machine` which we create based on the rules outlined above.
+    * This yields a `List` of state transitions, which can be collapsed by using the `sequence` function we defined
+    * above.
+    *
+    * This attempt makes a few bad choices, though:
+    *
+    *   - The machine transitions are encoded as anonymous functions; this is a little clunky
+    *   - The state of the machine (in terms of candies and coins) is produced for each input; only the last is required
+    *   - The final count of candies and coins is obtained in an unsafe way; throws `NoSuchElementException` if empty
+    *
+    * A better solution is provided in the second example. The major differences include:
+    *
+    *   - Modeling the candy machine updates in the `Candy` object and using pattern matching for better clarity
+    *   - Cleaner implementation in `sequence`, using function composition of `update` and `modify`
+    *   - Obtaining the final machine state once, after processing all inputs, in a safe way
     */
+
 //  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = {
 //    val machineT: (Machine => Machine) => State[Machine, (Int, Int)] = f => for {
 //      _ <- modify(f)
@@ -247,7 +276,7 @@ object State {
 //  }
 
   object Candy {
-    def update: Input => Machine => Machine = i => m => (i, m) match {
+    val update: Input => Machine => Machine = i => m => (i, m) match {
       case (_, Machine(_, 0, _))               => m                                        // ran out of candies
       case (Coin, Machine(false, _, _))        => m                                        // adding coin when open
       case (Turn, Machine(true, _, _))         => m                                        // turning knob when locked
