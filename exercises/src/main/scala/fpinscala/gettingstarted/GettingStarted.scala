@@ -78,7 +78,28 @@ object TestFib {
   // test implementation of `fib`
   def main(args: Array[String]): Unit = {
     println("Expected: 0, 1, 1, 2, 3, 5, 8")
-    println("Actual:   %d, %d, %d, %d, %d, %d, %d".format(fib(0), fib(1), fib(2), fib(3), fib(4), fib(5), fib(6)))
+    println("Actual:   %d".format(fib(0)))
+    println("%d".format(fib(1)))
+    println("%d".format(fib(2)))
+    /*println("%d".format(fib(3)))
+    println("%d".format(fib(4)))
+    println("%d".format(fib(5)))
+    println("%d".format(fib(6)))*/
+  }
+}
+
+object TestIsSorted {
+
+  import PolymorphicFunctions._
+
+  // test implementation of `isSorted`
+  def main(args: Array[String]): Unit = {
+    println("Expected: Array(8,5,3,2,1,1,0) = false")
+    val list1 = Array(8,5,3,2,1,1,0)
+    println("Actual: Array(8,5,3,2,1,1,0) = " + isSorted(list1, ordered))
+    println("Expected: Array(0,1,1,2,3,5,8) = true")
+    val list2 = Array(0,1,1,2,3,5,8)
+    println("Actual: Array(0,1,1,2,3,5,8) = " + isSorted(list2, ordered))
   }
 }
 
@@ -145,9 +166,18 @@ object PolymorphicFunctions {
     go(0, 0, as.length - 1)
   }
 
+  def ordered(a: Int, b: Int): Boolean = a > b
+
   // Exercise 2: Implement a polymorphic function to check whether
   // an `Array[A]` is sorted
-  def isSorted[A](as: Array[A], gt: (A,A) => Boolean): Boolean = ???
+  def isSorted[A](as: Array[A], gt: (A,A) => Boolean): Boolean = {
+    def go(i: Int): Boolean = {
+      if(i == as.length - 1) true
+      else if(gt(as(i), as(i+1))) false
+      else go(i+1)
+    }
+    go(0)
+  }
 
   // Polymorphic functions are often so constrained by their type
   // that they only have one implementation! Here's an example:
