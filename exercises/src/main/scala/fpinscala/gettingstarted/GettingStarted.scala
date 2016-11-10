@@ -88,21 +88,6 @@ object TestFib {
   }
 }
 
-object TestIsSorted {
-
-  import PolymorphicFunctions._
-
-  // test implementation of `isSorted`
-  def main(args: Array[String]): Unit = {
-    println("Expected: Array(8,5,3,2,1,1,0) = false")
-    val list1 = Array(8,5,3,2,1,1,0)
-    println("Actual: Array(8,5,3,2,1,1,0) = " + isSorted(list1, ordered))
-    println("Expected: Array(0,1,1,2,3,5,8) = true")
-    val list2 = Array(0,1,1,2,3,5,8)
-    println("Actual: Array(0,1,1,2,3,5,8) = " + isSorted(list2, ordered))
-  }
-}
-
 // Functions get passed around so often in FP that it's
 // convenient to have syntax for constructing a function
 // *without* having to give it a name
@@ -190,7 +175,7 @@ object PolymorphicFunctions {
   // Note that `=>` associates to the right, so we could
   // write the return type as `A => B => C`
   def curry[A,B,C](f: (A, B) => C): A => (B => C) =
-    ???
+    (a: A) => (b: B) => f(a, b)
 
   // NB: The `Function2` trait has a `curried` method already
 
@@ -212,4 +197,19 @@ object PolymorphicFunctions {
 
   def compose[A,B,C](f: B => C, g: A => B): A => C =
     ???
+}
+
+object TestIsSorted {
+
+  import PolymorphicFunctions._
+
+  // test implementation of `isSorted`
+  def main(args: Array[String]): Unit = {
+    println("Expected: Array(8,5,3,2,1,1,0) = false")
+    val list1 = Array(8,5,3,2,1,1,0)
+    println("Actual: Array(8,5,3,2,1,1,0) = " + isSorted(list1, ordered))
+    println("Expected: Array(0,1,1,2,3,5,8) = true")
+    val list2 = Array(0,1,1,2,3,5,8)
+    println("Actual: Array(0,1,1,2,3,5,8) = " + isSorted(list2, ordered))
+  }
 }
