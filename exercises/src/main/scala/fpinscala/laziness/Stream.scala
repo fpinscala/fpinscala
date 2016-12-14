@@ -39,9 +39,9 @@ trait Stream[+A] {
     foldRight(Nil: List[A])(_ :: _)
 
   /**
-    * Tail-recursvie implementation of `toList`.
+    * Tail-recursive implementation of `toList`.
     */
-  def toList2: List[A] = {
+  def toListTailRecursive: List[A] = {
     val buffer = new collection.mutable.ListBuffer[A]
 
     @annotation.tailrec
@@ -99,7 +99,7 @@ trait Stream[+A] {
   /**
     * Exercise 5.5 - Use foldRight to implement takeWhile.
     */
-  def takeWhile2(p: A => Boolean): Stream[A] =
+  def takeWhileViaFoldRight(p: A => Boolean): Stream[A] =
     foldRight(empty: Stream[A])((a, s) => if (p(a)) cons(a, s) else s)
 
   /**
