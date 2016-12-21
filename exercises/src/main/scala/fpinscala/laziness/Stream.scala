@@ -319,7 +319,7 @@ object Stream {
     * Exercise 5.12 - Write fibs, from, constant, and ones in terms of unfold.
     */
 
-  def fibs2: Stream[Int] =
+  def fibsViaUnfold: Stream[Int] =
     unfold((0, 1)) { case (prev, curr) => Some((prev, (curr, prev + curr))) }
 
   def from2(n: Int): Stream[Int] =
