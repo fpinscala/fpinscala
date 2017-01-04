@@ -193,7 +193,7 @@ trait Stream[+A] {
     unfold(this) {
       case Empty => None
       case s     => Some((s, s drop 1))
-    } append empty
+    } append Stream(empty)
 
   /**
     * Exercise 5.16 - Hard: Generalize tails to the function scanRight, which is like a foldRight that returns a stream
