@@ -1,2 +1,3 @@
-#!/bin/bash 
-java -Xmx1024M -Xss8m -XX:PermSize=300m -jar `dirname $0`/sbt-launch.jar "$@"
+#!/bin/bash
+SBT_OPTS="-Xms512M -Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256M"
+java $SBT_OPTS -jar `dirname $0`/sbt-launch.jar "$@"
