@@ -26,6 +26,8 @@ class GettingStartedTest extends FunSuite with Matchers {
   }
 
   test("some property of fib is true") {
-    MyModule.fib(0) // shouldEqual <something>
+    // test some property of MyModule.fib(<int>)
   }
+
+  // etc
 }
