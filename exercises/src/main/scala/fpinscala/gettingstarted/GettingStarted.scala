@@ -36,7 +36,14 @@ object MyModule {
 
   // Exercise 1: Write a function to compute the nth fibonacci number
 
-  def fib(n: Int): Int = ???
+  def fib(n: Int): Int = {
+    @annotation.tailrec
+    def go(a: Int, prev: Int, cur: Int): Int = {
+      if(a == 0) prev
+      else go(n - 1, cur, prev + cur)
+    }
+    go(n, 0, 1)
+  }
 
   // This definition and `formatAbs` are very similar..
   private def formatFactorial(n: Int) = {
@@ -71,7 +78,13 @@ object TestFib {
   // test implementation of `fib`
   def main(args: Array[String]): Unit = {
     println("Expected: 0, 1, 1, 2, 3, 5, 8")
-    println("Actual:   %d, %d, %d, %d, %d, %d, %d".format(fib(0), fib(1), fib(2), fib(3), fib(4), fib(5), fib(6)))
+    println("Actual:   %d".format(fib(0)))
+    println("%d".format(fib(1)))
+    println("%d".format(fib(2)))
+    /*println("%d".format(fib(3)))
+    println("%d".format(fib(4)))
+    println("%d".format(fib(5)))
+    println("%d".format(fib(6)))*/
   }
 }
 
@@ -138,9 +151,18 @@ object PolymorphicFunctions {
     go(0, 0, as.length - 1)
   }
 
+  def ordered(a: Int, b: Int): Boolean = a > b
+
   // Exercise 2: Implement a polymorphic function to check whether
   // an `Array[A]` is sorted
-  def isSorted[A](as: Array[A], gt: (A,A) => Boolean): Boolean = ???
+  def isSorted[A](as: Array[A], gt: (A,A) => Boolean): Boolean = {
+    def go(i: Int): Boolean = {
+      if(i == as.length - 1) true
+      else if(gt(as(i), as(i+1))) false
+      else go(i+1)
+    }
+    go(0)
+  }
 
   // Polymorphic functions are often so constrained by their type
   // that they only have one implementation! Here's an example:
@@ -153,13 +175,13 @@ object PolymorphicFunctions {
   // Note that `=>` associates to the right, so we could
   // write the return type as `A => B => C`
   def curry[A,B,C](f: (A, B) => C): A => (B => C) =
-    ???
+    (a: A) => (b: B) => f(a, b)
 
   // NB: The `Function2` trait has a `curried` method already
 
   // Exercise 4: Implement `uncurry`
   def uncurry[A,B,C](f: A => B => C): (A, B) => C =
-    ???
+    (a: A, b: B) => f(a)(b)
 
   /*
   NB: There is a method on the `Function` object in the standard library,
@@ -174,5 +196,20 @@ object PolymorphicFunctions {
   // Exercise 5: Implement `compose`
 
   def compose[A,B,C](f: B => C, g: A => B): A => C =
-    ???
+    (a: A) => f(g(a))
+}
+
+object TestIsSorted {
+
+  import PolymorphicFunctions._
+
+  // test implementation of `isSorted`
+  def main(args: Array[String]): Unit = {
+    println("Expected: Array(8,5,3,2,1,1,0) = false")
+    val list1 = Array(8,5,3,2,1,1,0)
+    println("Actual: Array(8,5,3,2,1,1,0) = " + isSorted(list1, ordered))
+    println("Expected: Array(0,1,1,2,3,5,8) = true")
+    val list2 = Array(0,1,1,2,3,5,8)
+    println("Actual: Array(0,1,1,2,3,5,8) = " + isSorted(list2, ordered))
+  }
 }
