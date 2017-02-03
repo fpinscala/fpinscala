@@ -36,7 +36,13 @@ object MyModule {
 
   // Exercise 1: Write a function to compute the nth fibonacci number
 
-  def fib(n: Int): Int = ???
+  def fib(n: Int): Int = {
+    @annotation.tailrec
+    def go(n: Int, n1: Int, n2: Int): Int =
+      if (n <= 0) n1 else go(n - 1, n2, n1 + n2)
+
+    go(n, 0, 1)
+  }
 
   // This definition and `formatAbs` are very similar..
   private def formatFactorial(n: Int) = {
@@ -119,7 +125,6 @@ object MonomorphicBinarySearch {
 }
 
 object PolymorphicFunctions {
-
   // Here's a polymorphic version of `binarySearch`, parameterized on
   // a function for testing whether an `A` is greater than another `A`.
   def binarySearch[A](as: Array[A], key: A, gt: (A,A) => Boolean): Int = {
@@ -140,7 +145,14 @@ object PolymorphicFunctions {
 
   // Exercise 2: Implement a polymorphic function to check whether
   // an `Array[A]` is sorted
-  def isSorted[A](as: Array[A], gt: (A,A) => Boolean): Boolean = ???
+  def isSorted[A](as: Array[A], ordered: (A,A) => Boolean): Boolean = {
+    def go(as: Array[A], accum: Boolean): Boolean =
+      if (accum == false) accum
+      else if (as.length < 2) accum
+      else go(as.tail, ordered(as(1), as(0)))
+
+    go(as, true)
+  }
 
   // Polymorphic functions are often so constrained by their type
   // that they only have one implementation! Here's an example:
@@ -153,13 +165,13 @@ object PolymorphicFunctions {
   // Note that `=>` associates to the right, so we could
   // write the return type as `A => B => C`
   def curry[A,B,C](f: (A, B) => C): A => (B => C) =
-    ???
+    (a: A) => (b: B) => f(a, b)
 
   // NB: The `Function2` trait has a `curried` method already
 
   // Exercise 4: Implement `uncurry`
   def uncurry[A,B,C](f: A => B => C): (A, B) => C =
-    ???
+    (a: A, b: B) => f(a)(b)
 
   /*
   NB: There is a method on the `Function` object in the standard library,
@@ -173,6 +185,6 @@ object PolymorphicFunctions {
 
   // Exercise 5: Implement `compose`
 
-  def compose[A,B,C](f: B => C, g: A => B): A => C =
-    ???
+  def compose[A,B,C](f: B => C, g: A => B): A => C = (a: A) => f(g(a))
 }
+
