@@ -77,7 +77,7 @@ sealed trait Validation[+E, +A] {
     case Error(Seq(a)) => Error(Seq(a))
   }
 
-  def flatMap[EE >: E,B](f: A => Validation[EE,B]): Validation[EE, B] = this match {
+  def flatMap[EE >: E, B](f: A => Validation[EE, B]): Validation[EE, B] = this match {
     case Success(a) => f(a)
     case Error(errors) => Error(errors)
   }
