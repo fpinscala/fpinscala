@@ -205,7 +205,7 @@ trait Stream[+A] {
     * Note that this cannot be implemented in terms of `unfold` since `unfold` generates elements of the stream from
     * left to right. It can be implemented in terms of `foldRight` though.
     *
-    * A sample derivation for the example above is looks like:
+    * A sample derivation for the example above looks like:
     *
     * Stream(1, 2, 3).scanRight(0)(_ + _)
     *

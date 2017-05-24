@@ -182,12 +182,10 @@ object Parallel {
     * would not be quite the same with `List`.
     */
   def sequenceHalf[A](ps: IndexedSeq[Parallel[A]]): Parallel[IndexedSeq[A]] = fork {
-    ps match {
-      case _ if ps.isEmpty     => unit(Vector())
-      case _ if ps.length == 1 => map(ps.head)(a => Vector(a))
-      case _                   =>
-        val (l, r) = ps.splitAt(ps.length / 2)
-        map2(sequenceHalf(l), sequenceHalf(r))(_ ++ _)
+    ps.length match {
+      case 0 => unit(Vector())
+      case 1 => map(ps.head)(Vector(_))
+      case _ => val (l, r) = ps.splitAt(ps.length / 2) ; map2(sequenceHalf(l), sequenceHalf(r))(_ ++ _)
     }
   }
 
@@ -196,4 +194,22 @@ object Parallel {
     */
   def sequenceFinal[A](ps: List[Parallel[A]]): Parallel[List[A]] =
     map(sequenceHalf(ps.toIndexedSeq))(_.toList)
+
+  def parMap[A, B](as: List[A])(f: A => B): Parallel[List[B]] = fork {
+    val ps = as map asyncF(f)
+    sequenceFinal(ps)
+  }
+
+  /**
+    * Exercise 7.6 - Implement `parFilter`, which filters elements of a list in parallel.
+    */
+  def parFilter[A](as: List[A])(f: A => Boolean): Parallel[List[A]] = fork {
+    val pars = as.foldRight(Nil: List[Parallel[A]])((a, acc) => if (f(a)) lazyUnit(a) :: acc else acc)
+    sequenceFinal(pars)
+  }
+
+  def parFilterBookSolution[A](as: List[A])(f: A => Boolean): Parallel[List[A]] = {
+    val pars: List[Parallel[List[A]]] = as map asyncF(a => if (f(a)) List(a) else Nil)
+    map(sequenceFinal(pars))(_.flatten)
+  }
 }
