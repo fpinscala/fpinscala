@@ -144,7 +144,7 @@ trait Stream[+A] {
   def takeViaUnfold(n: Int): Stream[A] =
     unfold((n, this)) {
       case (n, Cons(h, t)) if n > 1 => Some((h(), (n - 1, t())))
-      case (1, Cons(h, _))          => Some(h(), (0, empty))
+      case (1, Cons(h, _))          => Some((h(), (0, empty)))
       case (_, _)                   => None
     }
 
