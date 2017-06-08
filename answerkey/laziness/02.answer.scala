@@ -3,8 +3,7 @@
 `take` first checks if n==0. In that case we need not look at the stream at all.
 */
 def take(n: Int): Stream[A] = this match {
-  case Cons(h, t) if n > 1 => cons(h(), t().take(n - 1))
-  case Cons(h, _) if n == 1 => cons(h(), empty)
+  case Cons(h, t) if n > 0 => cons(h(), t().take(n - 1))
   case _ => empty
 }
 
