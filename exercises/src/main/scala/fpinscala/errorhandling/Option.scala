@@ -42,21 +42,22 @@ case class Some[+A](get: A) extends Option[A]
 case object None extends Option[Nothing]
 
 object Option {
-  def failingFn(i: Int): Int = {
-    // `val y: Int = ...` declares `y` as having type `Int`, and sets it equal to the right hand side of the `=`.
-    val y: Int = throw new Exception("fail!")
-    try {
-      val x = 42 + 5
-      x + y
-    }
 
-    /*
-     * A `catch` block is just a pattern matching block like the ones we've seen. `case e: Exception` is a pattern that
-     * matches any `Exception`, and it binds this value to the identifier `e`. The match returns the value 43.
-     */
-
-    catch { case e: Exception => 43 }
-  }
+  //  def failingFn(i: Int): Int = {
+//    // `val y: Int = ...` declares `y` as having type `Int`, and sets it equal to the right hand side of the `=`.
+//    val y: Int = throw new Exception("fail!")
+//    try {
+//      val x = 42 + 5
+//      x + y
+//    }
+//
+//    /*
+//     * A `catch` block is just a pattern matching block like the ones we've seen. `case e: Exception` is a pattern that
+//     * matches any `Exception`, and it binds this value to the identifier `e`. The match returns the value 43.
+//     */
+//
+//    catch { case e: Exception => 43 }
+//  }
 
   def failingFn2(i: Int): Int = {
     try {
@@ -68,8 +69,7 @@ object Option {
   }
 
   def mean(xs: Seq[Double]): Option[Double] =
-    if (xs.isEmpty) None
-    else Some(xs.sum / xs.length)
+    if (xs.isEmpty) None else Some(xs.sum / xs.length)
 
   /**
     * Exercise 4.2 - Implement the variance function in terms of flatMap.

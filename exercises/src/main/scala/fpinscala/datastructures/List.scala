@@ -16,12 +16,11 @@ package fpinscala.datastructures
   * types `T1` and `T2`, if `T1` is a subtype of `T2`, then `List[T1]` is a subtype of `List[T2]`.
   *
   */
-
 sealed trait List[+A]
 case object Nil extends List[Nothing]
 case class Cons[+A](head: A, tail: List[A]) extends List[A]
 
-// `List` companion object. Contains functions for creating and working with lists.
+// scalastyle:off
 object List {
 
   /**
@@ -42,8 +41,7 @@ object List {
 
   // Variadic function syntax
   def apply[A](as: A*): List[A] =
-    if (as.isEmpty) Nil
-    else Cons(as.head, apply(as.tail: _*))
+    if (as.isEmpty) Nil else Cons(as.head, apply(as.tail: _*))
 
   /**
     * Exercise 3.1 - What will be the result of the following match expression?
@@ -456,3 +454,4 @@ object List {
     }
   }
 }
+// scalastyle:on
