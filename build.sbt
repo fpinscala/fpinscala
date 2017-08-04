@@ -13,23 +13,18 @@ lazy val commonSettings = Seq(
 // Project definitions
 
 lazy val root = Project("fpinscala", file("." + "fpinscala")).in(file("."))
-  .aggregate(chaptercode, exercises, answers)
+  .aggregate(exercises, answers)
   .settings(commonSettings: _*)
   .settings(warnUnusedImport: _*)
   .settings(inlineWarnings: _*)
   .settings(nio2checkSettings: _*)
 
-lazy val chaptercode = Project("chaptercode", file("chaptercode")).in(file("chaptercode"))
+lazy val exercises = project.in(file("exercises"))
   .settings(commonSettings: _*)
   .settings(warnUnusedImport: _*)
   .settings(inlineWarnings: _*)
 
-lazy val exercises = Project("exercises", file("exercises")).in(file("exercises"))
-  .settings(commonSettings: _*)
-  .settings(warnUnusedImport: _*)
-  .settings(inlineWarnings: _*)
-
-lazy val answers = Project("answers", file("answers")).in(file("answers"))
+lazy val answers = project.in(file("answers"))
   .settings(commonSettings: _*)
   .settings(warnUnusedImport: _*)
   .settings(inlineWarnings: _*)
