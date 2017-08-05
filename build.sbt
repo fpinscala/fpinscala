@@ -5,7 +5,6 @@ lazy val commonSettings = Seq(
   parallelExecution in Test       := false,
   connectInput                    := true,
   updateOptions                   := updateOptions.value.withCachedResolution(true),
-  scalastyleFailOnError           := true,
   scalacOptions                   := commonScalacOptions,
   scalacOptions in (Compile, doc) := (scalacOptions in (Compile, doc)).value filterNot (_ == "-Xfatal-warnings"))
 
