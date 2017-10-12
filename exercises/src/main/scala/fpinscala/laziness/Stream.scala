@@ -2,24 +2,18 @@ package fpinscala.laziness
 
 import fpinscala.laziness.Stream._
 
+
 trait Stream[+A] {
 
-  /**
-    * The arrow `=>` in front of the argument type `B` means that the function `f` takes its second argument by name and
-    * may choose not to evaluate it.
-    */
-  def foldRight[B](z: => B)(f: (A, => B) => B): B =
-    this match {
-      // If `f` doesn't evaluate its second argument, the recursion never occurs.
+  /** Lazy version of `foldRight` for lists. */
+  def foldRight[B](z: => B)(f: (A, => B) => B): B = this match {
+      // If `f` doesn't evaluate its second argument, the recursion never occurs
       case Cons(h, t) => f(h(), t().foldRight(z)(f))
       case _          => z
     }
 
-  /**
-    * Here `b` is the unevaluated recursive step that folds the tail of the stream. If `p(a)` returns `true`, `b` will
-    * never be evaluated and the computation terminates early.
-    */
-  def exists(p: A => Boolean): Boolean = 
+  /** Short-circuiting version of `exists` using `foldRight`. */
+  def exists(p: A => Boolean): Boolean =
     foldRight(false)((a, b) => p(a) || b)
 
   @annotation.tailrec
@@ -29,18 +23,17 @@ trait Stream[+A] {
   }
 
   /**
-    * Exercise 5.1 - Write a function to convert a Stream to a List, which will force its evaluation and let you look at
-    * it in the REPL. You can convert to the regular List type in the standard library. You can place this and other
-    * functions that operate on a Stream inside the Stream trait.
+    * Exercise 5.1
     *
-    * Note that this implementation uses `foldRight` which is not stack-safe.
+    * Write a function to convert a `Stream` to a `List`, which will force its evaluation and let
+    * you look at it in the REPL. You can convert to the regular `List` type in the standard
+    * library. You can place this and other functions that operate on a `Stream` inside the `Stream`
+    * trait.
     */
   def toList: List[A] =
     foldRight(Nil: List[A])(_ :: _)
 
-  /**
-    * Tail-recursive implementation of `toList`.
-    */
+  /** Tail-recursive version for illustration. */
   def toListTailRecursive: List[A] = {
     val buffer = new collection.mutable.ListBuffer[A]
 
@@ -54,23 +47,18 @@ trait Stream[+A] {
   }
 
   /**
-    * Exercise 5.2 - Write the function take(n) for returning the first n elements of a Stream, and drop(n) for skipping
-    * the first n elements of a Stream.
+    * Exercise 5.2
     *
-    * Note that we only evaluate the tail of the stream if we need to, ie. when `n` is greater than 1. In the terminal
-    * case we drop the tail of the stream without evaluating it.
-    *
-    * Note also that this implementation returns an empty stream for any `n <= 0`.
+    * Write the function `take(n)` for returning the first `n` elements of a `Stream`, and `drop(n)`
+    * for skipping the first `n` elements of a `Stream`.
     */
+
   def take(n: Int): Stream[A] = this match {
     case Cons(h, t) if n > 1  => cons(h(), t().take(n - 1))
     case Cons(h, _) if n == 1 => cons(h(), empty)
     case _                    => empty
   }
 
-  /**
-    * Note that this implementation is tail-recursive and final.
-    */
   @annotation.tailrec
   final def drop(n: Int): Stream[A] = this match {
     case Cons(_, t) if n > 0 => t().drop(n - 1)
@@ -78,8 +66,10 @@ trait Stream[+A] {
   }
 
   /**
-    * Exercise 5.3 - Write the function takeWhile for returning all starting elements of a Stream that match the given
-    * predicate.
+    * Exercise 5.3
+    *
+    * Write the function `takeWhile` for returning all starting elements of a `Stream` that match
+    * the given predicate.
     */
   def takeWhile(p: A => Boolean): Stream[A] = this match {
     case Cons(h, t) if p(h()) => cons(h(), t() takeWhile p)
@@ -87,30 +77,36 @@ trait Stream[+A] {
   }
 
   /**
-    * Exercise 5.4 - Implement forAll, which checks that all elements in the Stream match a given predicate. Your
-    * implementation should terminate the traversal as soon as it encounters a nonmatching value.
+    * Exercise 5.4
     *
-    * Note that we use the version of `foldRight` implemented above, which has the short-circuit properties we want for
-    * this method.
+    * Implement `forAll`, which checks that all elements in the `Stream` match a given predicate.
+    * Your implementation should terminate the traversal as soon as it encounters a nonmatching
+    * value.
     */
   def forAll(p: A => Boolean): Boolean =
-    foldRight(true)((a, acc) => p(a) && acc)
+    foldRight(true)((h, q) => p(h) && q)
 
   /**
-    * Exercise 5.5 - Use foldRight to implement takeWhile.
+    * Exercise 5.5
+    *
+    * Use `foldRight` to implement `takeWhile`.
     */
   def takeWhileViaFoldRight(p: A => Boolean): Stream[A] =
     foldRight(empty: Stream[A])((a, s) => if (p(a)) cons(a, s) else s)
 
   /**
-    * Exercise 5.6 - Hard: Implement headOption using foldRight.
+    * Exercise 5.6
+    *
+    * Hard: Implement `headOption` using `foldRight`.
     */
   def headOption: Option[A] =
     foldRight(None: Option[A])((a, _) => Some(a))
 
   /**
-    * Exercise 5.7 - Implement map, filter, append, and flatMap using foldRight. The append method should be non-strict
-    * in its argument.
+    * Exercise 5.7
+    *
+    * Implement `map`, `filter`, `append`, and `flatMap` using `foldRight`. The `append` method
+    * should be non-strict in its argument.
     */
 
   def map[B](f: A => B): Stream[B] =
@@ -119,15 +115,11 @@ trait Stream[+A] {
   def filter(p: A => Boolean): Stream[A] =
     foldRight(empty: Stream[A])((a, acc) => if (p(a)) cons(a, acc) else acc)
 
-  def append[AA >: A](s: Stream[AA]): Stream[AA] =
+  def append[AA >: A] (s: Stream[AA]): Stream[AA] =
     foldRight(s)(cons(_, _))
 
   def flatMap[B](f: A => Stream[B]): Stream[B] =
     foldRight(empty: Stream[B])((a, acc) => f(a) append acc)
-
-  /**
-    * Note: exercises 5.8 -- 5.12 are implemented in the `Stream` object below
-    */
 
   /**
     * Exercise 5.13 - Use unfold to implement map, take, takeWhile, zipWith (as in chapter 3), and zipAll. The zipAll
@@ -216,10 +208,10 @@ trait Stream[+A] {
     * define our combiner function:
     *
     * val combiner: (A, => (B, Stream[B])) => (B, Stream[B]) = (a, t) => {
-    *  lazy val p = t
-    *  val b = f(a, p._1)
+    * lazy val p = t
+    * val b = f(a, p._1)
     *
-    *  (b, cons(b, p._2))
+    * (b, cons(b, p._2))
     * }
     *
     * becomes:
@@ -248,36 +240,43 @@ trait Stream[+A] {
       val b = f(a, acc1._1)
 
       (b, cons(b, acc1._2))
-    }) match { case (_, s) => s }
+    }) match {
+      case (_, s) => s
+    }
 }
 
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
 
 object Stream {
+
+  /** Smart constructor for nonempty streams */
   def cons[A](hd: => A, tl: => Stream[A]): Stream[A] = {
     lazy val head = hd
     lazy val tail = tl
+
     Cons(() => head, () => tail)
   }
 
+  /** Smart constructor for empty streams */
   def empty[A]: Stream[A] = Empty
 
+  /** Convenient variable argument method for constructing a stream */
   def apply[A](as: A*): Stream[A] =
-    if (as.isEmpty) empty 
-    else cons(as.head, apply(as.tail: _*))
+    if (as.isEmpty) empty else cons(as.head, apply(as.tail: _*))
 
+  /** A stream of 1s; note the recursive definition */
   val ones: Stream[Int] = Stream.cons(1, ones)
 
   /**
-    * Exercise 5.8 - Generalize ones slightly to the function constant, which returns an infinite Stream of a given
-    * value.
+    * Exercise 5.8
+    *
+    * Generalize `ones` slightly to the function `constant`, which returns an infinite `Stream` of a
+    * given value.
     */
   def constant[A](a: A): Stream[A] = Stream.cons(a, constant(a))
 
-  /**
-    * A more efficient version of `constant` which makes the tail lazy.
-    */
+  /** A more efficient version of `constant` which makes the tail lazy. */
   def constant2[A](a: A): Stream[A] = {
     lazy val tail: Stream[A] = Cons(() => a, () => tail)
 
@@ -285,17 +284,19 @@ object Stream {
   }
 
   /**
-    * Exercise 5.9 - Write a function that generates an infinite stream of integers, starting from n, then n + 1, n + 2,
-    * and so on.
+    * Exercise 5.9
+    *
+    * Write a function that generates an infinite stream of integers, starting from `n`, then `n +
+    * 1`, `n + 2`, and so on.
     */
   def from(n: Int): Stream[Int] =
     cons(n, from(n + 1))
 
   /**
-    * Exercise 5.10 - Write a function fibs that generates the infinite stream of Fibonacci numbers: 0, 1, 1, 2, 3, 5,
-    * 8, and so on.
+    * Exercise 5.10
     *
-    * Note that this function uses an internal looping function that is not tail-recursive.
+    * Write a function `fibs` that generates the infinite stream of Fibonacci numbers: 0, 1, 1, 2,
+    * 3, 5, 8, and so on.
     */
   def fibs: Stream[Int] = {
     def loop(previous: Int, current: Int): Stream[Int] =
@@ -305,29 +306,28 @@ object Stream {
   }
 
   /**
-    * Exercise 5.11 - Write a more general stream-building function called unfold. It takes an initial state, and a
-    * function for producing both the next state and the next value in the generated stream.
+    * Exercise 5.11
     *
-    * Note that this can also be done with pattern matching, though the implementation is less concise and does not make
-    * use of higher order functions on `Option`.
+    * Write a more general stream-building function called `unfold`. It takes an initial state, and
+    * a function for producing both the next state and the next value in the generated stream.
     */
-  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = {
+  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] =
     f(z) map { case (a, s) => cons(a, unfold(s)(f)) } getOrElse empty
-  }
 
   /**
-    * Exercise 5.12 - Write fibs, from, constant, and ones in terms of unfold.
+    * Exercise 5.12
+    *
+    * Write `fibs`, `from`, `constant`, and `ones` in terms of `unfold`.
     */
-
   def fibsViaUnfold: Stream[Int] =
-    unfold((0, 1)) { case (prev, curr) => Some((prev, (curr, prev + curr))) }
+    unfold((0, 1)) { case (previous, current) => Some((previous, (current, previous + current))) }
 
-  def from2(n: Int): Stream[Int] =
-    unfold(n)(i => Some((i, i + 1)))
+  def fromViaUnfold(n: Int): Stream[Int] =
+    unfold(n)(i => Some((i, i +  1)))
 
-  def constant3[A](a: A): Stream[A] =
+  def constantViaUnfold[A](a: A): Stream[A] =
     unfold(a)(_ => Some((a, a)))
 
-  def ones2: Stream[Int] =
+  def onesViaUnfold: Stream[Int] =
     unfold(1)(_ => Some((1, 1)))
 }
