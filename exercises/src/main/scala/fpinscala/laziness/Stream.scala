@@ -122,64 +122,65 @@ trait Stream[+A] {
     foldRight(empty: Stream[B])((a, acc) => f(a) append acc)
 
   /**
-    * Exercise 5.13 - Use unfold to implement map, take, takeWhile, zipWith (as in chapter 3), and zipAll. The zipAll
-    * function should continue the traversal as long as either stream has more elements—it uses Option to indicate
-    * whether each stream has been exhausted.
+    * Exercise 5.13
+    *
+    * Use `unfold` to implement `map`, `take`, `takeWhile`, `zipWith` (as in chapter 3), and
+    * `zipAll`. The `zipAll` function should continue the traversal as long as either stream has
+    * more elements—it uses `Option` to indicate whether each stream has been exhausted.
     */
 
   def mapViaUnfold[B](f: A => B): Stream[B] =
     unfold(this) {
       case Cons(h, t) => Some((f(h()), t()))
-      case _          => None // this is needed to terminate evaluation
+      case _          => None
     }
 
   def takeViaUnfold(n: Int): Stream[A] =
-    unfold((n, this)) {
-      case (n, Cons(h, t)) if n > 1 => Some((h(), (n - 1, t())))
-      case (1, Cons(h, _))          => Some((h(), (0, empty)))
-      case (_, _)                   => None
+    unfold((this, n)) {
+      case (Cons(h, t), k) if k > 1 => Some((h(), (t(), k - 1)))
+      case (Cons(h, _), 1)          => Some((h(), (empty, 0)))
+      case _                        => None
     }
 
-  def takeWhileViaUnfold(p: A => Boolean): Stream[A] =
-    unfold(this) {
-      case Cons(h, t) if p(h()) => Some((h(), t()))
-      case _                    => None
-    }
+    def takeWhileViaUnfold(p: A => Boolean): Stream[A] =
+      unfold(this) {
+        case Cons(h, t) if p(h()) => Some((h(), t()))
+        case _                    => None
+      }
 
-  def zipWithViaUnfold[B, C](s: Stream[B])(f: (A, B) => C): Stream[C] =
-    unfold((this, s)) {
-      case (Cons(h1, t1), Cons(h2, t2)) => Some((f(h1(), h2()), (t1(), t2())))
-      case _                            => None
-    }
+    def zipWithViaUnfold[B, C](s: Stream[B])(f: (A, B) => C): Stream[C] =
+      unfold((this, s)) {
+        case (Cons(h1, t1), Cons(h2, t2)) => Some((f(h1(), h2()), (t1(), t2())))
+        case _                            => None
+      }
 
-  def zipAll[B](s: Stream[B]): Stream[(Option[A], Option[B])] =
-    unfold((this, s)) {
-      case (Cons(h1, t1), Cons(h2, t2)) => Some(((Some(h1()), Some(h2())), (t1(), t2())))
-      case (Cons(h, t), Empty)          => Some(((Some(h()), None), (t(), empty)))
-      case (Empty, Cons(h, t))          => Some(((None, Some(h())), (empty, t())))
-      case (Empty, Empty)               => None
-    }
+    def zipAllViaUnfold[B](s: Stream[B]): Stream[(Option[A], Option[B])] =
+      unfold((this, s)) {
+        case (Cons(h1, t1), Cons(h2, t2)) => Some(((Some(h1()), Some(h2())), (t1(), t2())))
+        case (Cons(h, t), Empty)          => Some(((Some(h()), None), (t(), empty)))
+        case (Empty, Cons(h, t))          => Some(((None, Some(h())), (empty, t())))
+        case _                            => None
+      }
 
   /**
-    * Exercise 5.14 - Hard: Implement startsWith using functions you’ve written. It should check if one Stream is a
-    * prefix of another. For instance, Stream(1,2,3) startsWith Stream(1,2) would be true.
+    * Exercise 5.14
     *
-    * Note that this implementation uses `zipAll` rather than `zipWith` to generate the pairs of elements to be tested
-    * for equality. This is because `zipAll` is better suited to handle empty streams. If the initial stream is empty,
-    * we want this function to return `false` if the second stream is non-empty.
+    * Hard: Implement `startsWith` using functions you’ve written. It should check if one `Stream`
+    * is a prefix of another. For instance, `Stream(1,2,3) startsWith Stream(1,2)` would be `true`.
     */
   def startsWith[B](s: Stream[B]): Boolean =
-    zipAll(s) takeWhileViaUnfold { case (_, b) => b.nonEmpty } forAll { case (a, b) => a == b }
+    zipAllViaUnfold(s) takeWhileViaUnfold {
+      case (_, b) => b.nonEmpty
+    } forAll {
+      case (a, b) => a == b
+    }
 
   /**
-    * Exercise 5.15 - Implement tails using unfold. For a given Stream, tails returns the Stream of suffixes of the
-    * input sequence, starting with the original Stream. For example, given Stream(1,2,3), it would return
-    * Stream(Stream(1,2,3), Stream(2,3), Stream(3), Stream()).
+    * Exercise 5.15
     *
-    * Note the use of `drop` to pass the tail of the current stream to the next iteration of `unfold`. This can be done
-    * in other ways, but using `drop`, which we've already defined, is more elegant.
-    *
-    * Note also that we append the empty stream to the result of the `unfold`.
+    * Implement `tails` using `unfold`. For a given `Stream`, `tails` returns the `Stream` of
+    * suffixes of the input sequence, starting with the original `Stream`. For example, given
+    * `Stream(1,2,3)`, it would return `Stream(Stream(1,2,3), Stream(2,3), Stream(3), Stream())`.
     */
   def tails: Stream[Stream[A]] =
     unfold(this) {
@@ -188,30 +189,45 @@ trait Stream[+A] {
     } append Stream(empty)
 
   /**
-    * Exercise 5.16 - Hard: Generalize tails to the function scanRight, which is like a foldRight that returns a stream
-    * of the intermediate results. For example:
+    * Exercise 5.16
     *
-    * scala> Stream(1,2,3).scanRight(0)(_ + _).toList
-    * res0: List[Int] = List(6,5,3,0)
+    * Hard: Generalize `tails` to the function `scanRight`, which is like a `foldRight` that returns
+    * a stream of the intermediate results. For example:
     *
-    * Note that this cannot be implemented in terms of `unfold` since `unfold` generates elements of the stream from
-    * left to right. It can be implemented in terms of `foldRight` though.
+    * {{{
+    *   scala> Stream(1, 2, 3).scanRight(0)(_ + _).toList
+    *   res0: List[Int] = List(6, 5, 3, 0)
+    * }}}
     *
+    * This example should be equivalent to the expression `List(1+2+3+0, 2+3+0, 3+0, 0)`. Your
+    * function should reuse intermediate results so that traversing a `Stream` with `n` elements
+    * always takes time linear in `n`. Can it be implemented using `unfold`? How, or why not? Could
+    * it be implemented using another function we’ve written?
+    *
+    * ==Note==
+    * This cannot be implemented in terms of `unfold` since `unfold` generates elements of the
+    * stream from left to right. It can be implemented in terms of `foldRight` though.
+    */
+  def scanRight[B](z: => B)(f: (A, => B) => B): Stream[B] =
+    foldRight(Stream(z))((a, bs) => bs match {
+      case Cons(h, _) => cons(f(a, h()), bs)
+      case _          => bs
+    })
+
+  /**
     * A sample derivation for the example above looks like:
     *
     * Stream(1, 2, 3).scanRight(0)(_ + _)
     *
     * define our initial value:
     *
-    * val init: (B, Stream[B]) = (0, Stream(0))
+    * val init: Stream[B] = Stream(0)
     *
     * define our combiner function:
     *
-    * val combiner: (A, => (B, Stream[B])) => (B, Stream[B]) = (a, t) => {
-    * lazy val p = t
-    * val b = f(a, p._1)
-    *
-    * (b, cons(b, p._2))
+    * val combiner: (A, => Stream[B]) => Stream[B] = (a, bs) => bs match {
+    *   case Cons(h, _) => cons(f(a, h()), bs)
+    *   case _          => bs
     * }
     *
     * becomes:
@@ -224,25 +240,13 @@ trait Stream[+A] {
     * combiner(1, combiner(2, combiner(3, init)))
     *
     * becomes:
-    * val inner1 = combiner(3, init)   ≈ (3 + 0, Stream(3 + 0, 0))
-    * val inner2 = combiner(2, inner1) ≈ (2 + 3 + 0, Stream(2 + 3 + 0, 3 + 0, 0))
-    * val inner3 = combiner(1, inner2) ≈ (1 + 2 + 3 + 0, Stream(1 + 2 + 3 + 0, 2 + 3 + 0, 3 + 0, 0))
+    * val inner1 = combiner(3, Stream(0)) = cons(3+0, cons(0, empty))
+    * val inner2 = combiner(2, inner1)    = cons(2+3+0, cons(3+0, cons(0, empty)))
+    * val inner3 = combiner(1, inner2)    = cons(1+2+3+0, cons(2+3+0, cons(3+0, cons(0, empty))))
     *
     * becomes:
-    * (6, Stream(6, 5, 3, 0))
-    *
-    * take the second element of our tuple:
-    * Stream(6, 5, 3, 0)
+    * cons(6, cons(5, cons(3, cons(0, empty))))
     */
-  def scanRight[B](z: B)(f: (A, => B) => B): Stream[B] =
-    foldRight((z, Stream(z)))((a, acc) => {
-      lazy val acc1 = acc
-      val b = f(a, acc1._1)
-
-      (b, cons(b, acc1._2))
-    }) match {
-      case (_, s) => s
-    }
 }
 
 case object Empty extends Stream[Nothing]
