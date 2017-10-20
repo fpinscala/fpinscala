@@ -27,18 +27,25 @@ object RNG {
     rng => (a, rng)
 
   /**
-    * Function composition on a state transition. Note that the state is unchanged; we apply `f` to the return value of
-    * the state transition, and return the result, along with the new state computed by the transition.
+    * Function composition on a state transition. Note that the state is unchanged; we apply `f` to
+    * the return value of the state transition, and return the result, along with the new state
+    * computed by the transition.
     */
-  def map[A,B](s: Rand[A])(f: A => B): Rand[B] = rng => {
-      val (a, rng2) = s(rng)
-      (f(a), rng2)
-    }
+  def map[A, B](s: Rand[A])(f: A => B): Rand[B] = rng => {
+    val (a, rng2) = s(rng)
+    (f(a), rng2)
+  }
+
+  /** Method using `map`. */
+  def nonNegativeEven: Rand[Int] =
+    map(nonNegativeInt)(i => i - i % 2)
 
   /**
-    * Exercise 6.1 - Write a function that uses RNG.nextInt to generate a random integer between 0 and Int.maxValue
-    * (inclusive). Make sure to handle the corner case when nextInt returns Int.MinValue, which doesn’t have a
-    * non-negative counterpart.
+    * Exercise 6.1
+    *
+    * Write a function that uses `RNG.nextInt` to generate a random integer between `0` and
+    * `Int.maxValue` (inclusive). Make sure to handle the corner case when `nextInt` returns
+    * `Int.MinValue`, which doesn't have a non-negative counterpart.
     */
   def nonNegativeInt(rng: RNG): (Int, RNG) = {
     val (i, r) = rng.nextInt
@@ -47,21 +54,24 @@ object RNG {
   }
 
   /**
-    * Exercise 6.2 - Write a function to generate a Double between 0 and 1, not including 1. Note: You can use
-    * Int.MaxValue to obtain the maximum positive integer value, and you can use x.toDouble to convert an x: Int to a
-    * Double.
+    * Exercise 6.2
+    *
+    * Write a function to generate a `Double` between `0` and `1`, not including `1`. Note: You can
+    * use `Int.MaxValue` to obtain the maximum positive integer value, and you can use `x.toDouble`
+    * to convert an `x: Int` to a `Double`.
     */
   def double(rng: RNG): (Double, RNG) = {
     val (i, r) = nonNegativeInt(rng)
 
-    (i / (Int.MaxValue.toDouble + 1), r)
+    (i / (Int.MaxValue.toDouble + 1.0), r)
   }
 
   /**
-    * Exercise 6.3 - Write functions to generate an (Int, Double) pair, a (Double, Int) pair, and a (Double, Double,
-    * Double) 3-tuple. You should be able to reuse the functions you’ve already written.
+    * Exercise 6.3
+    *
+    * Write functions to generate an `(Int, Double)` pair, a `(Double, Int)` pair, and a `(Double,
+    * Double, Double)` 3-tuple. You should be able to reuse the functions you’ve already written.
     */
-
   def intDouble(rng: RNG): ((Int,Double), RNG) = {
     val (i, r1) = rng.nextInt
     val (d, r2) = double(r1)
@@ -84,7 +94,9 @@ object RNG {
   }
 
   /**
-    * Exercise 6.4 - Write a function to generate a list of random integers.
+    * Exercise 6.4
+    *
+    * Write a function to generate a list of random integers.
     */
   def ints(count: Int)(rng: RNG): (List[Int], RNG) = {
     @annotation.tailrec
@@ -97,55 +109,55 @@ object RNG {
   }
 
   /**
-    * Exercise 6.5 - Use map to re-implement double in a more elegant way. See exercise 6.2.
+    * Exercise 6.5
     *
-    * Note that `map` takes a `Rand[A]` and a function from `A` to `B` and yields a `Rand[B]`. Because `Rand[T]` is a
-    * type alias for `RNG => (T, RNG)` this is the same as:
-    *
-    * def map(s: RNG => (A, RNG))(f: A => B): RNG => (B, RNG) = ...
-    *
-    * Note that our implementation of `map` is just function composition on a state transition. The new state is
-    * computed by evaluating `s` with an input `RNG` instance. The application of `f` does not create a new state.
-    *
-    * This means that any function implemented in terms of `map` will automatically handle returning the _correct_ `RNG`
-    * instance in its output, based on our implementation of `map`.
+    * Use map to reimplement `double` in a more elegant way. See exercise 6.2.
     */
-  val doubleViaMap: Rand[Double] = map(nonNegativeInt)(i => i / (Int.MaxValue.toDouble + 1D))
+  val doubleViaMap: Rand[Double] =
+    map(nonNegativeInt)(i => i / (Int.MaxValue.toDouble + 1.0))
 
   /**
-    * Exercise 6.6 - Write the implementation of map2 based on the following signature. This function takes two actions,
-    * `ra` and `rb`, and a function `f` for combining their results, and returns a new action that combines them.
+    * Exercise 6.6
     *
-    * Note that because we cannot implement this function in terms of `map` we must explicitly handle the passing of the
-    * correct `RNG` instance throughout the function.
+    * Write the implementation of `map2` based on the following signature. This function takes two
+    * actions, `ra` and `rb`, and a function `f` for combining their results, and returns a new
+    * action that combines them:
     */
   def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = rng => {
-    val (aa, r1) = ra(rng)
-    val (bb, r2) = rb(r1)
+    val (a, rng1) = ra(rng)
+    val (b, rng2) = rb(rng1)
 
-    (f(aa, bb), r2)
+    (f(a, b), rng2)
   }
 
   /**
-    * Exercise 6.7 - Hard: If you can combine two `RNG` transitions, you should be able to combine a whole list of them.
-    * Implement `sequence` for combining a List of transitions into a single transition. Use it to re-implement the
-    * `ints` function you wrote before. For the latter, you can use the standard library function `List.fill(n)(x)` to
-    * make a list with `x` repeated `n` times.
+    * Exercise 6.7
     *
-    * Note that we have already implemented `map2` to combine two `RNG` transitions. That, along with iterating through
-    * a list of `Rand[A]` instances suggests that combining `map2` with a `foldRight` is the correct implementation.
-    *
-    * Note that the `z` parameter to `foldRight` is `unit(Nil)` which is a data constructor that takes a constant and
-    * lifts it to an appropriate `Rand` instance.
+    * Hard: If you can combine two `RNG` transitions, you should be able to combine a whole list of
+    * them. Implement `sequence` for combining a `List` of transitions into a single transition. Use
+    * it to reimplement the `ints` function you wrote before. For the latter, you can use the standard
+    * library function `List.fill(n)(x)` to make a list with `x` repeated `n` times.
     */
-  def sequence[A](fs: List[Rand[A]]): Rand[List[A]] =
-    fs.foldRight(unit(Nil: List[A]))((f, acc) => map2(f, acc)(_ :: _))
+  def sequence[A](rs: List[Rand[A]]): Rand[List[A]] =
+    rs.foldRight(unit(Nil: List[A]))((r, acc) => map2(r, acc)(_ :: _))
 
-  /**
-    * Note that the signature of this implementation is different from `ints` above.
-    */
+  /** Note the signature difference between this and the [[ints]] method. */
   def intsViaSequence(count: Int): Rand[List[Int]] =
     sequence(List.fill(count)(int))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   /**
     * Exercise 6.8 - Implement `flatMap`, and then use it to implement `nonNegativeLessThan`.
