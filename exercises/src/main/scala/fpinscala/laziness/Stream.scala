@@ -211,7 +211,6 @@ trait Stream[+A] {
   def scanRight[B](z: => B)(f: (A, => B) => B): Stream[B] =
     foldRight(Stream(z))((a, bs) => bs match {
       case Cons(h, _) => cons(f(a, h()), bs)
-      case _          => bs
     })
 
   /**
