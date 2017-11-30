@@ -93,7 +93,7 @@ object Nonblocking {
     def sequenceRight[A](as: List[Par[A]]): Par[List[A]] =
       as match {
         case Nil => unit(Nil)
-        case h :: t => map2(h, fork(sequence(t)))(_ :: _)
+        case h :: t => map2(h, fork(sequenceRight(t)))(_ :: _)
       }
 
     def sequenceBalanced[A](as: IndexedSeq[Par[A]]): Par[IndexedSeq[A]] = fork {
