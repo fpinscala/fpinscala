@@ -3,7 +3,7 @@ sudo: false
 scala:
   - 2.12.6
 jdk:
-  - oraclejdk7
-  - openjdk7
+  - oraclejdk8
+  - openjdk8
 notifications:
   email: false
