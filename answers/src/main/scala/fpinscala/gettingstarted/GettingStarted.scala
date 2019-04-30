@@ -13,8 +13,27 @@ object MyModule {
     msg.format(x, abs(x))
   }
 
-  def main(args: Array[String]): Unit =
+  def main(args: Array[String]): Unit = {
+    println("GettingStarted.MyModule.main()")
     println(formatAbs(-42))
+
+    var a = Array(1, 1, 2, 3, 5, 8, 13, 21, 34, 55)
+    println(PolymorphicFunctions.isSorted[Int](a, (a1, a2) => a1 > a2)) // true
+    println(PolymorphicFunctions.isSorted[Int](a, (a1, a2) => a1 >= a2)) // false
+    println(PolymorphicFunctions.isSortedDesc[Int](a, (a1, a2) => a1 > a2)) // false
+    var b = Array(1, 2, 3, 5, 8, 13, 21, 34, 55)
+    println(PolymorphicFunctions.isSorted[Int](b, (a1, a2) => a1 > a2)) // true
+    println(PolymorphicFunctions.isSorted[Int](b, (a1, a2) => a1 >= a2)) // true
+    println(PolymorphicFunctions.isSortedDesc[Int](a, (a1, a2) => a1 > a2)) // false
+    var c = Array(2, 1, 2, 3, 5, 8, 13, 21, 34, 55)
+    println(PolymorphicFunctions.isSorted[Int](c, (a1, a2) => a1 > a2)) // false
+    println(PolymorphicFunctions.isSorted[Int](c, (a1, a2) => a1 >= a2)) // false
+    println(PolymorphicFunctions.isSortedDesc[Int](c, (a1, a2) => a1 > a2)) // false
+    var d = Array(3, 2, 1)
+    println(PolymorphicFunctions.isSorted[Int](d, (a1, a2) => a1 > a2)) // false
+    println(PolymorphicFunctions.isSorted[Int](d, (a1, a2) => a1 >= a2)) // false
+    println(PolymorphicFunctions.isSortedDesc[Int](d, (a1, a2) => a1 > a2)) // true
+  }
 
   // A definition of factorial, using a local, tail recursive function
   def factorial(n: Int): Int = {
@@ -133,13 +152,24 @@ object PolymorphicFunctions {
 
 
   // Exercise 2: Implement a polymorphic function to check whether
-  // an `Array[A]` is sorted
+  // an `Array[A]` is sorted, in ascending order
   def isSorted[A](as: Array[A], gt: (A,A) => Boolean): Boolean = {
     @annotation.tailrec
     def go(n: Int): Boolean =
       if (n >= as.length-1) true
-      else if (gt(as(n), as(n+1))) false
+      else if (gt(as(n), as(n+1))) false // if some element is greaterThan the next, then return NOT sorted
       else go(n+1)
+
+    go(0)
+  }
+
+  // in descending order
+  def isSortedDesc[A](as: Array[A], gt: (A,A) => Boolean): Boolean = {
+    @annotation.tailrec
+    def go(n: Int): Boolean =
+      if (n >= as.length-1) true
+      else if (gt(as(n), as(n+1))) go(n+1)
+      else false
 
     go(0)
   }
