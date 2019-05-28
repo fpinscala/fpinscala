@@ -15,21 +15,38 @@ object MyModule {
 
   def main(args: Array[String]): Unit = {
     println("GettingStarted.MyModule.main()")
+
     println(formatAbs(-42))
 
-    var a = Array(1, 1, 2, 3, 5, 8, 13, 21, 34, 55)
-    println(PolymorphicFunctions.isSorted[Int](a, (a1, a2) => a1 > a2)) // true
-    println(PolymorphicFunctions.isSorted[Int](a, (a1, a2) => a1 >= a2)) // false
+    println("fib(0)="+fib(0))
+    println("fib(1)="+fib(1))
+    println("fib(2)="+fib(2))
+    println("fib(3)="+fib(3))
+    println("fib(4)="+fib(4))
+    println("fib(5)="+fib(5))
+    println("fib(6)="+fib(6))
+    println("fib(7)="+fib(7))
+    println("fib(8)="+fib(8))
+    println("fib(9)="+fib(9))
+    println("fib(10)="+fib(10))
+
+    FormatAbsAndFactorial.main(Array.empty)
+
+    AnonymousFunctions.main(Array.empty)
+
+    val a = Array(1, 1, 2, 3, 5, 8, 13, 21, 34, 55) // non-strict ascending
+    println(PolymorphicFunctions.isSorted[Int](a, (a1, a2) => a1 > a2)) // true - = is ok
+    println(PolymorphicFunctions.isSorted[Int](a, (a1, a2) => a1 >= a2)) // false - = is not ok
     println(PolymorphicFunctions.isSortedDesc[Int](a, (a1, a2) => a1 > a2)) // false
-    var b = Array(1, 2, 3, 5, 8, 13, 21, 34, 55)
+    val b = Array(1, 2, 3, 5, 8, 13, 21, 34, 55) // strict ascending
     println(PolymorphicFunctions.isSorted[Int](b, (a1, a2) => a1 > a2)) // true
     println(PolymorphicFunctions.isSorted[Int](b, (a1, a2) => a1 >= a2)) // true
     println(PolymorphicFunctions.isSortedDesc[Int](a, (a1, a2) => a1 > a2)) // false
-    var c = Array(2, 1, 2, 3, 5, 8, 13, 21, 34, 55)
+    val c = Array(2, 1, 2, 3, 5, 8, 13, 21, 34, 55) // not sorted
     println(PolymorphicFunctions.isSorted[Int](c, (a1, a2) => a1 > a2)) // false
     println(PolymorphicFunctions.isSorted[Int](c, (a1, a2) => a1 >= a2)) // false
     println(PolymorphicFunctions.isSortedDesc[Int](c, (a1, a2) => a1 > a2)) // false
-    var d = Array(3, 2, 1)
+    val d = Array(3, 2, 1) // strict descending
     println(PolymorphicFunctions.isSorted[Int](d, (a1, a2) => a1 > a2)) // false
     println(PolymorphicFunctions.isSorted[Int](d, (a1, a2) => a1 >= a2)) // false
     println(PolymorphicFunctions.isSortedDesc[Int](d, (a1, a2) => a1 > a2)) // true
@@ -151,8 +168,10 @@ object PolymorphicFunctions {
   }
 
 
+
   // Exercise 2: Implement a polymorphic function to check whether
   // an `Array[A]` is sorted, in ascending order
+  // gt is a function that defines a condition that violates the sorting order (i.e. if gt returns true, the array is NOT sorted)
   def isSorted[A](as: Array[A], gt: (A,A) => Boolean): Boolean = {
     @annotation.tailrec
     def go(n: Int): Boolean =
