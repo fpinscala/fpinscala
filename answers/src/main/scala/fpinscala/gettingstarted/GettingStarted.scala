@@ -34,22 +34,30 @@ object MyModule {
 
     AnonymousFunctions.main(Array.empty)
 
-    val a = Array(1, 1, 2, 3, 5, 8, 13, 21, 34, 55) // non-strict ascending
-    println(PolymorphicFunctions.isSorted[Int](a, (a1, a2) => a1 > a2)) // true - = is ok
-    println(PolymorphicFunctions.isSorted[Int](a, (a1, a2) => a1 >= a2)) // false - = is not ok
-    println(PolymorphicFunctions.isSortedDesc[Int](a, (a1, a2) => a1 > a2)) // false
-    val b = Array(1, 2, 3, 5, 8, 13, 21, 34, 55) // strict ascending
-    println(PolymorphicFunctions.isSorted[Int](b, (a1, a2) => a1 > a2)) // true
-    println(PolymorphicFunctions.isSorted[Int](b, (a1, a2) => a1 >= a2)) // true
-    println(PolymorphicFunctions.isSortedDesc[Int](a, (a1, a2) => a1 > a2)) // false
-    val c = Array(2, 1, 2, 3, 5, 8, 13, 21, 34, 55) // not sorted
-    println(PolymorphicFunctions.isSorted[Int](c, (a1, a2) => a1 > a2)) // false
-    println(PolymorphicFunctions.isSorted[Int](c, (a1, a2) => a1 >= a2)) // false
-    println(PolymorphicFunctions.isSortedDesc[Int](c, (a1, a2) => a1 > a2)) // false
-    val d = Array(3, 2, 1) // strict descending
-    println(PolymorphicFunctions.isSorted[Int](d, (a1, a2) => a1 > a2)) // false
-    println(PolymorphicFunctions.isSorted[Int](d, (a1, a2) => a1 >= a2)) // false
-    println(PolymorphicFunctions.isSortedDesc[Int](d, (a1, a2) => a1 > a2)) // true
+    println("// non-strict ascending")
+    val a = Array(1, 1, 2, 3, 5, 8, 13, 21, 34, 55)
+    println(PolymorphicFunctions.isSorted[Int](a, (a1, a2) => a1 < a2))        // false - 1, 1 is not ok
+    println(PolymorphicFunctions.isSortedWithGT[Int](a, (a1, a2) => a1 > a2))  // true - 1, 1 is ok
+    println(PolymorphicFunctions.isSorted[Int](a, (a1, a2) => a1 <= a2))       // true - 1, 1 is ok
+    println(PolymorphicFunctions.isSortedWithGT[Int](a, (a1, a2) => a1 >= a2)) // false - 1, 1 is not ok
+    println(PolymorphicFunctions.isSortedDesc[Int](a, (a1, a2) => a1 > a2))    // false
+    println("// strict ascending")
+    val b = Array(1, 2, 3, 5, 8, 13, 21, 34, 55)
+    println(PolymorphicFunctions.isSorted[Int](b, (a1, a2) => a1 < a2))        // true
+    println(PolymorphicFunctions.isSortedWithGT[Int](b, (a1, a2) => a1 > a2))  // true
+    println(PolymorphicFunctions.isSorted[Int](b, (a1, a2) => a1 <= a2))       // true
+    println(PolymorphicFunctions.isSortedWithGT[Int](b, (a1, a2) => a1 >= a2)) // true
+    println(PolymorphicFunctions.isSortedDesc[Int](a, (a1, a2) => a1 > a2))    // false
+    println("// not sorted") // should be false for whatever passed in
+    val c = Array(2, 1, 2, 3, 5, 8, 13, 21, 34, 55)
+    println(PolymorphicFunctions.isSorted[Int](c, (a1, a2) => a1 > a2))        // false
+    println(PolymorphicFunctions.isSortedWithGT[Int](c, (a1, a2) => a1 >= a2)) // false
+    println(PolymorphicFunctions.isSortedDesc[Int](c, (a1, a2) => a1 > a2))    // false
+    println("// strict descending")
+    val d = Array(3, 2, 1)
+    println(PolymorphicFunctions.isSorted[Int](d, (a1, a2) => a1 > a2))        // true
+    println(PolymorphicFunctions.isSortedWithGT[Int](d, (a1, a2) => a1 >= a2)) // false
+    println(PolymorphicFunctions.isSortedDesc[Int](d, (a1, a2) => a1 > a2))    // true
   }
 
   // A definition of factorial, using a local, tail recursive function
@@ -171,14 +179,23 @@ object PolymorphicFunctions {
 
   // Exercise 2: Implement a polymorphic function to check whether
   // an `Array[A]` is sorted, in ascending order
+  // ordered is the parameter name used in book
+  def isSorted[A](as: Array[A], ordered: (A,A) => Boolean): Boolean = {
+    @annotation.tailrec
+    def go(n: Int): Boolean =
+      if (n >= as.length-1) true
+      else if (!ordered(as(n), as(n+1))) false // if some element and the next is not ordered, then return NOT sorted
+      else go(n+1)
+    go(0)
+  }
+
   // gt is a function that defines a condition that violates the sorting order (i.e. if gt returns true, the array is NOT sorted)
-  def isSorted[A](as: Array[A], gt: (A,A) => Boolean): Boolean = {
+  def isSortedWithGT[A](as: Array[A], gt: (A,A) => Boolean): Boolean = {
     @annotation.tailrec
     def go(n: Int): Boolean =
       if (n >= as.length-1) true
       else if (gt(as(n), as(n+1))) false // if some element is greaterThan the next, then return NOT sorted
       else go(n+1)
-
     go(0)
   }
 
@@ -189,7 +206,6 @@ object PolymorphicFunctions {
       if (n >= as.length-1) true
       else if (gt(as(n), as(n+1))) go(n+1)
       else false
-
     go(0)
   }
 
