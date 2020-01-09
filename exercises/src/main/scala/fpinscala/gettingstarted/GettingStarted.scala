@@ -1,5 +1,7 @@
 package fpinscala.gettingstarted
 
+import scala.annotation.tailrec
+
 // A comment!
 /* Another comment */
 /** A documentation comment */
@@ -36,7 +38,13 @@ object MyModule {
 
   // Exercise 1: Write a function to compute the nth fibonacci number
 
-  def fib(n: Int): Int = ???
+  def fib(n: Int): Int = {
+    @tailrec
+    def loop(n: Int, current: Int, next: Int): Int = {
+      if (n == 0) current else loop(n - 1, next, current + next)
+    }
+    loop(n, 0, 1)
+  }
 
   // This definition and `formatAbs` are very similar..
   private def formatFactorial(n: Int) = {
@@ -70,8 +78,9 @@ object TestFib {
 
   // test implementation of `fib`
   def main(args: Array[String]): Unit = {
-    println("Expected: 0, 1, 1, 2, 3, 5, 8")
-    println("Actual:   %d, %d, %d, %d, %d, %d, %d".format(fib(0), fib(1), fib(2), fib(3), fib(4), fib(5), fib(6)))
+    println("Expected: 0, 1, 1, 2, 3, 5, 8, 13, 21, 34")
+    println("Actual:   %d, %d, %d, %d, %d, %d, %d, %d, %d, %d".format(fib(0), fib(1),fib(2),fib(3),fib(4),fib(5),fib(6),fib(7),fib(8),fib(9)))
+
   }
 }
 
@@ -120,6 +129,10 @@ object MonomorphicBinarySearch {
 
 object PolymorphicFunctions {
 
+  def main(args: Array[String]): Unit = {
+    println(isSorted[Int](Array(1,2,6,4,5,6), (a: Int, b: Int) => a <= b))
+  }
+
   // Here's a polymorphic version of `binarySearch`, parameterized on
   // a function for testing whether an `A` is greater than another `A`.
   def binarySearch[A](as: Array[A], key: A, gt: (A,A) => Boolean): Int = {
@@ -140,7 +153,11 @@ object PolymorphicFunctions {
 
   // Exercise 2: Implement a polymorphic function to check whether
   // an `Array[A]` is sorted
-  def isSorted[A](as: Array[A], gt: (A,A) => Boolean): Boolean = ???
+  def isSorted[A](as: Array[A], gt: (A,A) => Boolean): Boolean = {
+    as.sliding(2,1).map { w  =>
+      gt(w.head, w.last)
+    }.forall(identity)
+  }
 
   // Polymorphic functions are often so constrained by their type
   // that they only have one implementation! Here's an example:
