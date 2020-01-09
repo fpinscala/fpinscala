@@ -154,8 +154,11 @@ object PolymorphicFunctions {
   // Exercise 2: Implement a polymorphic function to check whether
   // an `Array[A]` is sorted
   def isSorted[A](as: Array[A], gt: (A,A) => Boolean): Boolean = {
-    as.sliding(2,1).map { w  =>
-      gt(w.head, w.last)
+    as.sliding(2).map {
+      _.toList match {
+        case f :: l :: _ =>
+          gt(f, l)
+      }
     }.forall(identity)
   }
 
