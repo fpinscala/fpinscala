@@ -131,7 +131,13 @@ object PolymorphicFunctions {
 
   def main(args: Array[String]): Unit = {
     println(isSorted[Int](Array(1,2,6,4,5,6), (a: Int, b: Int) => a <= b))
+    val curriedAdd = curry(addCurry)
+    val pApplied = curriedAdd(10)
+    println("Expected: 12, 14, 16, 18")
+    println("Actual:   %d, %d, %d, %d".format(pApplied(2), pApplied(4), pApplied(6), pApplied(8)))
   }
+
+  def addCurry(one: Int, two: Int): Int = one.+(two)
 
   // Here's a polymorphic version of `binarySearch`, parameterized on
   // a function for testing whether an `A` is greater than another `A`.
