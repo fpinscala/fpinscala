@@ -62,20 +62,82 @@ object List { // `List` companion object. Contains functions for creating and wo
     case Cons(_, tail) => Cons(h, tail)
   }
 
-  def drop[A](l: List[A], n: Int): List[A] = ???
+  def drop[A](l: List[A], n: Int): List[A] = {
+    if (n < 0) {
+      l
+    } else l match {
+      case Nil => Nil
+      case Cons(_, t) => drop(t, n - 1)
+    }
+  }
 
-  def dropWhile[A](l: List[A], f: A => Boolean): List[A] = ???
+  def dropWhile[A](l: List[A], f: A => Boolean): List[A] = l match {
+    case Nil => Nil
+    case Cons(h, t) if f(h) => dropWhile(t, f)
+    case _ => l
+  }
 
-  def init[A](l: List[A]): List[A] = ???
+  def init[A](l: List[A]): List[A] = l match {
+    case Nil => Nil
+    case Cons(_, Nil) => Nil
+    case Cons(h, t) => Cons(h, init(t))
+  }
 
-  def length[A](l: List[A]): Int = ???
+  def length[A](l: List[A]): Int = foldRight(l, 0)((_, acc) => acc + 1)
 
-  def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B = ???
+  def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B = l match {
+    case Nil => z
+    case Cons(h, t) => foldLeft(t, f(z, h))(f)
+  }
 
-  def map[A,B](l: List[A])(f: A => B): List[B] = ???
+  def combine[A](l: List[A], z: A)(f: (A, A) => A): A = {
+    foldLeft(l, z)(f)
+  }
+
+  def reverse[A](l: List[A]): List[A] = {
+    foldLeft(l, List[A]())((t, h) => Cons(h, t))
+  }
+
+  def foldRight2[A, B](l : List[A], z: B)(f: (B, A) => B): B = {
+    foldLeft(reverse(l), z)(f)
+  }
+
+  def append[A](l: List[A], r: List[A]): List[A] = {
+    foldRight(l, r)(Cons(_, _))
+  }
+
+  def concat[A](l: List[List[A]]): List[A] = {
+    foldRight(l, List[A]())(append)
+  }
+
+  def map[A,B](l: List[A])(f: A => B): List[B] = {
+    foldRight(l, Nil: List[B])((i, acc) => Cons[B](f(i), acc))
+  }
+
+  def filter[A](l: List[A])(f: A => Boolean): List[A] = {
+    foldRight(l, Nil:List[A])((i, acc) => if (f(i)) Cons(i, acc) else acc)
+  }
+
+  def flatMap[A, B](as: List[A])(f: A => List[B]): List[B] = {
+    concat(map(as)(f))
+  }
+
+  def filter2[A](l: List[A])(f: A => Boolean): List[A] = {
+    flatMap(l)(a => if (f(a)) List(a) else Nil)
+  }
+
+  def zipWith[A](l: List[A], r: List[A])(f: (A, A) => A): List[A] = (l, r) match {
+    case (Nil, _) => Nil
+    case (_, Nil) => Nil
+    case (Cons(h,t), Cons(h2, t2)) => Cons(f(h, h2), zipWith(t, t2)(f))
+  }
 
   def main(args: Array[String]): Unit = {
     println(s"The last value of list is 3,5,7 shouldBe ${tail(List(1,3,5,7))}")
     println(s"The value of list should be 9,3,5,7 ${setHead(List(1,3,5,7), 9)}")
+
+    println(init(List(1,2,3,4,5)))
+
+    println(reverse(List(1,2,3,4)))
   }
 }
