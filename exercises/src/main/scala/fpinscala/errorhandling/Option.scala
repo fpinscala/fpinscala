@@ -68,7 +68,33 @@ object Option {
     a.flatMap(someA => b.map(someB => f(someA, someB)))
   }
 
-  def sequence[A](a: List[Option[A]]): Option[List[A]] = ???
+  def sequence[A](a: List[Option[A]]): Option[List[A]] = {
+    val ret = a match {
+      case Nil => Some(List())
+      case h :: t => h flatMap (hh => sequence(t) map { tt =>
+        println(s"$hh ++ $tt")
+        hh :: tt
+      })
+    }
+    println(ret)
+    ret
+  }
 
-  def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] = ???
+  def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] = {
+    a match {
+      case Nil => Some(Nil)
+      case h :: t =>
+        f(h) match {
+          case Some(hh) =>
+            traverse(t)(f).map(hh :: _)
+          case None => None
+        }
+    }
+  }
+
+  def main(args: Array[String]): Unit = {
+    println(traverse(List(1,2,3,4,5)){ digit =>
+      if (digit < 6) Some(digit) else None
+    })
+  }
 }

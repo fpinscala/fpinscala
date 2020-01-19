@@ -102,10 +102,6 @@ object List { // `List` companion object. Contains functions for creating and wo
     foldLeft(reverse(l), z)(f)
   }
 
-  def append[A](l: List[A], r: List[A]): List[A] = {
-    foldRight(l, r)(Cons(_, _))
-  }
-
   def concat[A](l: List[List[A]]): List[A] = {
     foldRight(l, List[A]())(append)
   }
