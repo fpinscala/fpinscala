@@ -144,7 +144,7 @@ object PolymorphicFunctions {
     @annotation.tailrec
     def loop(n: Int): Boolean = {
       if (n + 1 >= as.length) true
-      else if (gt(as(n), as(n + 1))) false
+      else if (!gt(as(n), as(n + 1))) false
       else loop(n + 1)
     }
     loop(0)
@@ -189,10 +189,10 @@ object TestFunctions {
 
   import PolymorphicFunctions._
 
-  def isGreaterThan(x: Int, y: Int): Boolean = x > y
+  def isSmallerThan(x: Int, y: Int): Boolean = x < y
 
   def main(args: Array[String]): Unit = {
-    assert(isSorted(Array(1, 2, 3, 4, 5, 8), isGreaterThan))
-    assert(!isSorted(Array(4, 5, 6, 7, 1), isGreaterThan))
+    assert(isSorted(Array(1, 2, 3, 4, 5, 8), isSmallerThan))
+    assert(!isSorted(Array(4, 5, 6, 7, 1), isSmallerThan))
   }
 }
