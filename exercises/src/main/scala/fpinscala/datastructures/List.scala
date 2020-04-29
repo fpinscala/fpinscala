@@ -92,11 +92,63 @@ object List { // `List` companion object. Contains functions for creating and wo
     }
   }
 
-  def length[A](l: List[A]): Int = ???
+  def length[A](l: List[A]): Int = foldRight(l, 0)((_, y) => 1 + y)
 
-  def foldLeft[A, B](l: List[A], z: B)(f: (B, A) => B): B = ???
+  @annotation.tailrec
+  def foldLeft[A, B](l: List[A], z: B)(f: (B, A) => B): B = l match {
+    case Nil => z
+    case Cons(head, tail) => foldLeft(tail, f(z, head))(f)
+  }
 
-  def map[A, B](l: List[A])(f: A => B): List[B] = ???
+  def reverse[A](l: List[A]): List[A] = foldLeft(l, Nil: List[A])((acc, elem) => Cons(elem, acc))
+
+  /*
+    reverse(Cons(1, Cons(2, Cons(3, Nil))))
+    foldLeft(Cons(1, Cons(2, Cons(3, Nil))), Nil)((acc, elem) => Cons(elem, acc))
+    foldLeft(Cons(2, Cons(3, Nil)), Cons(1, Nil))((acc, elem) => Cons(elem, acc))
+    foldLeft(Cons(3, Nil), Cons(2, Cons(1, Nil)))((acc, elem) => Cons(elem, acc))
+    foldLeft(Nil, Cons(3, Cons(2, Cons(1, Nil))))((acc, elem) => Cons(elem, acc))
+    Cons(3, Cons(2, Cons(1, Nil)))
+   */
+
+  def appendViaFoldRight[A](a1: List[A], a2: List[A]): List[A] =
+    foldRight(a1, a2)((elem, acc) => Cons(elem, acc))
+
+  def concat[A](l: List[List[A]]): List[A] =
+    foldRight(l, List[A]())(append)
+
+  def addOne(l: List[Int]): List[Int] =
+    foldRight(l, Nil: List[Int])((elem, acc) => Cons(elem + 1, acc))
+
+  def doubleToString(l: List[Double]): List[String] = foldRight(l, Nil: List[String])((h, t) => Cons(h.toString, t))
+
+  def map[A, B](l: List[A])(f: A => B): List[B] = foldRight(l, Nil: List[B])((h, t) => Cons(f(h), t))
+
+  def flatMap[A,B](as: List[A])(f: A => List[B]): List[B] =
+    foldRight(as, Nil: List[B])((h, t) => append(f(h), t))
+
+  def filterViaFlatMap[A](l: List[A])(f: A => Boolean): List[A] =
+    flatMap(l)(elem => if (f(elem)) List(elem) else Nil)
+
+  def addPairwise(a: List[Int], b: List[Int]): List[Int] = (a, b) match {
+    case (Nil, _) => Nil
+    case (_, Nil) => Nil
+    case (Cons(h1, t1), Cons(h2, t2)) => Cons(h1 + h2, addPairwise(t1, t2))
+  }
+
+  def zipWith[A, B](a: List[A], b: List[A])(f: (A, A) => B): List[B] = (a, b) match {
+    case (Nil, _) => Nil
+    case (_, Nil) => Nil
+    case (Cons(h1, t1), Cons(h2, t2)) => Cons(f(h1, h2), zipWith(t1, t2)(f))
+  }
+
+  @annotation.tailrec
+  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = (sup, sub) match {
+    case (_, Nil) => true
+    case (Nil, _) => false
+    case (Cons(h1, t1), Cons(h2, t2)) =>
+      if (h1 == h2) hasSubsequence(t1, t2) else hasSubsequence(t1, sub)
+  }
 }
 
 object run {
@@ -110,5 +162,20 @@ object run {
     println(s"DropWhile on Int list: ${dropWhile[Int](intList, x => x < 2)}")
     println(s"Init on stringList list: ${init(stringList)}")
     println(s"Add to list: ${addToList(stringList, "addedElement")}")
+    println(s"Length of stringList: ${length(stringList)}")
+
+    val sub1 = List(0, 1, 2, 3, 4)
+    val sub2 = List(1, 2, 3)
+    val sub3 = List(2,3)
+    val sub4 = List(4, 5)
+    val sup1 = List(0, 0, 1, 4)
+    val sub5 = List(0, 1, 4)
+    val sup2 = append(append(sub1, sub4), sub5)
+    println(s"HasSubsequence($intList, $sub1) should be true: ${hasSubsequence(intList, sub1)}")
+    println(s"HasSubsequence($intList, $sub2) should be true: ${hasSubsequence(intList, sub2)}")
+    println(s"HasSubsequence($intList, $sub3) should be true: ${hasSubsequence(intList, sub3)}")
+    println(s"HasSubsequence($intList, $sub4) should be false: ${hasSubsequence(intList, sub4)}")
+    println(s"HasSubsequence($sup1, $sub5) should be true: ${hasSubsequence(sup1, sub5)}")
+    println(s"HasSubsequence($sup2, $sub4) should be true: ${hasSubsequence(sup2, sub4)}")
   }
 }
