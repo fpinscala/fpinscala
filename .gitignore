@@ -3,6 +3,7 @@
 tags
 target
 project/boot
+project/metals.sbt
 .history
 project.vim
 *.old
@@ -10,3 +11,5 @@ project.vim
 .project
 .classpath
 .metadata/
+.bloop/
+.metals/
