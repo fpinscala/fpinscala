@@ -1,7 +1,5 @@
 package fpinscala.localeffects
 
-import fpinscala.monads._
-
 object Mutable {
   def quicksort(xs: List[Int]): List[Int] = if (xs.isEmpty) xs else {
     val arr = xs.toArray
@@ -187,7 +185,7 @@ object STMap {
   })
 
   def fromMap[S,K,V](m: Map[K,V]): ST[S, STMap[S,K,V]] = ST(new STMap[S,K,V] {
-    val table = (HashMap.newBuilder[K,V] ++= m).result
+    val table = (HashMap.newBuilder[K,V] ++= m).result()
   })
 }
 
