@@ -1,9 +1,8 @@
 package fpinscala.streamingio
 
-import fpinscala.iomonad.{IO,Monad,Free,unsafePerformIO}
-import language.implicitConversions
-import language.higherKinds
-import language.postfixOps
+import fpinscala.iomonad.IO
+
+import scala.language.{higherKinds, implicitConversions, postfixOps}
 
 object ImperativeAndLazyIO {
 
@@ -16,8 +15,6 @@ object ImperativeAndLazyIO {
   into `IO`.
                              */
 
-  import java.io._
-
   def linesGt40k(filename: String): IO[Boolean] = IO {
     // There are a number of convenience functions in scala.io.Source
     // for reading from external sources such as files.
@@ -25,9 +22,9 @@ object ImperativeAndLazyIO {
     try {
       var count = 0
       // Obtain a stateful iterator from the Source
-      val lines: Iterator[String] = src.getLines
+      val lines: Iterator[String] = src.getLines()
       while (count <= 40000 && lines.hasNext) {
-        lines.next // has side effect of advancing to next element
+        lines.next() // has side effect of advancing to next element
         count += 1
       }
       count > 40000
@@ -71,7 +68,7 @@ object ImperativeAndLazyIO {
 
   def lines(filename: String): IO[Stream[String]] = IO {
     val src = io.Source.fromFile(filename)
-    src.getLines.toStream append { src.close; Stream.empty }
+    src.getLines().toStream append { src.close; Stream.empty }
   }
                             /*
 
@@ -454,13 +451,13 @@ object SimpleStreamTransducers {
         cur match {
           case Halt() => acc
           case Await(recv) =>
-            val next = if (ss.hasNext) recv(Some(ss.next))
+            val next = if (ss.hasNext) recv(Some(ss.next()))
                        else recv(None)
             go(ss, next, acc)
           case Emit(h, t) => go(ss, t, g(acc, h))
         }
       val s = io.Source.fromFile(f)
-      try go(s.getLines, p, z)
+      try go(s.getLines(), p, z)
       finally s.close
     }
 
@@ -790,7 +787,7 @@ object GeneralizedStreamTransducers {
      * See the definition in the body of `Process`.
      */
 
-    import java.io.{BufferedReader,FileReader}
+    import java.io.{BufferedReader, FileReader}
     val p: Process[IO, String] =
       await(IO(new BufferedReader(new FileReader("lines.txt")))) {
         case Right(b) =>
@@ -830,8 +827,8 @@ object GeneralizedStreamTransducers {
       resource
         { IO(io.Source.fromFile(filename)) }
         { src =>
-            lazy val iter = src.getLines // a stateful iterator
-            def step = if (iter.hasNext) Some(iter.next) else None
+            lazy val iter = src.getLines() // a stateful iterator
+            def step = if (iter.hasNext) Some(iter.next()) else None
             lazy val lines: Process[IO,String] = eval(IO(step)).flatMap {
               case None => Halt(End)
               case Some(line) => Emit(line, lines)
@@ -1044,7 +1041,7 @@ object GeneralizedStreamTransducers {
      * input, so code that uses this channel does not need to be
      * responsible for knowing how to obtain a `Connection`.
      */
-    import java.sql.{Connection, PreparedStatement, ResultSet}
+    import java.sql.{Connection, PreparedStatement}
 
     def query(conn: IO[Connection]):
         Channel[IO, Connection => PreparedStatement, Map[String,Any]] =
@@ -1118,8 +1115,8 @@ object GeneralizedStreamTransducers {
 
 object ProcessTest extends App {
   import GeneralizedStreamTransducers._
-  import fpinscala.iomonad.IO
   import Process._
+  import fpinscala.iomonad.IO
 
   val p = eval(IO { println("woot"); 1 }).repeat
   val p2 = eval(IO { println("cleanup"); 2 } ).onHalt {

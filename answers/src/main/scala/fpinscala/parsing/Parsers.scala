@@ -1,11 +1,12 @@
 package fpinscala.parsing
 
 import java.util.regex._
-import scala.util.matching.Regex
-import fpinscala.testing._
+
 import fpinscala.testing.Prop._
-import language.higherKinds
-import language.implicitConversions
+import fpinscala.testing._
+
+import scala.language.{higherKinds, implicitConversions}
+import scala.util.matching.Regex
 
 trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trait
   def run[A](p: Parser[A])(input: String): Either[ParseError,A]
@@ -184,14 +185,14 @@ case class Location(input: String, offset: Int = 0) {
   def toError(msg: String): ParseError =
     ParseError(List((this, msg)))
 
-  def advanceBy(n: Int) = copy(offset = offset+n)
+  def advanceBy(n: Int): Location = copy(offset = offset+n)
 
   /* Returns the line corresponding to this location */
   def currentLine: String =
-    if (input.length > 1) input.lines.drop(line-1).next
+    if (input.length > 1) input.linesIterator.drop(line-1).next
     else ""
 
-  def columnCaret = (" " * (col-1)) + "^"
+  def columnCaret: FailedCase = (" " * (col-1)) + "^"
 }
 
 case class ParseError(stack: List[(Location,String)] = List()) {
