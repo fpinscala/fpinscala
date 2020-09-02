@@ -1,6 +1,4 @@
 package fpinscala.laziness
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
 
 import Stream._
 trait Stream[+A] {
