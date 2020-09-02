@@ -37,6 +37,7 @@ object MyModule {
   // Exercise 1: Write a function to compute the nth fibonacci number
 
   def fib(n: Int): Int = {
+    @annotation.tailrec
     def helper(n: Int, prev: Int = 0, acc: Int = 1): Int = {
       if (n == 0) acc
       else helper(n - 1, acc, acc + prev)
@@ -147,10 +148,16 @@ object PolymorphicFunctions {
   // Exercise 2: Implement a polymorphic function to check whether
   // an `Array[A]` is sorted
   def isSorted[A](as: Array[A], gt: (A,A) => Boolean): Boolean = {
-    if (as.length < 2) true
-    else if (gt(as(0), as(1))) false
-    else isSorted(as.tail, gt)
+    @annotation.tailrec
+    def go(cur: Int): Boolean = {
+      if (cur == as.length) !gt(as(cur), as(cur + 1))
+      else if (gt(as(cur), as(cur + 1))) false
+      else go(cur + 1)
+    }
+    if (as.isEmpty) true else go(0)
   }
+
+
 
   // Polymorphic functions are often so constrained by their type
   // that they only have one implementation! Here's an example:
