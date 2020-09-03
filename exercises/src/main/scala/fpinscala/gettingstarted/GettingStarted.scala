@@ -38,9 +38,9 @@ object MyModule {
 
   def fib(n: Int): Int = {
     @annotation.tailrec
-    def helper(n: Int, prev: Int = 0, acc: Int = 1): Int = {
-      if (n == 0) acc
-      else helper(n - 1, acc, acc + prev)
+    def helper(n: Int, cur: Int = 0, next: Int = 1): Int = {
+      if (n == 0) cur
+      else helper(n - 1, next, cur + next)
     }
     helper(n)
   }
@@ -150,7 +150,7 @@ object PolymorphicFunctions {
   def isSorted[A](as: Array[A], gt: (A,A) => Boolean): Boolean = {
     @annotation.tailrec
     def go(cur: Int): Boolean = {
-      if (cur == as.length) !gt(as(cur), as(cur + 1))
+      if (cur == as.length - 1) true
       else if (gt(as(cur), as(cur + 1))) false
       else go(cur + 1)
     }
