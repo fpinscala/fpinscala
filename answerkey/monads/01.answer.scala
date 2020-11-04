@@ -13,9 +13,9 @@ val optionMonad = new Monad[Option] {
   def flatMap[A,B](ma: Option[A])(f: A => Option[B]) = ma flatMap f
 }
 
-val streamMonad = new Monad[Stream] {
-  def unit[A](a: => A) = Stream(a)
-  def flatMap[A,B](ma: Stream[A])(f: A => Stream[B]) = ma flatMap f
+val streamMonad = new Monad[LazyList] {
+  def unit[A](a: => A) = LazyList(a)
+  def flatMap[A,B](ma: LazyList[A])(f: A => LazyList[B]) = ma flatMap f
 }
 
 val listMonad = new Monad[List] {
