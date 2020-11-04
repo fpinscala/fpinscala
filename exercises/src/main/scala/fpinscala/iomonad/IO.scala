@@ -15,14 +15,14 @@ function, which just returns `Unit`.
     self =>
     def run(): Unit
     def ++(io: IO): IO = new IO {
-      def run = {
-        self.run; io.run
+      def run(): Unit = {
+        self.run(); io.run()
       }
     }
   }
   object IO {
     def empty: IO = new IO {
-      def run = ()
+      def run(): Unit = ()
     }
   }
 
