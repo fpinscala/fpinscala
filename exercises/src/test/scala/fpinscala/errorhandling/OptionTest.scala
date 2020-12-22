@@ -1,12 +1,10 @@
 package fpinscala.errorhandling
 
-import org.mockito.IdiomaticMockito.WithExpect
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 
-class OptionTest extends AnyFreeSpec with Matchers with TableDrivenPropertyChecks with MockitoSugar with ArgumentMatchersSugar with WithExpect {
+class OptionTest extends AnyFreeSpec with Matchers with TableDrivenPropertyChecks {
 
   "Instance functions" - {
     "should map to None when None" in {
@@ -139,7 +137,6 @@ class OptionTest extends AnyFreeSpec with Matchers with TableDrivenPropertyCheck
     }
 
     "verify sequence" - {
-
       forAll(Table[List[Option[String]]](
         "options",
         List(None, None),
@@ -163,7 +160,6 @@ class OptionTest extends AnyFreeSpec with Matchers with TableDrivenPropertyCheck
     }
 
     "verify traverse" - {
-
       forAll(Table[List[Int]](
         "ints",
         List(1, 0),
@@ -171,7 +167,7 @@ class OptionTest extends AnyFreeSpec with Matchers with TableDrivenPropertyCheck
         List(1, 1),
       )) { ints =>
         s"should return None when list of ints is $ints" in {
-          val result1 = Option.traverse(ints)(i => if(i == 1) None else Some(i.toString))
+          val result1 = Option.traverse(ints)(i => if (i == 1) None else Some(i.toString))
           result1 shouldBe None
         }
       }
