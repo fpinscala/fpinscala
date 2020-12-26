@@ -3,6 +3,11 @@ package fpinscala.parallelism
 import java.util.concurrent._
 
 import scala.language.implicitConversions
+import java.util.concurrent.Executors
+
+import fpinscala.state.RNG
+
+import scala.concurrent.duration._
 
 object Par {
   type Par[A] = ExecutorService => Future[A]
@@ -47,8 +52,11 @@ object Par {
     flatMap(a)(a => flatMap(b)(b => unit(f(a, b))))
 
   def fork[A](a: => Par[A]): Par[A] = // This is the simplest and most natural implementation of `fork`, but there are some problems with it--for one, the outer `Callable` will block waiting for the "inner" task to complete. Since this blocking occupies a thread in our thread pool, or whatever resource backs the `ExecutorService`, this implies that we're losing out on some potential parallelism. Essentially, we're using two threads when one should suffice. This is a symptom of a more serious problem with the implementation, and we will discuss this later in the chapter.
-    es => es.submit(new Callable[A] {
-      def call = a(es).get
+    es => es.submit({
+      //      println("submit")
+      new Callable[A] {
+        def call = a(es).get
+      }
     })
 
   def map[A, B](pa: Par[A])(f: A => B): Par[B] =
@@ -108,7 +116,7 @@ object Par {
   def asyncF[A, B](f: A => B): A => Par[B] = a => lazyUnit(f(a))
 
   def sequenceBalanced[A](ps: IndexedSeq[Par[A]]): Par[IndexedSeq[A]] = fork {
-    if (ps.isEmpty) unit(Nil)
+    if (ps.isEmpty) unit(Nil.toIndexedSeq)
     else if (ps.size == 1) map(ps.head)(Vector(_))
     else {
       val (l, r) = ps.splitAt(ps.length / 2)
@@ -127,7 +135,7 @@ object Par {
     map(sequence(fas))(_.flatten)
   }
 
-  def parReduce[A, B](as: IndexedSeq[A], z: B)(f: (B, B) => B): Par[B] = fork {
+  def parReduce[A](as: IndexedSeq[A], z: A)(f: (A, A) => A): Par[A] = fork {
     if (as.isEmpty) unit(z)
     else if (as.size == 1) unit(as.head)
     else {
@@ -136,30 +144,53 @@ object Par {
     }
   }
 
-  def parSum(ints: IndexedSeq[Int]): Par[Int] = parReduce(ints, 0)(_ + _)
+  def parSum(ints: IndexedSeq[Int]): Par[Int] = parReduce(ints, 0)(longAdd)
 
-  def parCountLetters(paragraphs: IndexedSeq[String]): Par[Int] = parReduce(paragraphs.map(_.length), 0)(_ + _)
+  def parCountLetters(paragraphs: IndexedSeq[String]): Par[Int] = parReduce(paragraphs.map(_.length), 0)(longAdd)
+
+  def longAdd(x: Int, y: Int) = {
+    Thread.sleep(100)
+    println("add")
+    x + y
+  }
 
   def map3[A, B, C, D](a: Par[A], b: Par[B], c: Par[C])(f: (A, B, C) => D): Par[D] =
     map2Fixed(map2Fixed(a, b)((_, _)), c)({ case ((a, b), c) => f(a, b, c) })
 
   def map4[A, B, C, D, E](a: Par[A], b: Par[B], c: Par[C], d: Par[D])(f: (A, B, C, D) => E): Par[E] =
-    map2Fixed(map2Fixed(map2Fixed(a, b)((_, _)), c), d)({ case (((a, b), c), d) => f(a, b, c, d) })
+    map2Fixed(map2Fixed(map2Fixed(a, b)((_, _)), c)((_, _)), d)({ case (((a, b), c), d) => f(a, b, c, d) })
 
   def map5[A, B, C, D, E, G](a: Par[A], b: Par[B], c: Par[C], d: Par[D], e: Par[E])(f: (A, B, C, D, E) => G): Par[G] =
-    map2Fixed(map2Fixed(map2Fixed(map2Fixed(a, b)((_, _)), c), d), e)({ case ((((a, b), c), d), e) => f(a, b, c, d, e) })
+    map2Fixed(map2Fixed(map2Fixed(map2Fixed(a, b)((_, _)), c)((_, _)), d)((_, _)), e)({ case ((((a, b), c), d), e) => f(a, b, c, d, e) })
 
   class ParOps[A](p: Par[A]) {
+    def eq2(p2: Par[A]): Par[Boolean] = Par.map2(p, p2)(_ == _)
   }
 }
 
 object Examples {
 
-  def sum(ints: IndexedSeq[Int]): Int = // `IndexedSeq` is a superclass of random-access sequences like `Vector` in the standard library. Unlike lists, these sequences provide an efficient `splitAt` method for dividing them into two parts at a particular index.
+  def sum(ints: IndexedSeq[Int])(f: (Int, Int) => Int): Int = // `IndexedSeq` is a superclass of random-access sequences like `Vector` in the standard library. Unlike lists, these sequences provide an efficient `splitAt` method for dividing them into two parts at a particular index.
     if (ints.size <= 1)
       ints.headOption getOrElse 0 // `headOption` is a method defined on all collections in Scala. We saw this function in chapter 3.
     else {
       val (l, r) = ints.splitAt(ints.length / 2) // Divide the sequence in half using the `splitAt` function.
-      sum(l) + sum(r) // Recursively sum both halves and add the results together.
+      f(sum(l)(f), sum(r)(f)) // Recursively sum both halves and add the results together.
     }
+}
+
+object App extends App {
+  //  val f = Par.run(Executors.newFixedThreadPool(8))(Par.parSum((1 :: 2 :: 3 :: Nil).toIndexedSeq))
+  //  println(f.get)
+
+  val before = System.currentTimeMillis()
+
+  //  val f0 = Examples.sum(Seq.fill(1000)(2).toIndexedSeq)(Par.longAdd)
+  //  println(f0)
+
+  //  val f2 = Par.run(Executors.newCachedThreadPool)(Par.parCountLetters(Seq.fill(1000)("sjlkdfjsdlkfjsdf").toIndexedSeq))
+  val f = Par.run(Executors.newCachedThreadPool)(Par.parSum(Seq.fill(1000)(2).toIndexedSeq))
+  println(f.get)
+
+  println(s"time - ${System.currentTimeMillis() - before}")
 }
