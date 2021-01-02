@@ -64,7 +64,8 @@ object Monad {
 
   val parMonad: Monad[Par] = ???
 
-  def parserMonad[P[+_]](p: Parsers[P]): Monad[P] = ???
+  // todo: uncomment
+//  def parserMonad[P[+_]](p: Parsers[P]): Monad[P] = ???
 
   val optionMonad: Monad[Option] = ???
 
