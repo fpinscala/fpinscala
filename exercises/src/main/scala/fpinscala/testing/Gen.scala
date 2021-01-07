@@ -3,6 +3,8 @@ package fpinscala.testing
 import java.util.concurrent.Executors
 
 import fpinscala.laziness.Stream
+import fpinscala.monoids.Monoid
+import fpinscala.monoids.Monoid.{Part, Stub}
 import fpinscala.parallelism.Par
 import fpinscala.parallelism.Par.{Par, ParOps}
 import fpinscala.state._
@@ -80,7 +82,6 @@ sealed trait Result {
   def isFalsified: Boolean
 }
 
-
 case object Proved extends Result {
   def isFalsified: Boolean = false
 }
@@ -120,7 +121,6 @@ case class Prop(run: (MaxSize, TestCases, RNG) => Result) {
     case Passed => unit(Passed)
   })
 }
-
 
 case class Gen[A](sample: State[RNG, A]) {
   def map[B](f: A => B): Gen[B] = new Gen[B](sample.map(f(_)))
@@ -174,6 +174,25 @@ object Gen {
     (g.map(x => Some(x)), .8),
     (unit(None), .2)
   )
+
+  def stringN(gn: Gen[Int]): Gen[String] =
+    gn.flatMap(n =>
+      listOfN(n, choose(0,127)).map(_.map(_.toChar).mkString))
+
+  def trueOption[A](g: Gen[A]): Gen[scala.Option[A]] = weighted(
+    (g.map(x => scala.Some(x)), .8),
+    (unit(scala.None), .2)
+  )
+
+  def wc(gl: Gen[String], gw: Gen[Int], gr: Gen[String]): Gen[Monoid.WC] = weighted(
+    ((gl ** gw ** gr).map { case l ** w ** r => Part(l, w, r) }, .8),
+    (gl.map(Stub), .2)
+  )
+
+  def endoIntFunction(g: Gen[Int]): Gen[Int => Int] = weighted(
+    (weighted((g.map { g => _ + g }, .5), (g.map { g => _ - g }, .5)), .5),
+    (weighted((g.map { g => _ * g }, .5), (g.map { g => _ / g }, .5)), .5)
+  )
 }
 
 case class SGen[A](forSize: Int => Gen[A]) {
@@ -185,7 +204,6 @@ case class SGen[A](forSize: Int => Gen[A]) {
 
   def listOfN(size: Gen[Int]): SGen[List[A]] = SGen(n => size.flatMap(Gen.listOfN(_, forSize(n))))
 }
-
 
 object App extends App {
   implicit def toParOps[A](p: Par[A]): ParOps[A] = new ParOps(p)
@@ -213,7 +231,6 @@ object App extends App {
 
   run(maxProp)
   run(sortProp1 && sortProp2)
-
 
   // parallel
 
@@ -254,7 +271,6 @@ object App extends App {
   run(p3)
   run(p4)
   run(forkP)
-
 
   // streams
 
