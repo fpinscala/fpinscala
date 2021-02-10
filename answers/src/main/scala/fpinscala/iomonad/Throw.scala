@@ -37,7 +37,7 @@ object Throw extends Monad[Throw] {
     var fi: Any => Any = f.asInstanceOf[Any => Any]
     while (true) {
       try return fi(ai).asInstanceOf[B]
-      catch { case Call(a2,f2) => ai = a2; fi = f2; }
+      catch { case Call(a2,f2) => ai = a2; fi = f2.asInstanceOf[Any => Any]; }
     }
     return null.asInstanceOf[B] // unreachable
   }

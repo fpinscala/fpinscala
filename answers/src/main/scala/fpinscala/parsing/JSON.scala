@@ -17,7 +17,7 @@ object JSON {
     // we'll hide the string implicit conversion and promote strings to tokens instead
     // this is a bit nicer than having to write token everywhere
     import P.{string => _, _}
-    implicit def tok(s: String) = token(P.string(s))
+    implicit def tok(s: String): Parser[String] = token(P.string(s))
 
     def array = surround("[","]")(
       value sep "," map (vs => JArray(vs.toIndexedSeq))) scope "array"

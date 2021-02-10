@@ -1,5 +1,7 @@
 package fpinscala.localeffects
 
+import scala.reflect.ClassTag
+
 import fpinscala.monads._
 
 object Mutable {
@@ -79,8 +81,8 @@ trait RunnableST[A] {
   def apply[S]: ST[S,A]
 }
 
-// Scala requires an implicit Manifest for constructing arrays.
-sealed abstract class STArray[S,A](implicit manifest: Manifest[A]) {
+// Scala requires an implicit ClassTag for constructing arrays.
+sealed abstract class STArray[S,A](implicit ct: ClassTag[A]) {
   protected def value: Array[A]
   def size: ST[S,Int] = ST(value.size)
 
@@ -110,12 +112,12 @@ sealed abstract class STArray[S,A](implicit manifest: Manifest[A]) {
 
 object STArray {
   // Construct an array of the given size filled with the value v
-  def apply[S,A:Manifest](sz: Int, v: A): ST[S, STArray[S,A]] =
+  def apply[S,A: ClassTag](sz: Int, v: A): ST[S, STArray[S,A]] =
     ST(new STArray[S,A] {
       lazy val value = Array.fill(sz)(v)
     })
 
-  def fromList[S,A:Manifest](xs: List[A]): ST[S, STArray[S,A]] =
+  def fromList[S,A: ClassTag](xs: List[A]): ST[S, STArray[S,A]] =
     ST(new STArray[S,A] {
       lazy val value = xs.toArray
     })

@@ -474,13 +474,13 @@ object IO3 {
 
   type ~>[F[_], G[_]] = Translate[F,G] // gives us infix syntax `F ~> G` for `Translate[F,G]`
 
-  implicit val function0Monad = new Monad[Function0] {
+  implicit val function0Monad: Monad[Function0] = new Monad[Function0] {
     def unit[A](a: => A) = () => a
     def flatMap[A,B](a: Function0[A])(f: A => Function0[B]) =
       () => f(a())()
   }
 
-  implicit val parMonad = new Monad[Par] {
+  implicit val parMonad: Monad[Par] = new Monad[Par] {
     def unit[A](a: => A) = Par.unit(a)
     def flatMap[A,B](a: Par[A])(f: A => Par[B]) = Par.fork { Par.flatMap(a)(f) }
   }
@@ -551,7 +551,7 @@ object IO3 {
       }
   }
   object ConsoleState {
-    implicit val monad = new Monad[ConsoleState] {
+    implicit val monad: Monad[ConsoleState] = new Monad[ConsoleState] {
       def unit[A](a: => A) = ConsoleState(bufs => (a,bufs))
       def flatMap[A,B](ra: ConsoleState[A])(f: A => ConsoleState[B]) = ra flatMap f
     }
@@ -565,7 +565,7 @@ object IO3 {
       ConsoleReader(r => f(run(r)).run(r))
   }
   object ConsoleReader {
-    implicit val monad = new Monad[ConsoleReader] {
+    implicit val monad: Monad[ConsoleReader] = new Monad[ConsoleReader] {
       def unit[A](a: => A) = ConsoleReader(_ => a)
       def flatMap[A,B](ra: ConsoleReader[A])(f: A => ConsoleReader[B]) = ra flatMap f
     }

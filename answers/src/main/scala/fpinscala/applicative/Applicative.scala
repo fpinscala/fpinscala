@@ -108,8 +108,8 @@ object Applicative {
 
   type Const[A, B] = A
 
-  implicit def monoidApplicative[M](M: Monoid[M]) =
-    new Applicative[({ type f[x] = Const[M, x] })#f] {
+  implicit def monoidApplicative[M](M: Monoid[M]): Applicative[Const[M, *]] =
+    new Applicative[Const[M, *]] {
       def unit[A](a: => A): M = M.zero
       override def apply[A,B](m1: M)(m2: M): M = M.op(m1, m2)
     }

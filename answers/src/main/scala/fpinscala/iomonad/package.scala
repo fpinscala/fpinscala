@@ -8,7 +8,7 @@ package object iomonad {
   type IO[A] = IO3.IO[A]
   def IO[A](a: => A): IO[A] = IO3.IO[A](a)
 
-  implicit val ioMonad = IO3.freeMonad[Par]
+  implicit val ioMonad: Monad[Free[Par, *]] = IO3.freeMonad[Par]
 
   def now[A](a: A): IO[A] = IO3.Return(a)
 

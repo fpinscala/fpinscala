@@ -247,7 +247,7 @@ object SimpleLazyListTransducers {
 
     // Process forms a monad, and we provide monad syntax for it
 
-    import fpinscala.iomonad.Monad
+    import fpinscala.iomonad.{Monad, Monadic}
 
     def monad[I]: Monad[({ type f[x] = Process[I,x]})#f] =
       new Monad[({ type f[x] = Process[I,x]})#f] {
@@ -257,7 +257,7 @@ object SimpleLazyListTransducers {
       }
 
     // enable monadic syntax for `Process` type
-    implicit def toMonadic[I,O](a: Process[I,O]) = monad[I].toMonadic(a)
+    implicit def toMonadic[I,O](a: Process[I,O]): Monadic[Process[I, *], O] = monad[I].toMonadic(a)
 
     /**
      * A helper function to await an element or fall back to another process
@@ -620,7 +620,7 @@ object GeneralizedLazyListTransducers {
         case Emit(h, t) => Emit(h, this |> t)
         case Await(req,recv) => this match {
           case Halt(err) => Halt(err) |> recv(Left(err))
-          case Emit(h,t) => t |> Try(recv(Right(h)))
+          case Emit(h,t) => t |> Try(recv.asInstanceOf[Either[Throwable, O] => Process[Is[O]#f, O2]](Right(h)))
           case Await(req0,recv0) => await(req0)(recv0 andThen (_ |> p2))
         }
       }
@@ -673,13 +673,13 @@ object GeneralizedLazyListTransducers {
         case Await(side, recv) => side.get match {
           case Left(isO) => this match {
             case Halt(e) => p2.kill onComplete Halt(e)
-            case Emit(o,ot) => (ot tee p2)(Try(recv(Right(o))))
+            case Emit(o,ot) => (ot tee p2)(Try(recv.asInstanceOf[Either[Throwable, O] => Process[T[O,O2]#f, O3]](Right(o))))
             case Await(reqL, recvL) =>
               await(reqL)(recvL andThen (this2 => this2.tee(p2)(t)))
           }
           case Right(isO2) => p2 match {
             case Halt(e) => this.kill onComplete Halt(e)
-            case Emit(o2,ot) => (this tee ot)(Try(recv(Right(o2))))
+            case Emit(o2,ot) => (this tee ot)(Try(recv.asInstanceOf[Either[Throwable, O2] => Process[T[O,O2]#f, O3]](Right(o2))))
             case Await(reqR, recvR) =>
               await(reqR)(recvR andThen (p3 => this.tee(p3)(t)))
           }

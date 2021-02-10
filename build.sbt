@@ -1,6 +1,6 @@
 val commonSettings = Seq(
-  scalaVersion := "2.13.4",
-  scalacOptions ++= List("-feature", "-deprecation")
+  scalaVersion := "3.0.0-M3",
+  scalacOptions ++= List("-feature", "-deprecation", "-Ykind-projector")
 )
 
 lazy val root = (project in file("."))
