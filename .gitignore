@@ -10,3 +10,4 @@ project.vim
 .project
 .classpath
 .metadata/
+.bsp
