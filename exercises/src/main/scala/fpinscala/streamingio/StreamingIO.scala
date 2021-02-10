@@ -25,9 +25,9 @@ object ImperativeAndLazyIO {
     try {
       var count = 0
       // Obtain a stateful iterator from the Source
-      val lines: Iterator[String] = src.getLines
+      val lines: Iterator[String] = src.getLines()
       while (count <= 40000 && lines.hasNext) {
-        lines.next // has side effect of advancing to next element
+        lines.next() // has side effect of advancing to next element
         count += 1
       }
       count > 40000
@@ -50,13 +50,13 @@ object ImperativeAndLazyIO {
   a monolithic loop, and we must modify this loop directly if we want
   to change its behavior.
 
-  Now imagine if we had a `Stream[String]` for the lines of the file
-  and we could assemble functionality using all the `Stream` functions
+  Now imagine if we had a `LazyList[String]` for the lines of the file
+  and we could assemble functionality using all the `LazyList` functions
   we know and love.
                              */
 
   object Examples {
-    val lines: Stream[String] = sys.error("defined elsewhere")
+    val lines: LazyList[String] = sys.error("defined elsewhere")
     val ex1 = lines.zipWithIndex.exists(_._2 + 1 >= 40000)
     val ex2 = lines.filter(!_.trim.isEmpty).zipWithIndex.exists(_._2 + 1 >= 40000)
     val ex3 = lines.take(40000).map(_.head).indexOfSlice("abracadabra".toList)
@@ -65,25 +65,25 @@ object ImperativeAndLazyIO {
                             /*
 
   Could we actually write the above? Not quite. We could 'cheat' and
-  return an `IO[Stream[String]]` representing the lines of a file:
+  return an `IO[LazyList[String]]` representing the lines of a file:
 
                              */
 
-  def lines(filename: String): IO[Stream[String]] = IO {
+  def lines(filename: String): IO[LazyList[String]] = IO {
     val src = io.Source.fromFile(filename)
-    src.getLines.toStream append { src.close; Stream.empty }
+    src.getLines().to(LazyList) ++ { src.close; LazyList.empty }
   }
                             /*
 
   This is called _lazy I/O_, and it's problematic for a number of
   reasons, discussed in the book text. However, it would be nice to
   recover the same high-level, compositional style we are used to
-  from our use of `List` and `Stream`.
+  from our use of `List` and `LazyList`.
 
                              */
 }
 
-object SimpleStreamTransducers {
+object SimpleLazyListTransducers {
 
                             /*
 
@@ -98,14 +98,14 @@ object SimpleStreamTransducers {
     import Process._
 
     /*
-     * A `Process[I,O]` can be used to transform a `Stream[I]` to a
-     * `Stream[O]`.
+     * A `Process[I,O]` can be used to transform a `LazyList[I]` to a
+     * `LazyList[O]`.
      */
-    def apply(s: Stream[I]): Stream[O] = this match {
-      case Halt() => Stream()
+    def apply(s: LazyList[I]): LazyList[O] = this match {
+      case Halt() => LazyList()
       case Await(recv) => s match {
         case h #:: t => recv(Some(h))(t)
-        case xs => recv(None)(xs) // Stream is empty
+        case xs => recv(None)(xs) // LazyList is empty
       }
       case Emit(h,t) => h #:: t(s)
     }
@@ -375,13 +375,13 @@ object SimpleStreamTransducers {
         cur match {
           case Halt() => acc
           case Await(recv) =>
-            val next = if (ss.hasNext) recv(Some(ss.next))
+            val next = if (ss.hasNext) recv(Some(ss.next()))
                        else recv(None)
             go(ss, next, acc)
           case Emit(h, t) => go(ss, t, g(acc, h))
         }
       val s = io.Source.fromFile(f)
-      try go(s.getLines, p, z)
+      try go(s.getLines(), p, z)
       finally s.close
     }
 
@@ -395,7 +395,7 @@ object SimpleStreamTransducers {
   }
 }
 
-object GeneralizedStreamTransducers {
+object GeneralizedLazyListTransducers {
 
                             /*
 
@@ -733,8 +733,8 @@ object GeneralizedStreamTransducers {
       resource
         { IO(io.Source.fromFile(filename)) }
         { src =>
-            lazy val iter = src.getLines // a stateful iterator
-            def step = if (iter.hasNext) Some(iter.next) else None
+            lazy val iter = src.getLines() // a stateful iterator
+            def step = if (iter.hasNext) Some(iter.next()) else None
             lazy val lines: Process[IO,String] = eval(IO(step)).flatMap {
               case None => Halt(End)
               case Some(line) => Emit(line, lines)
@@ -1014,7 +1014,7 @@ object GeneralizedStreamTransducers {
 }
 
 object ProcessTest extends App {
-  import GeneralizedStreamTransducers._
+  import GeneralizedLazyListTransducers._
   import fpinscala.iomonad.IO
   import Process._
 

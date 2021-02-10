@@ -14,12 +14,12 @@ trait Monad[F[_]] extends Functor[F] {
   def map[A,B](a: F[A])(f: A => B): F[B] = flatMap(a)(a => unit(f(a)))
   def map2[A,B,C](a: F[A], b: F[B])(f: (A,B) => C): F[C] =
     flatMap(a)(a => map(b)(b => f(a,b)))
-  def sequence_[A](fs: Stream[F[A]]): F[Unit] = foreachM(fs)(skip)
-  def sequence_[A](fs: F[A]*): F[Unit] = sequence_(fs.toStream)
+  def sequence_[A](fs: LazyList[F[A]]): F[Unit] = foreachM(fs)(skip)
+  def sequence_[A](fs: F[A]*): F[Unit] = sequence_(fs.to(LazyList))
   def replicateM[A](n: Int)(f: F[A]): F[List[A]] =
-    Stream.fill(n)(f).foldRight(unit(List[A]()))(map2(_,_)(_ :: _))
+    LazyList.fill(n)(f).foldRight(unit(List[A]()))(map2(_,_)(_ :: _))
   def replicateM_[A](n: Int)(f: F[A]): F[Unit] =
-    foreachM(Stream.fill(n)(f))(skip)
+    foreachM(LazyList.fill(n)(f))(skip)
   def as[A,B](a: F[A])(b: B): F[B] = map(a)(_ => b)
   def skip[A](a: F[A]): F[Unit] = as(a)(())
   def when[A](b: Boolean)(fa: => F[A]): F[Boolean] =
@@ -38,14 +38,14 @@ trait Monad[F[_]] extends Functor[F] {
     _ <- if (ok) doWhile(a)(cond) else unit(())
   } yield ()
 
-  def foldM[A,B](l: Stream[A])(z: B)(f: (B,A) => F[B]): F[B] =
+  def foldM[A,B](l: LazyList[A])(z: B)(f: (B,A) => F[B]): F[B] =
     l match {
       case h #:: t => f(z,h) flatMap (z2 => foldM(t)(z2)(f))
       case _ => unit(z)
     }
-  def foldM_[A,B](l: Stream[A])(z: B)(f: (B,A) => F[B]): F[Unit] =
+  def foldM_[A,B](l: LazyList[A])(z: B)(f: (B,A) => F[B]): F[Unit] =
     skip { foldM(l)(z)(f) }
-  def foreachM[A](l: Stream[A])(f: A => F[Unit]): F[Unit] =
+  def foreachM[A](l: LazyList[A])(f: A => F[Unit]): F[Unit] =
     foldM_(l)(())((u,a) => skip(f(a)))
   def seq[A,B,C](f: A => F[B])(g: B => F[C]): A => F[C] =
     f andThen (fb => flatMap(fb)(g))

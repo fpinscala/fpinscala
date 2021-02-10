@@ -9,7 +9,7 @@ object BindTest extends App {
     val start = System.currentTimeMillis
     (0 to n).foreach { _ => task }
     val stop = System.currentTimeMillis
-    println((stop - start) / 1000.0 + " seconds")
+    println(s"${(stop - start) / 1000.0} seconds")
   }
 
   val N = 100000

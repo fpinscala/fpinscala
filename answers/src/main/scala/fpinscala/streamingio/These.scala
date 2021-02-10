@@ -30,9 +30,9 @@ object These {
   case class That[+B](b: B) extends These[Nothing,B]
   case class Both[+A,+B](a: A, b: B) extends These[A,B]
 
-  def zipAll[A,B,C](a: Seq[A], b: Seq[B]): Stream[These[A,B]] = 
-    if (a isEmpty) b.toStream.map(That(_))
-    else if (b isEmpty) a.toStream.map(This(_))
+  def zipAll[A,B,C](a: Seq[A], b: Seq[B]): LazyList[These[A,B]] = 
+    if (a isEmpty) b.to(LazyList).map(That(_))
+    else if (b isEmpty) a.to(LazyList).map(This(_))
     else Both(a.head, b.head) #:: zipAll(a.tail, b.tail)
   
   /* 

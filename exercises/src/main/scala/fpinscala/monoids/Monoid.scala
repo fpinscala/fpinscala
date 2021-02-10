@@ -128,10 +128,10 @@ object IndexedSeqFoldable extends Foldable[IndexedSeq] {
     ???
 }
 
-object StreamFoldable extends Foldable[Stream] {
-  override def foldRight[A, B](as: Stream[A])(z: B)(f: (A, B) => B) =
+object LazyListFoldable extends Foldable[LazyList] {
+  override def foldRight[A, B](as: LazyList[A])(z: B)(f: (A, B) => B) =
     ???
-  override def foldLeft[A, B](as: Stream[A])(z: B)(f: (B, A) => B) =
+  override def foldLeft[A, B](as: LazyList[A])(z: B)(f: (B, A) => B) =
     ???
 }
 
