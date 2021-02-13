@@ -11,3 +11,5 @@ project.vim
 .classpath
 .metadata/
 .bsp
+.metals
+.vscode
