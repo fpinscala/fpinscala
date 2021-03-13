@@ -12,7 +12,7 @@ object MyProgram:
     val msg = "The absolute value of %d is %d"
     msg.format(x, abs(x))
 
-  @main def run: Unit =
+  @main def printAbs: Unit =
     println(formatAbs(-42))
 
   // A definition of factorial, using a local, tail recursive function
@@ -60,7 +60,7 @@ object FormatAbsAndFactorial:
 
   // Now we can use our general `formatResult` function
   // with both `abs` and `factorial`
-  @main def runAbsAndFactorial: Unit =
+  @main def printAbsAndFactorial: Unit =
     println(formatResult("absolute value", -42, abs))
     println(formatResult("factorial", 7, factorial))
 
@@ -71,7 +71,7 @@ object AnonymousFunctions:
   import MyProgram.*
 
   // Some examples of anonymous functions:
-  @main def runAnonymousFunctions: Unit =
+  @main def printAnonymousFunctions: Unit =
     println(formatResult("absolute value", -42, abs))
     println(formatResult("factorial", 7, factorial))
     println(formatResult("increment", 7, (x: Int) => x + 1))
