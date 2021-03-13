@@ -35,16 +35,16 @@ object List: // `List` companion object. Contains functions for creating and wor
       case Nil => a2
       case Cons(h,t) => Cons(h, append(t, a2))
 
-  def foldRight[A,B](as: List[A], z: B)(f: (A, B) => B): B = // Utility functions
+  def foldRight[A,B](as: List[A], z: B, f: (A, B) => B): B = // Utility functions
     as match
       case Nil => z
-      case Cons(x, xs) => f(x, foldRight(xs, z)(f))
+      case Cons(x, xs) => f(x, foldRight(xs, z, f))
 
   def sum2(ns: List[Int]) =
-    foldRight(ns, 0)((x,y) => x + y)
+    foldRight(ns, 0, (x,y) => x + y)
 
   def product2(ns: List[Double]) =
-    foldRight(ns, 1.0)(_ * _) // `_ * _` is more concise notation for `(x,y) => x * y`; see sidebar
+    foldRight(ns, 1.0, _ * _) // `_ * _` is more concise notation for `(x,y) => x * y`; see sidebar
 
 
   def tail[A](l: List[A]): List[A] = ???
