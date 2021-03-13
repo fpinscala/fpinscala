@@ -25,7 +25,7 @@ object Stream {
 
   def apply[A](as: A*): Stream[A] =
     if (as.isEmpty) empty
-    else cons(as.head, apply(as.tail: _*))
+    else cons(as.head, apply(as.tail*))
 }
   ]#
 
@@ -48,7 +48,7 @@ object Stream {
 
   def apply[A](as: A*): Stream[A] =
     if (as.isEmpty) empty
-    else cons(as.head, apply(as.tail: _*))
+    else cons(as.head, apply(as.tail*))
   ]#
 
   question ones #[

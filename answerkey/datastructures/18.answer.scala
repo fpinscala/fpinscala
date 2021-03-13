@@ -14,5 +14,5 @@ def map_2[A,B](l: List[A])(f: A => B): List[B] = {
     case Cons(h,t) => buf += f(h); go(t)
   }
   go(l)
-  List(buf.toList: _*) // converting from the standard Scala list to the list we've defined here
+  List(buf.toList*) // converting from the standard Scala list to the list we've defined here
 }

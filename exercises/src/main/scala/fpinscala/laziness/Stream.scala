@@ -46,7 +46,7 @@ object Stream {
 
   def apply[A](as: A*): Stream[A] =
     if (as.isEmpty) empty 
-    else cons(as.head, apply(as.tail: _*))
+    else cons(as.head, apply(as.tail*))
 
   val ones: Stream[Int] = Stream.cons(1, ones)
   def from(n: Int): Stream[Int] = ???

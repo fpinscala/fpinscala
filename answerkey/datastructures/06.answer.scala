@@ -15,7 +15,7 @@ def init2[A](l: List[A]): List[A] = {
   @annotation.tailrec
   def go(cur: List[A]): List[A] = cur match {
     case Nil => sys.error("init of empty list")
-    case Cons(_,Nil) => List(buf.toList: _*)
+    case Cons(_,Nil) => List(buf.toList*)
     case Cons(h,t) => buf += h; go(t)
   }
   go(l)

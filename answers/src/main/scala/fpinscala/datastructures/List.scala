@@ -21,7 +21,7 @@ object List: // `List` companion object. Contains functions for creating and wor
 
   def apply[A](as: A*): List[A] = // Variadic function syntax
     if as.isEmpty then Nil
-    else Cons(as.head, apply(as.tail: _*))
+    else Cons(as.head, apply(as.tail*))
 
   val x = List(1,2,3,4,5) match
     case Cons(x, Cons(2, Cons(4, _))) => x
@@ -117,7 +117,7 @@ object List: // `List` companion object. Contains functions for creating and wor
     @annotation.tailrec
     def go(cur: List[A]): List[A] = cur match
       case Nil => sys.error("init of empty list")
-      case Cons(_,Nil) => List(buf.toList: _*)
+      case Cons(_,Nil) => List(buf.toList*)
       case Cons(h,t) => buf += h; go(t)
     go(l)
 
@@ -225,7 +225,7 @@ object List: // `List` companion object. Contains functions for creating and wor
       case Nil => ()
       case Cons(h,t) => buf += f(h); go(t)
     go(l)
-    List(buf.toList: _*) // converting from the standard Scala list to the list we've defined here
+    List(buf.toList*) // converting from the standard Scala list to the list we've defined here
   }
 
   /*
@@ -243,7 +243,7 @@ object List: // `List` companion object. Contains functions for creating and wor
       case Nil => ()
       case Cons(h,t) => if (f(h)) buf += h; go(t)
     go(l)
-    List(buf.toList: _*) // converting from the standard Scala list to the list we've defined here
+    List(buf.toList*) // converting from the standard Scala list to the list we've defined here
 
   /*
   This could also be implemented directly using `foldRight`.

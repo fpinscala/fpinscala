@@ -21,7 +21,7 @@ object List: // `List` companion object. Contains functions for creating and wor
 
   def apply[A](as: A*): List[A] = // Variadic function syntax
     if as.isEmpty then Nil
-    else Cons(as.head, apply(as.tail: _*))
+    else Cons(as.head, apply(as.tail*))
 
   val x = List(1,2,3,4,5) match
     case Cons(x, Cons(2, Cons(4, _))) => x

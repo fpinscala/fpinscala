@@ -309,7 +309,7 @@ object Gen {
     )
 
   def interleave[A](s1: Stream[A], s2: Stream[A]): Stream[A] =
-    s1.zipAll(s2).flatMap { case (a,a2) => Stream((a.toList ++ a2.toList): _*) }
+    s1.zipAll(s2).flatMap { case (a,a2) => Stream((a.toList ++ a2.toList)*) }
 
   /* The random case is simple - we generate a double and use this to choose between
    * the two random samplers. The exhaustive case is trickier if we want to try
