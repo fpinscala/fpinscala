@@ -10,7 +10,7 @@ This source file contains the answers to the last two exercises in the section
 The Gen data type in this file incorporates exhaustive checking of finite domains.
 */
 
-import fpinscala.laziness.{Stream,Cons,Empty}
+import fpinscala.laziness.Stream
 import fpinscala.state._
 import fpinscala.parallelism._
 import fpinscala.parallelism.Par.Par
@@ -54,7 +54,7 @@ object Prop {
       def go(i: Int, j: Int, s: Stream[Option[A]], onEnd: Int => Result): Result =
         if (i == j) Right((Unfalsified, i))
         else s match {
-          case Cons(h,t) => h() match {
+          case Stream.Cons(h,t) => h() match {
             case Some(h) =>
               try {
                 if (f(h)) go(i+1,j,t(),onEnd)
@@ -340,11 +340,11 @@ object Gen {
   def interleave[A](b: Stream[Boolean], s1: Stream[A], s2: Stream[A]): Stream[A] =
     b.headOption map { hd =>
       if (hd) s1 match {
-        case Cons(h, t) => Stream.cons(h(), interleave(b drop 1, t(), s2))
+        case Stream.Cons(h, t) => Stream.cons(h(), interleave(b drop 1, t(), s2))
         case _ => s2
       }
       else s2 match {
-        case Cons(h, t) => Stream.cons(h(), interleave(b drop 1, s1, t()))
+        case Stream.Cons(h, t) => Stream.cons(h(), interleave(b drop 1, s1, t()))
         case _ => s1
       }
     } getOrElse Stream.empty
