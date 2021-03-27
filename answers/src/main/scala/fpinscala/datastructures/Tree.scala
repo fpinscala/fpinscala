@@ -4,11 +4,20 @@ enum Tree[+A]:
   case Leaf(value: A)
   case Branch(left: Tree[A], right: Tree[A])
 
+  def size: Int = this match
+    case Leaf(_) => 1
+    case Branch(l, r) => 1 + l.size + r.size
+
 object Tree:
 
   def size[A](t: Tree[A]): Int = t match
     case Leaf(_) => 1
     case Branch(l,r) => 1 + size(l) + size(r)
+
+  extension (t: Tree[Int]) def firstPositive: Option[Int] = t match
+    case Leaf(i) => if i > 0 then Some(i) else None
+    case Branch(l, r) => l.firstPositive orElse r.firstPositive
+
 
   /*
   We're using the method `max` that exists on all `Int` values rather than an explicit `if` expression.
