@@ -2,6 +2,7 @@ package fpinscala.errorhandling
 
 // Hide std library `Either` since we are writing our own in this chapter
 import scala.{Either => _, Left => _, Right => _}
+import scala.util.control.NonFatal
 
 enum Either[+E,+A]:
   case Left(get: E)
@@ -26,10 +27,10 @@ object Either:
     else 
       Right(xs.sum / xs.length)
 
-  def safeDiv(x: Int, y: Int): Either[Exception, Int] = 
+  def safeDiv(x: Int, y: Int): Either[Throwable, Int] = 
     try Right(x / y)
-    catch case e: Exception => Left(e)
+    catch case NonFatal(t) => Left(t)
 
-  def attempt[A](a: => A): Either[Exception, A] =
+  def catchNonFatal[A](a: => A): Either[Throwable, A] =
     try Right(a)
-    catch case e: Exception => Left(e)
+    catch case NonFatal(t) => Left(t)
