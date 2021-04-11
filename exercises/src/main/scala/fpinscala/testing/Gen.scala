@@ -1,6 +1,5 @@
 package fpinscala.testing
 
-import fpinscala.laziness.Stream
 import fpinscala.state.*
 import fpinscala.parallelism.*
 import fpinscala.parallelism.Par.Par

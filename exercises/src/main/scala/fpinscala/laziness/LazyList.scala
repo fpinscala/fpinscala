@@ -1,8 +1,8 @@
 package fpinscala.laziness
 
-enum Stream[+A]:
+enum LazyList[+A]:
   case Empty
-  case Cons(h: () => A, t: () => Stream[A])
+  case Cons(h: () => A, t: () => LazyList[A])
 
   def foldRight[B](z: => B)(f: (A, => B) => B): B = // The arrow `=>` in front of the argument type `B` means that the function `f` takes its second argument by name and may choose not to evaluate it.
     this match
@@ -10,18 +10,18 @@ enum Stream[+A]:
       case _ => z
 
   def exists(p: A => Boolean): Boolean = 
-    foldRight(false)((a, b) => p(a) || b) // Here `b` is the unevaluated recursive step that folds the tail of the stream. If `p(a)` returns `true`, `b` will never be evaluated and the computation terminates early.
+    foldRight(false)((a, b) => p(a) || b) // Here `b` is the unevaluated recursive step that folds the tail of the lazy list. If `p(a)` returns `true`, `b` will never be evaluated and the computation terminates early.
 
   @annotation.tailrec
   final def find(f: A => Boolean): Option[A] = this match
     case Empty => None
     case Cons(h, t) => if (f(h())) Some(h()) else t().find(f)
 
-  def take(n: Int): Stream[A] = ???
+  def take(n: Int): LazyList[A] = ???
 
-  def drop(n: Int): Stream[A] = ???
+  def drop(n: Int): LazyList[A] = ???
 
-  def takeWhile(p: A => Boolean): Stream[A] = ???
+  def takeWhile(p: A => Boolean): LazyList[A] = ???
 
   def forAll(p: A => Boolean): Boolean = ???
 
@@ -30,23 +30,23 @@ enum Stream[+A]:
   // 5.7 map, filter, append, flatmap using foldRight. Part of the exercise is
   // writing your own function signatures.
 
-  def startsWith[B](s: Stream[B]): Boolean = ???
+  def startsWith[B](s: LazyList[B]): Boolean = ???
 
 
-object Stream:
-  def cons[A](hd: => A, tl: => Stream[A]): Stream[A] = 
+object LazyList:
+  def cons[A](hd: => A, tl: => LazyList[A]): LazyList[A] = 
     lazy val head = hd
     lazy val tail = tl
     Cons(() => head, () => tail)
 
-  def empty[A]: Stream[A] = Empty
+  def empty[A]: LazyList[A] = Empty
 
-  def apply[A](as: A*): Stream[A] =
+  def apply[A](as: A*): LazyList[A] =
     if as.isEmpty then empty 
     else cons(as.head, apply(as.tail*))
 
-  val ones: Stream[Int] = Stream.cons(1, ones)
+  val ones: LazyList[Int] = LazyList.cons(1, ones)
 
-  def from(n: Int): Stream[Int] = ???
+  def from(n: Int): LazyList[Int] = ???
 
-  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = ???
+  def unfold[A, S](z: S)(f: S => Option[(A, S)]): LazyList[A] = ???

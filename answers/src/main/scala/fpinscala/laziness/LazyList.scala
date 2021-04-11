@@ -1,10 +1,10 @@
 package fpinscala.laziness
 
-import Stream.*
+import LazyList.*
 
-enum Stream[+A]:
+enum LazyList[+A]:
   case Empty
-  case Cons(h: () => A, t: () => Stream[A])
+  case Cons(h: () => A, t: () => LazyList[A])
 
   // The natural recursive solution
   def toListRecursive: List[A] = this match
@@ -12,15 +12,15 @@ enum Stream[+A]:
     case _ => List()
 
   /*
-  The above solution will stack overflow for large streams, since it's
+  The above solution will stack overflow for large lazy lists, since it's
   not tail-recursive. Here is a tail-recursive implementation. At each
   step we cons onto the front of the `acc` list, which will result in the
-  reverse of the stream. Then at the end we reverse the result to get the
+  reverse of the lazy list. Then at the end we reverse the result to get the
   correct order again.
   */
   def toList: List[A] =
     @annotation.tailrec
-    def go(s: Stream[A], acc: List[A]): List[A] = s match
+    def go(s: LazyList[A], acc: List[A]): List[A] = s match
       case Cons(h,t) => go(t(), h() :: acc)
       case _ => acc
     go(this, List()).reverse
@@ -34,7 +34,7 @@ enum Stream[+A]:
   def toListFast: List[A] =
     val buf = new collection.mutable.ListBuffer[A]
     @annotation.tailrec
-    def go(s: Stream[A]): List[A] = s match
+    def go(s: LazyList[A]): List[A] = s match
       case Cons(h,t) =>
         buf += h()
         go(t())
@@ -42,29 +42,29 @@ enum Stream[+A]:
     go(this)
 
   /*
-    Create a new Stream[A] from taking the n first elements from this. We can achieve that by recursively
+    Create a new LazyList[A] from taking the n first elements from this. We can achieve that by recursively
     calling take on the invoked tail of a cons cell. We make sure that the tail is not invoked unless
     we need to, by handling the special case where n == 1 separately. If n == 0, we can avoid looking
-    at the stream at all.
+    at the lazy list at all.
   */
-  def take(n: Int): Stream[A] = this match
+  def take(n: Int): LazyList[A] = this match
     case Cons(h, t) if n > 1 => cons(h(), t().take(n - 1))
     case Cons(h, _) if n == 1 => cons(h(), empty)
     case _ => empty
 
   /*
-    Create a new Stream[A] from this, but ignore the n first elements. This can be achieved by recursively calling
+    Create a new LazyList[A] from this, but ignore the n first elements. This can be achieved by recursively calling
     drop on the invoked tail of a cons cell. Note that the implementation is also tail recursive.
   */
   @annotation.tailrec
-  final def drop(n: Int): Stream[A] = this match
+  final def drop(n: Int): LazyList[A] = this match
     case Cons(_, t) if n > 0 => t().drop(n - 1)
     case _ => this
 
   /*
   It's a common Scala style to write method calls without `.` notation, as in `t() takeWhile f`.
   */
-  def takeWhile(f: A => Boolean): Stream[A] = this match
+  def takeWhile(f: A => Boolean): LazyList[A] = this match
     case Cons(h,t) if f(h()) => cons(h(), t() takeWhile f)
     case _ => empty
 
@@ -74,7 +74,7 @@ enum Stream[+A]:
       case _ => z
 
   def exists(p: A => Boolean): Boolean =
-    foldRight(false)((a, b) => p(a) || b) // Here `b` is the unevaluated recursive step that folds the tail of the stream. If `p(a)` returns `true`, `b` will never be evaluated and the computation terminates early.
+    foldRight(false)((a, b) => p(a) || b) // Here `b` is the unevaluated recursive step that folds the tail of the lazy list. If `p(a)` returns `true`, `b` will never be evaluated and the computation terminates early.
 
   /*
   Since `&&` is non-strict in its second argument, this terminates the traversal as soon as a nonmatching element is found.
@@ -82,7 +82,7 @@ enum Stream[+A]:
   def forAll(f: A => Boolean): Boolean =
     foldRight(true)((a,b) => f(a) && b)
 
-  def takeWhile_1(f: A => Boolean): Stream[A] =
+  def takeWhile_1(f: A => Boolean): LazyList[A] =
     foldRight(empty[A])((h,t) =>
       if f(h) then cons(h,t)
       else empty)
@@ -90,40 +90,40 @@ enum Stream[+A]:
   def headOption: Option[A] =
     foldRight(None: Option[A])((h,_) => Some(h))
 
-  def map[B](f: A => B): Stream[B] =
+  def map[B](f: A => B): LazyList[B] =
     foldRight(empty[B])((h,t) => cons(f(h), t))
 
-  def filter(f: A => Boolean): Stream[A] =
+  def filter(f: A => Boolean): LazyList[A] =
     foldRight(empty[A])((h,t) =>
       if (f(h)) cons(h, t)
       else t)
 
-  def append[B>:A](s: => Stream[B]): Stream[B] =
+  def append[B>:A](s: => LazyList[B]): LazyList[B] =
     foldRight(s)((h,t) => cons(h,t))
 
-  def flatMap[B](f: A => Stream[B]): Stream[B] =
+  def flatMap[B](f: A => LazyList[B]): LazyList[B] =
     foldRight(empty[B])((h,t) => f(h) append t)
 
-  def mapViaUnfold[B](f: A => B): Stream[B] =
+  def mapViaUnfold[B](f: A => B): LazyList[B] =
     unfold(this) {
       case Cons(h,t) => Some((f(h()), t()))
       case _ => None
     }
 
-  def takeViaUnfold(n: Int): Stream[A] =
+  def takeViaUnfold(n: Int): LazyList[A] =
     unfold((this,n)) {
       case (Cons(h,t), 1) => Some((h(), (empty, 0)))
       case (Cons(h,t), n) if n > 1 => Some((h(), (t(), n-1)))
       case _ => None
     }
 
-  def takeWhileViaUnfold(f: A => Boolean): Stream[A] =
+  def takeWhileViaUnfold(f: A => Boolean): LazyList[A] =
     unfold(this) {
       case Cons(h,t) if f(h()) => Some((h(), t()))
       case _ => None
     }
 
-  def zipWith[B,C](s2: Stream[B])(f: (A,B) => C): Stream[C] =
+  def zipWith[B,C](s2: LazyList[B])(f: (A,B) => C): LazyList[C] =
     unfold((this, s2)) {
       case (Cons(h1,t1), Cons(h2,t2)) =>
         Some((f(h1(), h2()), (t1(), t2())))
@@ -131,15 +131,15 @@ enum Stream[+A]:
     }
 
   // special case of `zipWith`
-  def zip[B](s2: Stream[B]): Stream[(A,B)] =
+  def zip[B](s2: LazyList[B]): LazyList[(A,B)] =
     zipWith(s2)((_,_))
 
 
-  def zipAll[B](s2: Stream[B]): Stream[(Option[A],Option[B])] =
+  def zipAll[B](s2: LazyList[B]): LazyList[(Option[A],Option[B])] =
     zipWithAll(s2)((_,_))
 
-  def zipWithAll[B, C](s2: Stream[B])(f: (Option[A], Option[B]) => C): Stream[C] =
-    Stream.unfold((this, s2)) {
+  def zipWithAll[B, C](s2: LazyList[B])(f: (Option[A], Option[B]) => C): LazyList[C] =
+    LazyList.unfold((this, s2)) {
       case (Empty, Empty) => None
       case (Cons(h, t), Empty) => Some(f(Some(h()), Option.empty[B]) -> (t(), empty[B]))
       case (Empty, Cons(h, t)) => Some(f(Option.empty[A], Some(h())) -> (empty[A] -> t()))
@@ -147,32 +147,32 @@ enum Stream[+A]:
     }
 
   /*
-  `s startsWith s2` when corresponding elements of `s` and `s2` are all equal, until the point that `s2` is exhausted. If `s` is exhausted first, or we find an element that doesn't match, we terminate early. Using non-strictness, we can compose these three separate logical steps--the zipping, the termination when the second stream is exhausted, and the termination if a nonmatching element is found or the first stream is exhausted.
+  `s startsWith s2` when corresponding elements of `s` and `s2` are all equal, until the point that `s2` is exhausted. If `s` is exhausted first, or we find an element that doesn't match, we terminate early. Using non-strictness, we can compose these three separate logical steps--the zipping, the termination when the second lazy list is exhausted, and the termination if a nonmatching element is found or the first lazy list is exhausted.
   */
-  def startsWith[A](s: Stream[A]): Boolean =
+  def startsWith[A](s: LazyList[A]): Boolean =
     zipAll(s).takeWhile(!_._2.isEmpty).forAll {
       case (h,h2) => h == h2
     }
 
   /*
-  The last element of `tails` is always the empty `Stream`, so we handle this as a special case, by appending it to the output.
+  The last element of `tails` is always the empty `LazyList`, so we handle this as a special case, by appending it to the output.
   */
-  def tails: Stream[Stream[A]] =
+  def tails: LazyList[LazyList[A]] =
     unfold(this) {
       case Empty => None
       case s => Some((s, s drop 1))
-    }.append(Stream(empty))
+    }.append(LazyList(empty))
 
-  def hasSubsequence[A](s: Stream[A]): Boolean =
+  def hasSubsequence[A](s: LazyList[A]): Boolean =
     tails.exists(_.startsWith(s))
 
   /*
-  The function can't be implemented using `unfold`, since `unfold` generates elements of the `Stream` from left to right. It can be implemented using `foldRight` though.
+  The function can't be implemented using `unfold`, since `unfold` generates elements of the `LazyList` from left to right. It can be implemented using `foldRight` though.
 
-  The implementation is just a `foldRight` that keeps the accumulated value and the stream of intermediate results, which we `cons` onto during each iteration. When writing folds, it's common to have more state in the fold than is needed to compute the result. Here, we simply extract the accumulated list once finished.
+  The implementation is just a `foldRight` that keeps the accumulated value and the lazy list of intermediate results, which we `cons` onto during each iteration. When writing folds, it's common to have more state in the fold than is needed to compute the result. Here, we simply extract the accumulated list once finished.
   */
-  def scanRight[B](z: B)(f: (A, => B) => B): Stream[B] =
-    foldRight((z, Stream(z)))((a, p0) => {
+  def scanRight[B](z: B)(f: (A, => B) => B): LazyList[B] =
+    foldRight((z, LazyList(z)))((a, p0) => {
       // p0 is passed by-name and used in by-name args in f and cons. So use lazy val to ensure only one evaluation...
       lazy val p1 = p0
       val b2 = f(a, p1._1)
@@ -184,35 +184,35 @@ enum Stream[+A]:
     case Empty => None
     case Cons(h, t) => if (f(h())) Some(h()) else t().find(f)
 
-object Stream:
-  def cons[A](hd: => A, tl: => Stream[A]): Stream[A] =
+object LazyList:
+  def cons[A](hd: => A, tl: => LazyList[A]): LazyList[A] =
     lazy val head = hd
     lazy val tail = tl
     Cons(() => head, () => tail)
 
-  def empty[A]: Stream[A] = Empty
+  def empty[A]: LazyList[A] = Empty
 
-  def apply[A](as: A*): Stream[A] =
+  def apply[A](as: A*): LazyList[A] =
     if as.isEmpty then empty
     else cons(as.head, apply(as.tail*))
 
-  val ones: Stream[Int] = Stream.cons(1, ones)
+  val ones: LazyList[Int] = LazyList.cons(1, ones)
 
   // This is more efficient than `cons(a, constant(a))` since it's just
   // one object referencing itself.
-  def constant[A](a: A): Stream[A] =
-    lazy val tail: Stream[A] = Cons(() => a, () => tail)
+  def constant[A](a: A): LazyList[A] =
+    lazy val tail: LazyList[A] = Cons(() => a, () => tail)
     tail
 
-  def from(n: Int): Stream[Int] =
+  def from(n: Int): LazyList[Int] =
     cons(n, from(n+1))
 
   val fibs =
-    def go(f0: Int, f1: Int): Stream[Int] =
+    def go(f0: Int, f1: Int): LazyList[Int] =
       cons(f0, go(f1, f0+f1))
     go(0, 1)
 
-  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] =
+  def unfold[A, S](z: S)(f: S => Option[(A, S)]): LazyList[A] =
     f(z) match
       case Some((h,s)) => cons(h, unfold(s)(f))
       case None => empty
@@ -220,10 +220,10 @@ object Stream:
   /*
   The below two implementations use `fold` and `map` functions in the Option class to implement unfold, thereby doing away with the need to manually pattern match as in the above solution.
    */
-  def unfoldViaFold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] =
+  def unfoldViaFold[A, S](z: S)(f: S => Option[(A, S)]): LazyList[A] =
     f(z).fold(empty[A])((p: (A,S)) => cons(p._1,unfold(p._2)(f)))
 
-  def unfoldViaMap[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] =
+  def unfoldViaMap[A, S](z: S)(f: S => Option[(A, S)]): LazyList[A] =
     f(z).map((p: (A,S)) => cons(p._1,unfold(p._2)(f))).getOrElse(empty[A])
 
   /*
