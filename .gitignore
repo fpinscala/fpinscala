@@ -13,3 +13,6 @@ project.vim
 .bsp
 .metals
 .vscode
+.bloop
+project/metals.sbt
+project/project
