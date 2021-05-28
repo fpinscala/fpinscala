@@ -1,5 +1,5 @@
 val commonSettings = Seq(
-  scalaVersion := "3.0.0-RC3",
+  scalaVersion := "3.0.0",
   scalacOptions ++= List("-feature", "-deprecation", "-Ykind-projector")
 )
 
