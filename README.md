@@ -8,6 +8,7 @@ private functional programming tutor without actually having one.
 There are two main branches in this repository:
  - [first-edition](https://github.com/fpinscala/fpinscala/tree/first-edition)
  - [second-edition](https://github.com/fpinscala/fpinscala/tree/second-edition)
+
 Be sure to select the branch which matches the edition of the book you are reading!
 
 Here's how to use this repository:
