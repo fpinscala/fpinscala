@@ -25,9 +25,9 @@ object ImperativeAndLazyIO {
     try {
       var count = 0
       // Obtain a stateful iterator from the Source
-      val lines: Iterator[String] = src.getLines
+      val lines: Iterator[String] = src.getLines()
       while (count <= 40000 && lines.hasNext) {
-        lines.next // has side effect of advancing to next element
+        lines.next() // has side effect of advancing to next element
         count += 1
       }
       count > 40000
@@ -71,7 +71,7 @@ object ImperativeAndLazyIO {
 
   def lines(filename: String): IO[Stream[String]] = IO {
     val src = io.Source.fromFile(filename)
-    src.getLines.toStream append { src.close; Stream.empty }
+    src.getLines().toStream append { src.close; Stream.empty }
   }
                             /*
 
@@ -375,13 +375,13 @@ object SimpleStreamTransducers {
         cur match {
           case Halt() => acc
           case Await(recv) =>
-            val next = if (ss.hasNext) recv(Some(ss.next))
+            val next = if (ss.hasNext) recv(Some(ss.next()))
                        else recv(None)
             go(ss, next, acc)
           case Emit(h, t) => go(ss, t, g(acc, h))
         }
       val s = io.Source.fromFile(f)
-      try go(s.getLines, p, z)
+      try go(s.getLines(), p, z)
       finally s.close
     }
 
@@ -733,8 +733,8 @@ object GeneralizedStreamTransducers {
       resource
         { IO(io.Source.fromFile(filename)) }
         { src =>
-            lazy val iter = src.getLines // a stateful iterator
-            def step = if (iter.hasNext) Some(iter.next) else None
+            lazy val iter = src.getLines() // a stateful iterator
+            def step = if (iter.hasNext) Some(iter.next()) else None
             lazy val lines: Process[IO,String] = eval(IO(step)).flatMap {
               case None => Halt(End)
               case Some(line) => Emit(line, lines)

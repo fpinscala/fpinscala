@@ -23,7 +23,7 @@ import java.util.concurrent.{Executors,ExecutorService}
 case class Prop(run: (MaxSize,TestCases,RNG) => Result) {
   def &&(p: Prop) = Prop {
     (max,n,rng) => run(max,n,rng) match {
-      case Right((a,n)) => p.run(max,n,rng).right.map { case (s,m) => (s,n+m) }
+      case Right((a,n)) => p.run(max,n,rng).map { case (s,m) => (s,n+m) }
       case l => l
     }
   }
@@ -100,7 +100,7 @@ object Prop {
         Stream.from(0).take(max+1).map(i => forAll(g(i))(f)).toList
       val p: Prop = props.map(p => Prop((max,n,rng) => p.run(max,casesPerSize,rng))).
             reduceLeft(_ && _)
-      p.run(max,n,rng).right.map {
+      p.run(max,n,rng).map {
         case (Proven,n) => (Exhausted,n)
         case x => x
       }

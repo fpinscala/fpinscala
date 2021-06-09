@@ -37,7 +37,7 @@ object IO0 {
   // Ordinary code with side effects
   def converter: Unit = {
     println("Enter a temperature in degrees Fahrenheit: ")
-    val d = readLine.toDouble
+    val d = readLine().toDouble
     println(fahrenheitToCelsius(d))
   }
 
@@ -81,7 +81,7 @@ object IO1 {
 
   // We can now express the example
 
-  def ReadLine: IO[String] = IO { readLine }
+  def ReadLine: IO[String] = IO { readLine() }
   def PrintLine(msg: String): IO[Unit] = IO { println(msg) }
   import IO0.fahrenheitToCelsius
 
@@ -143,7 +143,7 @@ object IO1 {
 
   val factorialREPL: IO[Unit] = sequence_(
     IO { println(helpstring) },
-    doWhile { IO { readLine } } { line =>
+    doWhile { IO { readLine() } } { line =>
       val ok = line != "q"
       when (ok) { for {
         n <- factorial(line.toInt)
