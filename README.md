@@ -54,9 +54,17 @@ Chapter descriptions:
 * Chapter 14: localeffects
 * Chapter 15: streamingio
 
+### Setup build environment
+
+You'll need a Java development kit installed as well as the [SBT](http://scala-sbt.org) build tool. If you don't have these tools, we can get them via Couriser. First, install Coursier by choosing an installation method for your operating system on this page: https://get-coursier.io/docs/cli-installation. Then run `cs setup`. This will install Java, Scala, and the SBT build tool.
+
+You'll also likely want an editor that's aware of Scala syntax. [VSCode](https://code.visualstudio.com) with the [Metals](https://scalameta.org/metals/docs/editors/vscode.html) extension works great.
+
+### Building
+
 To build the code for the first time, if on windows:
 
-    $ .\sbt.cmd
+    $ sbt.cmd
 
 If on mac/linux, first make sure you have not checked out the code onto
 an encrypted file system, otherwise you will get compile errors
@@ -64,11 +72,9 @@ regarding too long file names (one solution is to put the fpinscala repo
 on a unencrypted usb key, and symlink it into your preferred code
 location).
 
-    $ chmod a+x ./sbt
-    $ ./sbt
+    $ sbt
 
-This will download and launch [sbt](http://scala-sbt.org), a build tool
-for Scala. Once it is finished downloading, you'll get a prompt from
+Once it is finished launching, you'll get a prompt from
 which you can issue commands to build and interact with your code. Try
 the following:
 
@@ -86,13 +92,6 @@ to get a Scala REPL with access to your exercises, and
 
 To get a menu of possible main methods to execute.
 
-To create project files for the eclipse IDE you can install the
-[sbteclipse](https://github.com/typesafehub/sbteclipse)
-[sbt](http://scala-sbt.org) plugin. This makes a new command available
-in [sbt](http://scala-sbt.org):
-
-    > eclipse
-
 All code in this repository is
 [MIT-licensed](http://opensource.org/licenses/mit-license.php). See the
 LICENSE file for details.
@@ -101,5 +100,5 @@ Have fun, and good luck! Also be sure to check out [the community
 wiki](https://github.com/fpinscala/fpinscala/wiki) for the **chapter
 notes**, links to more reading, and more.
 
-_Paul and Rúnar_
+_Paul, Rúnar, and Michael_
 
