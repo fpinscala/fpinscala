@@ -92,7 +92,7 @@ object Validated:
       case Either.Left(e) => Invalid(e)      
 
   def traverse[E, A, B](as: List[A], f: A => Validated[E, B], combineErrors: (E, E) => E): Validated[E, List[B]] =
-    as.foldRight(Valid(Nil): Validated[E, List[A]])((a, acc) => f(a).map2(acc, _ :: _, combineErrors))
+    as.foldRight(Valid(Nil): Validated[E, List[B]])((a, acc) => f(a).map2(acc, _ :: _, combineErrors))
 
   def sequence[E, A](vs: List[Validated[E, A]], combineErrors: (E, E) => E): Validated[E, List[A]] =
     traverse(vs, identity, combineErrors)
