@@ -8,7 +8,7 @@ trait Functor[F[_]] {
 }
 
 trait Monad[F[_]] extends Functor[F] {
-  def unit[B](a: => B): F[B]
+  def unit[D](a: => D): F[D]
   def flatMap[A,B](a: F[A])(f: A => F[B]): F[B]
 
   def map[A,B](a: F[A])(f: A => B): F[B] = flatMap(a)(a => unit(f(a)))
