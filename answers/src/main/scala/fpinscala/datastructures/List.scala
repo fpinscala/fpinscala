@@ -40,12 +40,11 @@ object List: // `List` companion object. Contains functions for creating and wor
       case Nil => z
       case Cons(x, xs) => f(x, foldRight(xs, z, f))
 
-  def sum2(ns: List[Int]) =
+  def sumViaFoldRight(ns: List[Int]) =
     foldRight(ns, 0, (x,y) => x + y)
 
-  def product2(ns: List[Double]) =
+  def productViaFoldRight(ns: List[Double]) =
     foldRight(ns, 1.0, _ * _) // `_ * _` is more concise notation for `(x,y) => x * y`; see sidebar
-
 
   /*
   3. The third case is the first that matches, with `x` bound to 1 and `y` bound to 2.
@@ -152,10 +151,10 @@ object List: // `List` companion object. Contains functions for creating and wor
     case Nil => z
     case Cons(h,t) => foldLeft(t, f(z,h), f)
 
-  def sum3(l: List[Int]) = foldLeft(l, 0, _ + _)
-  def product3(l: List[Double]) = foldLeft(l, 1.0, _ * _)
+  def sumViaFoldLeft(l: List[Int]) = foldLeft(l, 0, _ + _)
+  def productViaFoldLeft(l: List[Double]) = foldLeft(l, 1.0, _ * _)
 
-  def length2[A](l: List[A]): Int = foldLeft(l, 0, (acc,h) => acc + 1)
+  def lengthViaFoldLeft[A](l: List[A]): Int = foldLeft(l, 0, (acc,h) => acc + 1)
 
   def reverse[A](l: List[A]): List[A] = foldLeft(l, List[A](), (acc,h) => Cons(h,acc))
 
@@ -201,7 +200,7 @@ object List: // `List` companion object. Contains functions for creating and wor
   def concat[A](l: List[List[A]]): List[A] =
     foldRight(l, Nil:List[A], append)
 
-  def add1(l: List[Int]): List[Int] =
+  def incrementEach(l: List[Int]): List[Int] =
     foldRight(l, Nil:List[Int], (h,t) => Cons(h+1,t))
 
   def doubleToString(l: List[Double]): List[String] =

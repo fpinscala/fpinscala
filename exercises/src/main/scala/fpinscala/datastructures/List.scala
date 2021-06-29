@@ -40,12 +40,11 @@ object List: // `List` companion object. Contains functions for creating and wor
       case Nil => z
       case Cons(x, xs) => f(x, foldRight(xs, z, f))
 
-  def sum2(ns: List[Int]) =
+  def sumViaFoldRight(ns: List[Int]) =
     foldRight(ns, 0, (x,y) => x + y)
 
-  def product2(ns: List[Double]) =
+  def productViaFoldRight(ns: List[Double]) =
     foldRight(ns, 1.0, _ * _) // `_ * _` is more concise notation for `(x,y) => x * y`; see sidebar
-
 
   def tail[A](l: List[A]): List[A] = ???
 
@@ -61,4 +60,28 @@ object List: // `List` companion object. Contains functions for creating and wor
 
   def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B = ???
 
+  def sumViaFoldLeft(ns: List[Int]) = ???
+
+  def productViaFoldLeft(ns: List[Double]) = ???
+
+  def reverse[A](l: List[A]): List[A] = ???
+
+  def appendViaFoldRight[A](l: List[A], r: List[A]): List[A] = ???
+
+  def concat[A](l: List[A], r: List[A]): List[A] = ???
+
+  def incrementEach(l: List[Int]): List[Int] = ???
+
+  def doubleToString(l: List[Double]): List[String] = ???
+
   def map[A,B](l: List[A])(f: A => B): List[B] = ???
+
+  def filter[A](as: List[A], f: A => Boolean): List[A] = ???
+
+  def flatMap[A,B](as: List[A], f: A => List[B]): List[B] = ???
+
+  def addPairwise(a: List[Int], b: List[Int]): List[Int] = ???
+
+  // def zipWith - TODO determine signature
+
+  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = ???
