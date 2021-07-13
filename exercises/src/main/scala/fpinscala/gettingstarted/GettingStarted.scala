@@ -176,3 +176,16 @@ object PolymorphicFunctions {
   def compose[A,B,C](f: B => C, g: A => B): A => C =
     ???
 }
+
+object TestPolymorphic {
+
+  import PolymorphicFunctions._
+
+  def order(a: Int, b: Int): Boolean = a >= b
+
+  // test implementation of `isSorted`
+  def main(args: Array[String]): Unit = {
+    println("Expected: true, false, false")
+    println("Actual:   %b, %b, %b".format(isSorted(Array(1, 2, 3), order), isSorted(Array(2, 1, 3), order), isSorted(Array(3, 2, 1), order)))
+  }
+}
