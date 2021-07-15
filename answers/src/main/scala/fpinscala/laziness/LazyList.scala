@@ -9,7 +9,7 @@ enum LazyList[+A]:
   // The natural recursive solution
   def toListRecursive: List[A] = this match
     case Cons(h,t) => h() :: t().toListRecursive
-    case _ => List()
+    case Empty => Nil
 
   /*
   The above solution will stack overflow for large lazy lists, since it's
@@ -20,10 +20,10 @@ enum LazyList[+A]:
   */
   def toList: List[A] =
     @annotation.tailrec
-    def go(s: LazyList[A], acc: List[A]): List[A] = s match
-      case Cons(h,t) => go(t(), h() :: acc)
-      case _ => acc
-    go(this, List()).reverse
+    def go(ll: LazyList[A], acc: List[A]): List[A] = ll match
+      case Cons(h, t) => go(t(), h() :: acc)
+      case Empty => acc.reverse
+    go(this, Nil)
 
   /*
   In order to avoid the `reverse` at the end, we could write it using a
@@ -34,11 +34,11 @@ enum LazyList[+A]:
   def toListFast: List[A] =
     val buf = new collection.mutable.ListBuffer[A]
     @annotation.tailrec
-    def go(s: LazyList[A]): List[A] = s match
-      case Cons(h,t) =>
+    def go(ll: LazyList[A]): List[A] = ll match
+      case Cons(h, t) =>
         buf += h()
         go(t())
-      case _ => buf.toList
+      case Empty => buf.toList
     go(this)
 
   /*
@@ -61,11 +61,8 @@ enum LazyList[+A]:
     case Cons(_, t) if n > 0 => t().drop(n - 1)
     case _ => this
 
-  /*
-  It's a common Scala style to write method calls without `.` notation, as in `t() takeWhile f`.
-  */
   def takeWhile(f: A => Boolean): LazyList[A] = this match
-    case Cons(h,t) if f(h()) => cons(h(), t() takeWhile f)
+    case Cons(h,t) if f(h()) => cons(h(), t().takeWhile(f))
     case _ => empty
 
   def foldRight[B](z: => B)(f: (A, => B) => B): B = // The arrow `=>` in front of the argument type `B` means that the function `f` takes its second argument by name and may choose not to evaluate it.
@@ -79,30 +76,26 @@ enum LazyList[+A]:
   /*
   Since `&&` is non-strict in its second argument, this terminates the traversal as soon as a nonmatching element is found.
   */
-  def forAll(f: A => Boolean): Boolean =
-    foldRight(true)((a,b) => f(a) && b)
+  def forAll(p: A => Boolean): Boolean =
+    foldRight(true)((a,b) => p(a) && b)
 
-  def takeWhile_1(f: A => Boolean): LazyList[A] =
-    foldRight(empty[A])((h,t) =>
-      if f(h) then cons(h,t)
-      else empty)
+  def takeWhile_1(p: A => Boolean): LazyList[A] =
+    foldRight(empty[A])((a, b) => if p(a) then cons(a, b) else empty)
 
   def headOption: Option[A] =
-    foldRight(None: Option[A])((h,_) => Some(h))
+    foldRight(None: Option[A])((h, _) => Some(h))
 
   def map[B](f: A => B): LazyList[B] =
-    foldRight(empty[B])((h,t) => cons(f(h), t))
+    foldRight(empty[B])((a, acc) => cons(f(a), acc))
 
   def filter(f: A => Boolean): LazyList[A] =
-    foldRight(empty[A])((h,t) =>
-      if (f(h)) cons(h, t)
-      else t)
+    foldRight(empty[A])((a, acc) => if f(a) then cons(a, acc) else acc)
 
-  def append[B>:A](s: => LazyList[B]): LazyList[B] =
-    foldRight(s)((h,t) => cons(h,t))
+  def append[A2>:A](that: => LazyList[A2]): LazyList[A2] =
+    foldRight(that)((a, acc) => cons(a, acc))
 
   def flatMap[B](f: A => LazyList[B]): LazyList[B] =
-    foldRight(empty[B])((h,t) => f(h) append t)
+    foldRight(empty[B])((a, acc) => f(a).append(acc))
 
   def mapViaUnfold[B](f: A => B): LazyList[B] =
     unfold(this) {
@@ -198,22 +191,22 @@ object LazyList:
 
   val ones: LazyList[Int] = LazyList.cons(1, ones)
 
-  // This is more efficient than `cons(a, constant(a))` since it's just
+  // This is more efficient than `cons(a, continually(a))` since it's just
   // one object referencing itself.
-  def constant[A](a: A): LazyList[A] =
-    lazy val tail: LazyList[A] = Cons(() => a, () => tail)
-    tail
+  def continually[A](a: A): LazyList[A] =
+    lazy val single: LazyList[A] = cons(a, single)
+    single
 
   def from(n: Int): LazyList[Int] =
-    cons(n, from(n+1))
+    cons(n, from(n + 1))
 
   val fibs =
-    def go(f0: Int, f1: Int): LazyList[Int] =
-      cons(f0, go(f1, f0+f1))
+    def go(current: Int, next: Int): LazyList[Int] =
+      cons(current, go(next, current + next))
     go(0, 1)
 
-  def unfold[A, S](z: S)(f: S => Option[(A, S)]): LazyList[A] =
-    f(z) match
+  def unfold[A, S](state: S)(f: S => Option[(A, S)]): LazyList[A] =
+    f(state) match
       case Some((h,s)) => cons(h, unfold(s)(f))
       case None => empty
 
@@ -229,14 +222,17 @@ object LazyList:
   /*
   Scala provides shorter syntax when the first action of a function literal is to match on an expression.  The function passed to `unfold` in `fibsViaUnfold` is equivalent to `p => p match { case (f0,f1) => ... }`, but we avoid having to choose a name for `p`, only to pattern match on it.
   */
-  val fibsViaUnfold =
-    unfold((0,1)) { case (f0,f1) => Some((f0,(f1,f0+f1))) }
+  val fibsViaUnfold: LazyList[Int] =
+    unfold((0,1)) { case (current, next) =>
+      Some((current, (next, current + next)))
+    }
 
-  def fromViaUnfold(n: Int) =
-    unfold(n)(n => Some((n,n+1)))
+  def fromViaUnfold(n: Int): LazyList[Int] =
+    unfold(n)(n => Some((n, n + 1)))
 
-  def constantViaUnfold[A](a: A) =
-    unfold(a)(_ => Some((a,a)))
+  def continuallyViaUnfold[A](a: A): LazyList[A] =
+    unfold(())(_ => Some((a, ())))
 
   // could also of course be implemented as constant(1)
-  val onesViaUnfold = unfold(1)(_ => Some((1,1)))
+  val onesViaUnfold: LazyList[Int] =
+    unfold(())(_ => Some((1, ())))

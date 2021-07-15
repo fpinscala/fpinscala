@@ -49,4 +49,5 @@ object LazyList:
 
   def from(n: Int): LazyList[Int] = ???
 
-  def unfold[A, S](z: S)(f: S => Option[(A, S)]): LazyList[A] = ???
+  def unfold[A, S](state: S)(f: S => Option[(A, S)]): LazyList[A] = ???
+
