@@ -3,7 +3,6 @@ We're using the method `max` that exists on all `Int` values rather than an expl
 
 Note how similar the implementation is to `size`. We'll abstract out the common pattern in a later exercise. 
 */
-def maximum(t: Tree[Int]): Int = t match {
+extension (t: Tree[Int]) def maximum: Int = t match
   case Leaf(n) => n
-  case Branch(l,r) => maximum(l) max maximum(r)
-}
+  case Branch(l, r) => l.maximum.max(r.maximum)
