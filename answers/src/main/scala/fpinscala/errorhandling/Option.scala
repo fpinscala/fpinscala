@@ -71,8 +71,8 @@ object Option:
     a flatMap (aa => b map (bb => f(aa, bb)))
 
   /* Here's an explicit recursive version: */
-  def sequence[A](a: List[Option[A]]): Option[List[A]] =
-    a match
+  def sequence[A](as: List[Option[A]]): Option[List[A]] =
+    as match
       case Nil => Some(Nil)
       case h :: t => h flatMap (hh => sequence(t) map (hh :: _))
 
@@ -81,8 +81,8 @@ object Option:
   Scala wrongly infers the result type of the fold as `Some[Nil.type]` and reports a type error (try it!). This is an
   unfortunate consequence of Scala using subtyping to encode algebraic data types.
   */
-  def sequence_1[A](a: List[Option[A]]): Option[List[A]] =
-    a.foldRight[Option[List[A]]](Some(Nil))((x,y) => map2(x,y)(_ :: _))
+  def sequence_1[A](as: List[Option[A]]): Option[List[A]] =
+    as.foldRight[Option[List[A]]](Some(Nil))((a, acc) => map2(a, acc)(_ :: _))
 
   def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] =
     a match

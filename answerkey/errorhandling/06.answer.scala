@@ -1,14 +1,13 @@
 def map[B](f: A => B): Either[E, B] = 
-  this match {
+  this match
     case Right(a) => Right(f(a))
     case Left(e) => Left(e)
-  }
   
 def flatMap[EE >: E, B](f: A => Either[EE, B]): Either[EE, B] =
-  this match {
+  this match
     case Left(e) => Left(e)
     case Right(a) => f(a)
-  }
+
 def orElse[EE >: E, AA >: A](b: => Either[EE, AA]): Either[EE, AA] =
   this match {
     case Left(_) => b
