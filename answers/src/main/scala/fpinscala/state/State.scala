@@ -20,7 +20,7 @@ object RNG:
   // This maps Int.MinValue to Int.MaxValue and -1 to 0.
   def nonNegativeInt(rng: RNG): (Int, RNG) =
     val (i, r) = rng.nextInt
-    (if (i < 0) -(i + 1) else i, r)
+    (if i < 0 then -(i + 1) else i, r)
 
   // We generate an integer >= 0 and divide it by one higher than the
   // maximum. This is just one possible solution.
