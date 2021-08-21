@@ -21,7 +21,7 @@ object RNG:
   def unit[A](a: A): Rand[A] =
     rng => (a, rng)
 
-  def map[A,B](s: Rand[A])(f: A => B): Rand[B] =
+  def map[A, B](s: Rand[A])(f: A => B): Rand[B] =
     rng => {
       val (a, rng2) = s(rng)
       (f(a), rng2)
@@ -39,25 +39,33 @@ object RNG:
 
   def ints(count: Int)(rng: RNG): (List[Int], RNG) = ???
 
-  def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = ???
+  def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = ???
 
-  def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = ???
+  def sequence[A](rs: List[Rand[A]]): Rand[List[A]] = ???
 
-  def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] = ???
+  def flatMap[A, B](r: Rand[A])(f: A => Rand[B]): Rand[B] = ???
 
-case class State[S,+A](run: S => (A, S)):
-  def map[B](f: A => B): State[S, B] =
-    ???
-  def map2[B,C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
-    ???
-  def flatMap[B](f: A => State[S, B]): State[S, B] =
-    ???
+opaque type State[S, +A] = S => (A, S)
+
+object State:
+  extension [S, A](underlying: State[S, A])
+    def run(s: S): (A, S) = underlying(s)
+
+    def map[B](f: A => B): State[S, B] =
+      ???
+
+    def map2[B, C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
+      ???
+
+    def flatMap[B](f: A => State[S, B]): State[S, B] =
+      ???
+
+  def apply[S, A](f: S => (A, S)): State[S, A] = f
 
 enum Input:
   case Coin, Turn
 
 case class Machine(locked: Boolean, candies: Int, coins: Int)
 
-object State:
-  type Rand[A] = State[RNG, A]
+object Candy:
   def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
