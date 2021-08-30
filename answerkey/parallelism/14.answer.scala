@@ -1,9 +1,8 @@
-// see nonblocking implementation in `Nonblocking.scala`
-def join[A](a: Par[Par[A]]): Par[A] = 
-  es => run(es)(run(es)(a).get())
+def join[A](ppa: Par[Par[A]]): Par[A] =
+  es => ppa.run(es).get().run(es)
 
-def joinViaFlatMap[A](a: Par[Par[A]]): Par[A] = 
-  flatMap(a)(x => x)
+def joinViaFlatMap[A](ppa: Par[Par[A]]): Par[A] =
+  ppa.flatMap(identity)
 
-def flatMapViaJoin[A,B](p: Par[A])(f: A => Par[B]): Par[B] = 
-  join(map(p)(f))
+extension [A](pa: Par[A]) def flatMapViaJoin[B](f: A => Par[B]): Par[B] =
+  join(pa.map(f))

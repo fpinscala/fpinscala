@@ -29,18 +29,18 @@ object BindTest extends App {
 
   object ParMonad extends Monad[Par] {
     def unit[A](a: => A) = Par.unit(a)
-    def flatMap[A,B](pa: Par[A])(f: A => Par[B]) = Par.fork { Par.flatMap(pa)(f) }
+    def flatMap[A,B](pa: Par[A])(f: A => Par[B]) = Par.fork { pa.flatMap(f) }
   }
 
   val pool = java.util.concurrent.Executors.newFixedThreadPool(4)
 
   timeit(10) { go(Throw)(Throw.unit(())) ( _ run ) }
   timeit(10) { go(IO2b.TailRec)(IO2b.TailRec.unit(())) ( IO2b.run ) }
-  timeit(10) { go(IO2c.Async)(IO2c.Async.unit(()))(r => Par.run(pool) { IO2c.run(r) }) }
+  timeit(10) { go(IO2c.Async)(IO2c.Async.unit(()))(r => IO2c.run(r).run(pool)) }
   timeit(10) { go[IO](ioMonad)(ioMonad.unit(()))(r => unsafePerformIO(r)(pool)) }
   timeit(10) { go(Task)(Task.now(()))(r => r.run(pool)) }
   timeit(10) { go(Task)(Task.forkUnit(()))(r => r.run(pool)) }
-  timeit(10) { go(ParMonad)(ParMonad.unit(())) { p => Par.run(pool)(p) }}
+  timeit(10) { go(ParMonad)(ParMonad.unit(())) { p => p.run(pool) }}
 
   // Par.run(pool)(ParMonad.forever { ParMonad.unit { println("woot") }})
   pool.shutdown()

@@ -346,7 +346,7 @@ object IO2c {
     case Return(a) => Par.unit(a)
     case Suspend(r) => r
     case FlatMap(x, f) => x match {
-      case Suspend(r) => Par.flatMap(r)(a => run(f(a)))
+      case Suspend(r) => r.flatMap(a => run(f(a)))
       case _ => sys.error("Impossible, since `step` eliminates these cases")
     }
   }
@@ -482,7 +482,7 @@ object IO3 {
 
   implicit val parMonad: Monad[Par] = new Monad[Par] {
     def unit[A](a: => A) = Par.unit(a)
-    def flatMap[A,B](a: Par[A])(f: A => Par[B]) = Par.fork { Par.flatMap(a)(f) }
+    def flatMap[A,B](a: Par[A])(f: A => Par[B]) = Par.fork { a.flatMap(f) }
   }
 
   def runFree[F[_],G[_],A](free: Free[F,A])(t: F ~> G)(

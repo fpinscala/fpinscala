@@ -33,5 +33,5 @@ package object iomonad {
   // and that it _performs_ the actual I/O.
   import java.util.concurrent.ExecutorService
   def unsafePerformIO[A](io: IO[A])(implicit E: ExecutorService): A =
-    Par.run(E) { IO3.run(io)(IO3.parMonad) }
+    IO3.run(io)(IO3.parMonad).run(E)
 }

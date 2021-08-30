@@ -1,33 +1,25 @@
-/* This version respects timeouts. See `Map2Future` below. */
-def map2[A,B,C](a: Par[A], b: Par[B])(f: (A,B) => C): Par[C] =
-  es => {
-    val (af, bf) = (a(es), b(es))
-    Map2Future(af, bf, f)
-  }
-
-/*
-Note: this implementation will not prevent repeated evaluation if multiple threads call `get` in parallel. We could prevent this using synchronization, but it isn't needed for our purposes here (also, repeated evaluation of pure values won't affect results).
+/* This version respects timeouts. 
+   Note: this implementation will not prevent repeated evaluation if multiple threads call `get` in parallel. We could prevent this using synchronization, but it isn't needed for our purposes here (also, repeated evaluation of pure values won't affect results).
 */
-case class Map2Future[A,B,C](a: Future[A], b: Future[B],
-                             f: (A,B) => C) extends Future[C] {
-  @volatile var cache: Option[C] = None
-  def isDone = cache.isDefined
-  def isCancelled = a.isCancelled || b.isCancelled
-  def cancel(evenIfRunning: Boolean) =
-    a.cancel(evenIfRunning) || b.cancel(evenIfRunning)
-  def get = compute(Long.MaxValue)
-  def get(timeout: Long, units: TimeUnit): C =
-    compute(TimeUnit.NANOSECONDS.convert(timeout, units))
+extension [A](pa: Par[A]) def map2Timeouts[B, C](pb: Par[B])(f: (A, B) => C): Par[C] =
+  es => new Future[C]:
+    private val futureA = pa(es)
+    private val futureB = pb(es)
+    @volatile private var cache: Option[C] = None
 
-  private def compute(timeoutInNanos: Long): C = cache match {
-    case Some(c) => c
-    case None =>
-      val start = System.nanoTime
-      val ar = a.get(timeoutInNanos, TimeUnit.NANOSECONDS)
-      val stop = System.nanoTime;val aTime = stop-start
-      val br = b.get(timeoutInNanos - aTime, TimeUnit.NANOSECONDS)
-      val ret = f(ar, br)
-      cache = Some(ret)
-      ret
-  }
-}
+    def isDone = cache.isDefined
+    def get() = get(Long.MaxValue, TimeUnit.NANOSECONDS)
+
+    def get(timeout: Long, units: TimeUnit) =
+      val timeoutNanos = TimeUnit.NANOSECONDS.convert(timeout, units)
+      val started = System.nanoTime
+      val a = futureA.get(timeoutNanos, TimeUnit.NANOSECONDS)
+      val elapsed = System.nanoTime - started
+      val b = futureB.get(timeoutNanos - elapsed, TimeUnit.NANOSECONDS)
+      val c = f(a, b)
+      cache = Some(c)
+      c
+
+    def isCancelled = futureA.isCancelled || futureB.isCancelled
+    def cancel(evenIfRunning: Boolean) =
+      futureA.cancel(evenIfRunning) || futureB.cancel(evenIfRunning)

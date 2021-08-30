@@ -12,7 +12,7 @@ The Gen data type in this file incorporates exhaustive checking of finite domain
 
 import fpinscala.state.*
 import fpinscala.parallelism.*
-import fpinscala.parallelism.Par.Par
+import fpinscala.parallelism.Par
 import Gen.*
 import Prop.*
 import Status.*
@@ -125,7 +125,7 @@ object Prop:
 
   val ES: ExecutorService = Executors.newCachedThreadPool
   val p1 = Prop.forAll(Gen.unit(Par.unit(1)))(i =>
-    Par.map(i)(_ + 1)(ES).get == Par.unit(2)(ES).get)
+    Par.map(i)(_ + 1).run(ES).get == Par.unit(2).run(ES).get)
 
   def check(p: => Boolean): Prop = // Note that we are non-strict here
     forAll(unit(()))(_ => p)
@@ -133,17 +133,17 @@ object Prop:
   val p2 = check {
     val p = Par.map(Par.unit(1))(_ + 1)
     val p2 = Par.unit(2)
-    p(ES).get == p2(ES).get
+    p.run(ES).get == p2.run(ES).get
   }
 
   def equal[A](p: Par[A], p2: Par[A]): Par[Boolean] =
-    Par.map2(p,p2)(_ == _)
+    p.map2(p2)(_ == _)
 
   val p3 = check {
-    equal (
+    equal(
       Par.map(Par.unit(1))(_ + 1),
       Par.unit(2)
-    ) (ES) get
+    ).run(ES).get
   }
 
   val S = weighted(
@@ -151,16 +151,16 @@ object Prop:
     unit(Executors.newCachedThreadPool) -> .25) // `a -> b` is syntax sugar for `(a,b)`
 
   def forAllPar[A](g: Gen[A])(f: A => Par[Boolean]): Prop =
-    forAll(S.map2(g)((_,_))) { case (s,a) => f(a)(s).get }
+    forAll(S.map2(g)((_, _))) { case (s, a) => f(a).run(s).get }
 
   def checkPar(p: Par[Boolean]): Prop =
     forAllPar(Gen.unit(()))(_ => p)
 
   def forAllPar2[A](g: Gen[A])(f: A => Par[Boolean]): Prop =
-    forAll(S ** g) { case (s,a) => f(a)(s).get }
+    forAll(S ** g) { case (s, a) => f(a).run(s).get }
 
   def forAllPar3[A](g: Gen[A])(f: A => Par[Boolean]): Prop =
-    forAll(S ** g) { case s ** a => f(a)(s).get }
+    forAll(S ** g) { case s ** a => f(a).run(s).get }
 
   val pint = Gen.choose(0,10) map (Par.unit(_))
   val p4 =
@@ -391,7 +391,7 @@ object Gen:
    */
   lazy val pint2: Gen[Par[Int]] = choose(-100,100).listOfN(choose(0,20)).map(l =>
     l.foldLeft(Par.unit(0))((p,i) =>
-      Par.fork { Par.map2(p, Par.unit(i))(_ + _) }))
+      Par.fork { p.map2(Par.unit(i))(_ + _) }))
 
   def genStringIntFn(g: Gen[Int]): Gen[String => Int] =
     g map (i => (s => i))
