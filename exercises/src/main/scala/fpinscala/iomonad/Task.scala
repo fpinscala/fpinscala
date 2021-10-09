@@ -1,6 +1,6 @@
 package fpinscala.iomonad
 
-import fpinscala.parallelism.Nonblocking._
+import fpinscala.parallelism.Nonblocking.*
 import java.util.concurrent.ExecutorService
 
 /*
@@ -49,16 +49,16 @@ object Task extends Monad[Task] {
   def unit[A](a: => A) = Task(IO(Try(a)))
 
   def flatMap[A,B](a: Task[A])(f: A => Task[B]): Task[B] =
-    a flatMap f
+    a.flatMap(f)
 
   def fail[A](e: Throwable): Task[A] = Task(IO(Left(e)))
   def now[A](a: A): Task[A] = Task(Return(Right(a)))
 
-  def more[A](a: => Task[A]): Task[A] = Task.now(()) flatMap (_ => a)
+  def more[A](a: => Task[A]): Task[A] = Task.now(()).flatMap(_ => a)
 
   def delay[A](a: => A): Task[A] = more(now(a))
   def fork[A](a: => Task[A]): Task[A] =
-    Task { par { Par.lazyUnit(()) } flatMap (_ => a.get) }
+    Task { par { Par.lazyUnit(()) }.flatMap(_ => a.get) }
   def forkUnit[A](a: => A): Task[A] = fork(now(a))
 
   def Try[A](a: => A): Either[Throwable,A] =

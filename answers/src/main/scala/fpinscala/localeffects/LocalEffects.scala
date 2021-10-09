@@ -2,7 +2,7 @@ package fpinscala.localeffects
 
 import scala.reflect.ClassTag
 
-import fpinscala.monads._
+import fpinscala.monads.*
 
 object Mutable {
   def quicksort(xs: List[Int]): List[Int] = if (xs.isEmpty) xs else {
@@ -102,7 +102,7 @@ sealed abstract class STArray[S,A](implicit ct: ClassTag[A]) {
 
   def fill(xs: Map[Int,A]): ST[S,Unit] =
     xs.foldRight(ST[S,Unit](())) {
-      case ((k, v), st) => st flatMap (_ => write(k, v))
+      case ((k, v), st) => st.flatMap(_ => write(k, v))
     }
 
   def swap(i: Int, j: Int): ST[S,Unit] = for {

@@ -1,11 +1,11 @@
 package fpinscala
 package monads
 
-import parsing._
-import testing._
-import parallelism._
-import state._
-import parallelism.Par._
+import parsing.*
+import testing.*
+import parallelism.*
+import state.*
+import parallelism.Par.*
 import language.higherKinds
 
 
@@ -59,7 +59,7 @@ object Monad {
   val genMonad = new Monad[Gen] {
     def unit[A](a: => A): Gen[A] = Gen.unit(a)
     override def flatMap[A,B](ma: Gen[A])(f: A => Gen[B]): Gen[B] =
-      ma flatMap f
+      ma.flatMap(f)
   }
 
   val parMonad: Monad[Par] = ???

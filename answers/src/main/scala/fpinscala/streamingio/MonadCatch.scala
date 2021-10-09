@@ -1,6 +1,6 @@
 package fpinscala.streamingio
 
-import fpinscala.iomonad._
+import fpinscala.iomonad.*
 
 import language.higherKinds
 
@@ -16,7 +16,7 @@ trait MonadCatch[F[_]] extends Monad[F] {
 object MonadCatch {
   implicit def task: MonadCatch[Task] = new MonadCatch[Task] {
     def unit[A](a: => A): Task[A] = Task.unit(a)
-    def flatMap[A,B](a: Task[A])(f: A => Task[B]): Task[B] = a flatMap f
+    def flatMap[A,B](a: Task[A])(f: A => Task[B]): Task[B] = a.flatMap(f)
     def attempt[A](a: Task[A]): Task[Either[Throwable,A]] = a.attempt
     def fail[A](err: Throwable): Task[A] = Task.fail(err)
   }

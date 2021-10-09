@@ -1,7 +1,6 @@
 package fpinscala.testing.exhaustive
 
-import language.implicitConversions
-import language.postfixOps
+import annotation.targetName
 
 /*
 This source file contains the answers to the last two exercises in the section
@@ -16,76 +15,98 @@ import fpinscala.parallelism.Par
 import Gen.*
 import Prop.*
 import Status.*
-import java.util.concurrent.{Executors,ExecutorService}
+import Result.*
+import java.util.concurrent.{Executors, ExecutorService}
 
-
-case class Prop(run: (MaxSize,TestCases,RNG) => Result):
-  def &&(p: Prop) = Prop {
-    (max,n,rng) => run(max,n,rng) match
-      case Right((a,n)) => p.run(max,n,rng).map { case (s,m) => (s,n+m) }
-      case l => l
-  }
-  def ||(p: Prop) = Prop {
-    (max,n,rng) => run(max,n,rng) match
-      case Left(msg) => p.tag(msg.string).run(max,n,rng)
-      case r => r
-  }
-  /* This is rather simplistic - in the event of failure, we simply prepend
-   * the given message on a newline in front of the existing message.
-   */
-  def tag(msg: String) = Prop {
-    (max,n,rng) => run(max,n,rng) match
-      case Left(e) => Left(FailedCase.fromString(msg + "\n" + e))
-      case r => r
-  }
+opaque type Prop = (MaxSize, TestCases, RNG) => Result
 
 object Prop:
+
   opaque type TestCases = Int
-  extension (t: TestCases)
-    def +(n: TestCases): TestCases = t + n
-    def /(n: TestCases): TestCases = t / n
+  object TestCases:
+    extension (x: TestCases) def toInt: Int = x
+    def fromInt(x: Int): TestCases = x
 
   opaque type MaxSize = Int
+  object MaxSize:
+    extension (x: MaxSize) def toInt: Int = x
+    def fromInt(x: Int): MaxSize = x
 
   opaque type FailedCase = String
-  extension (f: FailedCase) def string: String = f
   object FailedCase:
+    extension (f: FailedCase) def string: String = f
     def fromString(s: String): FailedCase = s
 
-  type Result = Either[FailedCase,(Status,TestCases)]
+  enum Status:
+    case Exhausted, Proven, Unfalsified
 
-  def forAll[A](a: Gen[A])(f: A => Boolean): Prop = Prop {
-    (n,rng) => {
+  enum Result:
+    case Falsified(failure: FailedCase)
+    case Passed(status: Status, testCases: TestCases)
+
+  extension (self: Prop)
+    def &&(that: Prop): Prop = 
+      (max, n, rng) => self.tag("and-left")(max, n, rng) match
+        case Passed(a, n) => that.tag("and-right")(max, n, rng) match
+          case Passed(s, m) => Passed(s, TestCases.fromInt(n.toInt + m.toInt))
+          case x => x
+        case x => x
+
+    def ||(that: Prop): Prop =
+      (max, n, rng) => self.tag("or-left")(max, n, rng) match
+        case Falsified(msg) => that.tag("or-right").tag(msg.string)(max, n, rng)
+        case x => x
+
+    def tag(msg: String): Prop = 
+      (max, n, rng) => self(max, n, rng) match
+        case Falsified(e) => Falsified(FailedCase.fromString(s"$msg($e)"))
+        case x => x
+
+    def run(p: Prop,
+          maxSize: MaxSize = 100,
+          testCases: TestCases = 100,
+          rng: RNG = RNG.Simple(System.currentTimeMillis)): Unit =
+      self(maxSize, testCases, rng) match
+        case Falsified(msg) => println(s"! Failed:\n $msg")
+        case Passed(Unfalsified, n) =>
+          println(s"+ OK, property unfalsified, ran $n tests.")
+        case Passed(Proven, n) =>
+          println(s"+ OK, property proven, ran $n tests.")
+        case Passed(Exhausted, n) =>
+          println(s"+ OK, property unfalsified up to max size, ran $n tests.")
+
+  def forAll[A](a: Gen[A])(f: A => Boolean): Prop =
+    (max, n, rng) => {
       def go(i: Int, j: Int, l: LazyList[Option[A]], onEnd: Int => Result): Result =
-        if i == j then Right((Unfalsified, i))
+        if i == j then Passed(Unfalsified, i)
         else l match
           case Some(h) #:: t => 
             try
               if f(h) then go(i+1, j, t, onEnd)
-              else Left(h.toString)
+              else Falsified(h.toString)
             catch
-              case e: Exception => Left(buildMsg(h, e))
-          case None #:: _ => Right((Unfalsified, i))
+              case e: Exception => Falsified(buildMsg(h, e))
+          case None #:: _ => Passed(Unfalsified, i)
           case _ => onEnd(i)
-      go(0, n/3, a.exhaustive, i => Right((Proven, i))) match
-        case Right((Unfalsified,_)) =>
+      go(0, TestCases.fromInt(n.toInt / 3), a.exhaustive, i => Passed(Proven, i)) match
+        case Passed(Unfalsified, _) =>
           val rands = randomLazyList(a)(rng).map(Some(_))
-          go(n/3, n, rands, i => Right((Unfalsified, i)))
+          go(TestCases.fromInt(n.toInt / 3), n, rands, i => Passed(Unfalsified, i))
         case s => s // If proven or failed, stop immediately
     }
-  }
 
   def buildMsg[A](s: A, e: Exception): String =
-    "test case: " + s + "\n" +
-    "generated an exception: " + e.getMessage + "\n" +
-    "stack trace:\n" + e.getStackTrace.mkString("\n")
+    s"test case: $s\n" +
+    s"generated an exception: ${e.getMessage}\n" +
+    s"stack trace:\n ${e.getStackTrace.mkString("\n")}"
 
   def apply(f: (TestCases,RNG) => Result): Prop =
-    Prop { (_,n,rng) => f(n,rng) }
+    (_, n, rng) => f(n,rng)
 
   /* We pattern match on the `SGen`, and delegate to our `Gen` version of `forAll`
    * if `g` is unsized; otherwise, we call the sized version of `forAll` (below).
    */
+  @targetName("forAllSized")
   def forAll[A](g: SGen[A])(f: A => Boolean): Prop = g match
     case Unsized(g2) => forAll(g2)(f)
     case Sized(gs) => forAll(gs)(f)
@@ -94,46 +115,29 @@ object Prop:
    * `Exhausted`. A sized generator can never be proven, since there are always
    * larger-sized tests that were not run which may have failed.
    */
-  def forAll[A](g: Int => Gen[A])(f: A => Boolean): Prop = Prop {
-    (max,n,rng) =>
-      val casesPerSize = n / max + 1
+  def forAll[A](g: Int => Gen[A])(f: A => Boolean): Prop =
+    (max, n, rng) =>
+      val casesPerSize = TestCases.fromInt(n.toInt / max + 1)
       val props: List[Prop] =
-        LazyList.from(0).take(max+1).map(i => forAll(g(i))(f)).toList
-      val p: Prop = props.map(p => Prop((max,n,rng) => p.run(max,casesPerSize,rng))).
+        LazyList.from(0).take(max.toInt + 1).map(i => forAll(g(i))(f)).toList
+      val p: Prop = props.map[Prop](p => (max, n, rng) => p(max, casesPerSize, rng)).
             reduceLeft(_ && _)
-      p.run(max,n,rng).map {
-        case (Proven,n) => (Exhausted,n)
+      p(max, n, rng) match
+        case Passed(Proven, n) => Passed(Exhausted, n)
         case x => x
-      }
-  }
 
-  def run(p: Prop,
-          maxSize: MaxSize = 100, // A default argument of `100`
-          testCases: TestCases = 100,
-          rng: RNG = RNG.Simple(System.currentTimeMillis)): Unit = {
-    p.run(maxSize, testCases, rng) match {
-      case Left(msg) => println("! test failed:\n" + msg)
-      case Right((Unfalsified,n)) =>
-        println("+ property unfalsified, ran " + n + " tests")
-      case Right((Proven,n)) =>
-        println("+ property proven, ran " + n + " tests")
-      case Right((Exhausted,n)) =>
-        println("+ property unfalsified up to max size, ran " +
-                 n + " tests")
-    }
-  }
+  val executor: ExecutorService = Executors.newCachedThreadPool
 
-  val ES: ExecutorService = Executors.newCachedThreadPool
-  val p1 = Prop.forAll(Gen.unit(Par.unit(1)))(i =>
-    Par.map(i)(_ + 1).run(ES).get == Par.unit(2).run(ES).get)
+  val p1 = Prop.forAll(Gen.unit(Par.unit(1)))(pi =>
+    pi.map(_ + 1).run(executor).get == Par.unit(2).run(executor).get)
 
-  def check(p: => Boolean): Prop = // Note that we are non-strict here
-    forAll(unit(()))(_ => p)
+  def check(p: => Boolean): Prop =
+    (_, _, _) => Passed(Proven, 1)
 
   val p2 = check {
-    val p = Par.map(Par.unit(1))(_ + 1)
+    val p = Par.unit(1).map(_ + 1)
     val p2 = Par.unit(2)
-    p.run(ES).get == p2.run(ES).get
+    p.run(executor).get == p2.run(executor).get
   }
 
   def equal[A](p: Par[A], p2: Par[A]): Par[Boolean] =
@@ -141,42 +145,42 @@ object Prop:
 
   val p3 = check {
     equal(
-      Par.map(Par.unit(1))(_ + 1),
+      Par.unit(1).map(_ + 1),
       Par.unit(2)
-    ).run(ES).get
+    ).run(executor).get
   }
 
-  val S = weighted(
+  val executors: Gen[ExecutorService] = weighted(
     choose(1,4).map(Executors.newFixedThreadPool) -> .75,
-    unit(Executors.newCachedThreadPool) -> .25) // `a -> b` is syntax sugar for `(a,b)`
+    unit(Executors.newCachedThreadPool) -> .25) // `a -> b` is syntax sugar for `(a, b)`
 
   def forAllPar[A](g: Gen[A])(f: A => Par[Boolean]): Prop =
-    forAll(S.map2(g)((_, _))) { case (s, a) => f(a).run(s).get }
+    forAll(executors ** g)((s, a) => f(a).run(s).get)
 
   def checkPar(p: Par[Boolean]): Prop =
     forAllPar(Gen.unit(()))(_ => p)
 
   def forAllPar2[A](g: Gen[A])(f: A => Par[Boolean]): Prop =
-    forAll(S ** g) { case (s, a) => f(a).run(s).get }
+    forAll(executors ** g)((s, a) => f(a).run(s).get)
 
   def forAllPar3[A](g: Gen[A])(f: A => Par[Boolean]): Prop =
-    forAll(S ** g) { case s ** a => f(a).run(s).get }
+    forAll(executors ** g) { case s ** a => f(a).run(s).get }
 
-  val pint = Gen.choose(0,10) map (Par.unit(_))
-  val p4 =
-    forAllPar(pint)(n => equal(Par.map(n)(y => y), n))
+  val gpy: Gen[Par[Int]] = Gen.choose(0, 10).map(Par.unit(_))
+  val p4 = forAllPar(gpy)(py => equal(py.map(y => y), py))
 
-  val forkProp = Prop.forAllPar(pint2)(i => equal(Par.fork(i), i)) tag "fork"
+  lazy val gpy2: Gen[Par[Int]] = choose(-100, 100).listOfN(choose(0, 20)).map(ys =>
+    ys.foldLeft(Par.unit(0))((p, y) =>
+      Par.fork(p.map2(Par.unit(y))(_ + _))))
 
-enum Status:
-  case Exhausted, Proven, Unfalsified
+  val forkProp = Prop.forAllPar(gpy2)(y => equal(Par.fork(y), y))
 
 /*
 The `Gen` type now has a random generator as well as an exhaustive lazy list.
 Infinite domains will simply generate infinite lazy lists of None.
 A finite domain is exhausted when the lazy list reaches empty.
 */
-case class Gen[+A](sample: State[RNG,A], exhaustive: LazyList[Option[A]]):
+case class Gen[+A](sample: State[RNG, A], exhaustive: LazyList[Option[A]]):
   def map[B](f: A => B): Gen[B] =
     Gen(sample.map(f), exhaustive.map(_.map(f)))
 
@@ -197,20 +201,20 @@ case class Gen[+A](sample: State[RNG,A], exhaustive: LazyList[Option[A]]):
 
   /* A version of `listOfN` that generates the size to use dynamically. */
   def listOfN(size: Gen[Int]): Gen[List[A]] =
-    size flatMap (n => this.listOfN(n))
+    size.flatMap(n => this.listOfN(n))
 
-  def listOf: SGen[List[A]] = Gen.listOf(this)
-  def listOf1: SGen[List[A]] = Gen.listOf1(this)
+  def list: SGen[List[A]] = Sized(n => listOfN(n))
+  def nonEmptyList: SGen[List[A]] = Sized(n => listOfN(n.max(1)))
 
-  def unsized = Unsized(this)
+  def unsized: SGen[A] = Unsized(this)
 
-  def **[B](g: Gen[B]): Gen[(A,B)] =
-    (this map2 g)((_,_))
+  def **[B](g: Gen[B]): Gen[(A, B)] =
+    map2(g)((_, _))
 
 object Gen:
   type Domain[+A] = LazyList[Option[A]]
 
-  def bounded[A](a: LazyList[A]): Domain[A] = a map (Some(_))
+  def bounded[A](a: LazyList[A]): Domain[A] = a.map(Some(_))
   def unbounded: Domain[Nothing] = LazyList(None)
 
   def unit[A](a: => A): Gen[A] =
@@ -268,8 +272,8 @@ object Gen:
   /* Notice we are using the `unbounded` definition here, which is just
    * `LazyList(None)` in our current representation of `exhaustive`.
    */
-  def uniform: Gen[Double] =
-    Gen(State(RNG.double), unbounded)
+  def double: Gen[Double] = Gen(State(RNG.double), unbounded)
+  def int: Gen[Int] = Gen(State(RNG.int), unbounded)
 
   def choose(i: Double, j: Double): Gen[Double] =
     Gen(State(RNG.double).map(d => i + d*(j-i)), unbounded)
@@ -309,7 +313,7 @@ object Gen:
     )
 
   def interleave[A](s1: LazyList[A], s2: LazyList[A]): LazyList[A] =
-    s1.map(Some(_)).zipAll(s2.map(Some(_)), None, None).flatMap { case (a,a2) => LazyList((a.toList ++ a2.toList)*) }
+    s1.map(Some(_)).zipAll(s2.map(Some(_)), None, None).flatMap((a,a2) => LazyList((a.toList ++ a2.toList)*))
 
   /* The random case is simple - we generate a double and use this to choose between
    * the two random samplers. The exhaustive case is trickier if we want to try
@@ -323,7 +327,7 @@ object Gen:
      * Making up a seed locally is fine here, since we just want a deterministic schedule
      * with the right distribution. */
     def bools: LazyList[Boolean] =
-      randomLazyList(uniform.map(_ < g1Threshold))(RNG.Simple(302837L))
+      randomLazyList(double.map(_ < g1Threshold))(RNG.Simple(302837L))
 
     Gen(State(RNG.double).flatMap(d => if (d < g1Threshold) g1._1.sample else g2._1.sample),
         interleave(bools, g1._1.exhaustive, g2._1.exhaustive))
@@ -346,9 +350,6 @@ object Gen:
         case _ => s1
     }.getOrElse(LazyList.empty)
 
-  def listOf[A](g: Gen[A]): SGen[List[A]] =
-    Sized(n => g.listOfN(n))
-
   /* Not the most efficient implementation, but it's simple.
    * This generates ASCII strings.
    */
@@ -360,23 +361,18 @@ object Gen:
   case class Sized[+A](forSize: Int => Gen[A]) extends SGen[A]
   case class Unsized[+A](get: Gen[A]) extends SGen[A]
 
-  implicit def unsized[A](g: Gen[A]): SGen[A] = Unsized(g)
-
   val smallInt = Gen.choose(-10,10)
-  val maxProp = forAll(listOf(smallInt)) { l =>
+  val maxProp = forAll(smallInt.list) { l =>
     val max = l.max
     !l.exists(_ > max) // No value greater than `max` should exist in `l`
   }
 
-  def listOf1[A](g: Gen[A]): SGen[List[A]] =
-    Sized(n => g.listOfN(n max 1))
-
-  val maxProp1 = forAll(listOf1(smallInt)) { l =>
+  val maxProp1 = forAll(smallInt.nonEmptyList) { l =>
     val max = l.max
     !l.exists(_ > max) // No value greater than `max` should exist in `l`
   }
 
-  val sortedProp = forAll(listOf(smallInt)) { l =>
+  val sortedProp = forAll(smallInt.list) { l =>
     val ls = l.sorted
     l.isEmpty || ls.tail.isEmpty || !l.zip(ls.tail).exists { case (a,b) => a > b }
   }
@@ -390,19 +386,19 @@ object Gen:
    * variation in structure to use for testing.
    */
   lazy val pint2: Gen[Par[Int]] = choose(-100,100).listOfN(choose(0,20)).map(l =>
-    l.foldLeft(Par.unit(0))((p,i) =>
+    l.foldLeft(Par.unit(0))((p, i) =>
       Par.fork { p.map2(Par.unit(i))(_ + _) }))
 
   def genStringIntFn(g: Gen[Int]): Gen[String => Int] =
-    g map (i => (s => i))
+    g.map(i => (s => i))
 
 trait SGen[+A]:
   def map[B](f: A => B): SGen[B] = this match
-    case Sized(g) => Sized(g andThen (_ map f))
-    case Unsized(g) => Unsized(g map f)
+    case Sized(g) => Sized(g.andThen(_.map(f)))
+    case Unsized(g) => Unsized(g.map(f))
   def flatMap[B](f: A => Gen[B]): SGen[B] = this match
-    case Sized(g) => Sized(g andThen (_ flatMap f))
-    case Unsized(g) => Unsized(g flatMap f)
+    case Sized(g) => Sized(g.andThen(_.flatMap(f)))
+    case Unsized(g) => Unsized(g.flatMap(f))
   def **[B](s2: SGen[B]): SGen[(A,B)] = (this,s2) match
     case (Sized(g), Sized(g2)) => Sized(n => g(n) ** g2(n))
     case (Unsized(g), Unsized(g2)) => Unsized(g ** g2)

@@ -1,11 +1,11 @@
 package fpinscala
 package monads
 
-import parsing._
-import testing._
-import parallelism._
-import state._
-import parallelism.Par._
+import parsing.*
+import testing.*
+import parallelism.*
+import state.*
+import parallelism.Par.*
 import language.higherKinds
 
 
@@ -83,7 +83,7 @@ object Monad {
   val genMonad = new Monad[Gen] {
     def unit[A](a: => A): Gen[A] = Gen.unit(a)
     override def flatMap[A,B](ma: Gen[A])(f: A => Gen[B]): Gen[B] =
-      ma flatMap f
+      ma.flatMap(f)
   }
 
   val parMonad = new Monad[Par] {
@@ -123,7 +123,7 @@ object Monad {
     val monad = new Monad[StateS] {
       def unit[A](a: => A): State[S, A] = State(s => (a, s))
       override def flatMap[A,B](st: State[S, A])(f: A => State[S, B]): State[S, B] =
-        st flatMap f
+        st.flatMap(f)
     }
   }
 
@@ -133,12 +133,12 @@ object Monad {
   def stateMonad[S] = new Monad[({type lambda[x] = State[S, x]})#lambda] {
     def unit[A](a: => A): State[S, A] = State(s => (a, s))
     override def flatMap[A,B](st: State[S, A])(f: A => State[S, B]): State[S, B] =
-      st flatMap f
+      st.flatMap(f)
   }
 
   val idMonad = new Monad[Id] {
     def unit[A](a: => A) = Id(a)
-    override def flatMap[A,B](ida: Id[A])(f: A => Id[B]): Id[B] = ida flatMap f
+    override def flatMap[A,B](ida: Id[A])(f: A => Id[B]): Id[B] = ida.flatMap(f)
   }
 
   def getState[S]: State[S,S] = State(s => (s,s))

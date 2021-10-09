@@ -68,14 +68,14 @@ object IO1 {
 
   object IO extends Monad[IO] {
     def unit[A](a: => A): IO[A] = new IO[A] { def run = a }
-    def flatMap[A,B](fa: IO[A])(f: A => IO[B]) = fa flatMap f
+    def flatMap[A,B](fa: IO[A])(f: A => IO[B]) = fa.flatMap(f)
     def apply[A](a: => A): IO[A] = unit(a) // syntax for IO { .. }
 
     def ref[A](a: A): IO[IORef[A]] = IO { new IORef(a) }
     sealed class IORef[A](var value: A) {
       def set(a: A): IO[A] = IO { value = a; a }
       def get: IO[A] = IO { value }
-      def modify(f: A => A): IO[A] = get flatMap (a => set(f(a)))
+      def modify(f: A => A): IO[A] = get.flatMap(a => set(f(a)))
     }
   }
 
@@ -93,7 +93,7 @@ object IO1 {
 
   /*                         Some other examples                      */
 
-  import IO._ // import all the `IO` combinators that come from `Monad`
+  import IO.* // import all the `IO` combinators that come from `Monad`
 
   // An `IO[Unit]` that reads a line from the console and echoes it back.
   val echo = ReadLine.flatMap(PrintLine)
@@ -178,9 +178,9 @@ object IO2a {
 
   object IO extends Monad[IO] { // Notice that none of these operations DO anything
     def unit[A](a: => A): IO[A] = Return(a)
-    def flatMap[A,B](a: IO[A])(f: A => IO[B]): IO[B] = a flatMap f
+    def flatMap[A,B](a: IO[A])(f: A => IO[B]): IO[B] = a.flatMap(f)
     def suspend[A](a: => IO[A]) =
-      Suspend(() => ()).flatMap { _ => a }
+      Suspend(() => ()).flatMap(_ => a)
 
   }
 
@@ -204,13 +204,13 @@ object IO2a {
     case FlatMap(x, f) => x match {
       case Return(a) => run(f(a))
       case Suspend(r) => run(f(r()))
-      case FlatMap(y, g) => run(y flatMap (a => g(a) flatMap f))
+      case FlatMap(y, g) => run(y.flatMap(a => g(a).flatMap(f)))
     }
   }
 }
 
 object IO2aTests {
-  import IO2a._
+  import IO2a.*
 
   /*
   Pg 240: REPL session has a typo, should be:
@@ -261,7 +261,7 @@ object IO2b {
     def flatMap[B](f: A => TailRec[B]): TailRec[B] =
       FlatMap(this, f)
     def map[B](f: A => B): TailRec[B] =
-      flatMap(f andThen (Return(_)))
+      flatMap(f.andThen(Return(_)))
   }
   case class Return[A](a: A) extends TailRec[A]
   case class Suspend[A](resume: () => A) extends TailRec[A]
@@ -269,9 +269,9 @@ object IO2b {
 
   object TailRec extends Monad[TailRec] {
     def unit[A](a: => A): TailRec[A] = Return(a)
-    def flatMap[A,B](a: TailRec[A])(f: A => TailRec[B]): TailRec[B] = a flatMap f
+    def flatMap[A,B](a: TailRec[A])(f: A => TailRec[B]): TailRec[B] = a.flatMap(f)
     def suspend[A](a: => TailRec[A]) =
-      Suspend(() => ()).flatMap { _ => a }
+      Suspend(() => ()).flatMap(_ => a)
 
   }
 
@@ -281,13 +281,13 @@ object IO2b {
     case FlatMap(x, f) => x match {
       case Return(a) => run(f(a))
       case Suspend(r) => run(f(r()))
-      case FlatMap(y, g) => run(y flatMap (a => g(a) flatMap f))
+      case FlatMap(y, g) => run(y.flatMap(a => g(a).flatMap(f)))
     }
   }
 }
 
 object IO2bTests {
-  import IO2b._
+  import IO2b.*
 
   val f: Int => TailRec[Int] = (i: Int) => Return(i)
 
@@ -309,7 +309,7 @@ object IO2bTests {
 
 object IO2c {
 
-  import fpinscala.parallelism.Nonblocking._
+  import fpinscala.parallelism.Nonblocking.*
 
   /*
    * We've solved our first problem of ensuring stack safety, but we're still
@@ -332,12 +332,12 @@ object IO2c {
 
   object Async extends Monad[Async] {
     def unit[A](a: => A): Async[A] = Return(a)
-    def flatMap[A,B](a: Async[A])(f: A => Async[B]): Async[B] = a flatMap f
+    def flatMap[A,B](a: Async[A])(f: A => Async[B]): Async[B] = a.flatMap(f)
   }
 
   // return either a `Suspend`, a `Return`, or a right-associated `FlatMap`
   @annotation.tailrec def step[A](async: Async[A]): Async[A] = async match {
-    case FlatMap(FlatMap(x, f), g) => step(x flatMap (a => f(a) flatMap g))
+    case FlatMap(FlatMap(x, f), g) => step(x.flatMap(a => f(a).flatMap(g)))
     case FlatMap(Return(x), f) => step(f(x))
     case _ => async
   }
@@ -378,7 +378,7 @@ object IO3 {
   def freeMonad[F[_]]: Monad[({type f[a] = Free[F,a]})#f] =
     new Monad[({type f[a] = Free[F,a]})#f] {
       def unit[A](a: => A) = Return(a)
-      def flatMap[A,B](fa: Free[F, A])(f: A => Free[F, B]) = fa flatMap f
+      def flatMap[A,B](fa: Free[F, A])(f: A => Free[F, B]) = fa.flatMap(f)
     }
 
   // Exercise 2: Implement a specialized `Function0` interpreter.
@@ -389,7 +389,7 @@ object IO3 {
     case FlatMap(x,f) => x match {
       case Return(a) => runTrampoline { f(a) }
       case Suspend(r) => runTrampoline { f(r()) }
-      case FlatMap(a0,g) => runTrampoline { a0 flatMap { a0 => g(a0) flatMap f } }
+      case FlatMap(a0,g) => runTrampoline { a0.flatMap(a0 => g(a0).flatMap(f)) }
     }
   }
 
@@ -404,7 +404,7 @@ object IO3 {
   // return either a `Suspend`, a `Return`, or a right-associated `FlatMap`
   @annotation.tailrec
   def step[F[_],A](a: Free[F,A]): Free[F,A] = a match {
-    case FlatMap(FlatMap(x, f), g) => step(x flatMap (a => f(a) flatMap g))
+    case FlatMap(FlatMap(x, f), g) => step(x.flatMap(a => f(a).flatMap(g)))
     case FlatMap(Return(x), f) => step(f(x))
     case _ => a
   }
@@ -533,7 +533,7 @@ object IO3 {
   `Console` using side effects. Here are two pure ways of interpreting
   a `Free[Console,A]`.
   */
-  import Console._
+  import Console.*
 
   case class Buffers(in: List[String], out: Vector[String])
 
@@ -553,7 +553,7 @@ object IO3 {
   object ConsoleState {
     implicit val monad: Monad[ConsoleState] = new Monad[ConsoleState] {
       def unit[A](a: => A) = ConsoleState(bufs => (a,bufs))
-      def flatMap[A,B](ra: ConsoleState[A])(f: A => ConsoleState[B]) = ra flatMap f
+      def flatMap[A,B](ra: ConsoleState[A])(f: A => ConsoleState[B]) = ra.flatMap(f)
     }
   }
 
@@ -567,7 +567,7 @@ object IO3 {
   object ConsoleReader {
     implicit val monad: Monad[ConsoleReader] = new Monad[ConsoleReader] {
       def unit[A](a: => A) = ConsoleReader(_ => a)
-      def flatMap[A,B](ra: ConsoleReader[A])(f: A => ConsoleReader[B]) = ra flatMap f
+      def flatMap[A,B](ra: ConsoleReader[A])(f: A => ConsoleReader[B]) = ra.flatMap(f)
     }
   }
 
@@ -601,8 +601,8 @@ object IO3 {
    * which supports asynchronous reads.
    */
 
-  import java.nio._
-  import java.nio.channels._
+  import java.nio.*
+  import java.nio.channels.*
 
   // Provides the syntax `Async { k => ... }` for asyncronous IO blocks.
   def Async[A](cb: (A => Unit) => Unit): IO[A] =

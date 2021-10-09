@@ -1,7 +1,7 @@
 package fpinscala.errorhandling
 
 // Hide std library `Either` since we are writing our own in this chapter
-import scala.{Either => _, Left => _, Right => _}
+import scala.{Either as _, Left as _, Right as _}
 import scala.util.control.NonFatal
 
 enum Either[+E,+A]:

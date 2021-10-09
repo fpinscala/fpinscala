@@ -3,7 +3,7 @@ package fpinscala
 import language.higherKinds
 
 package object iomonad {
-  import fpinscala.parallelism.Nonblocking._
+  import fpinscala.parallelism.Nonblocking.*
 
   type IO[A] = IO3.IO[A]
   def IO[A](a: => A): IO[A] = IO3.IO[A](a)
@@ -12,11 +12,11 @@ package object iomonad {
 
   def now[A](a: A): IO[A] = IO3.Return(a)
 
-  def fork[A](a: => IO[A]): IO[A] = par(Par.lazyUnit(())) flatMap (_ => a)
+  def fork[A](a: => IO[A]): IO[A] = par(Par.lazyUnit(())).flatMap(_ => a)
 
   def forkUnit[A](a: => A): IO[A] = fork(now(a))
 
-  def delay[A](a: => A): IO[A] = now(()) flatMap (_ => now(a))
+  def delay[A](a: => A): IO[A] = now(()).flatMap(_ => now(a))
 
   def par[A](a: Par[A]): IO[A] = IO3.Suspend(a)
 

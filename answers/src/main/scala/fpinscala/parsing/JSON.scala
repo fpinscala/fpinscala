@@ -16,13 +16,13 @@ object JSON {
   def jsonParser[Parser[+_]](P: Parsers[Parser]): Parser[JSON] = {
     // we'll hide the string implicit conversion and promote strings to tokens instead
     // this is a bit nicer than having to write token everywhere
-    import P.{string => _, _}
+    import P.{string as _, *}
     implicit def tok(s: String): Parser[String] = token(P.string(s))
 
     def array = surround("[","]")(
-      value sep "," map (vs => JArray(vs.toIndexedSeq))) scope "array"
+      value.sep(",").map(vs => JArray(vs.toIndexedSeq))).scope("array")
     def obj = surround("{","}")(
-      keyval sep "," map (kvs => JObject(kvs.toMap))) scope "object"
+      keyval.sep(",").map(kvs => JObject(kvs.toMap))).scope("object")
     def keyval = escapedQuoted ** (":" *> value)
     def lit = scope("literal") {
       "null".as(JNull) |

@@ -25,7 +25,7 @@ object BindTest extends App {
     }}
   }
 
-  import fpinscala.parallelism.Nonblocking._
+  import fpinscala.parallelism.Nonblocking.*
 
   object ParMonad extends Monad[Par] {
     def unit[A](a: => A) = Par.unit(a)

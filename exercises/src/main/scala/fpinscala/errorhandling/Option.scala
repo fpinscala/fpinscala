@@ -1,7 +1,7 @@
 package fpinscala.errorhandling
 
 // Hide std library `Option` since we are writing our own in this chapter
-import scala.{Option => _, Some => _, None => _}
+import scala.{Option as _, Some as _, None as _}
 
 enum Option[+A]:
   case Some(get: A)

@@ -4,7 +4,7 @@ import language.postfixOps
 
 /* Data type representing either A, B, or both A and B. */
 trait These[+A,+B] {
-  import These._
+  import These.*
 
   def bimap[A2,B2](f: A => A2, g: B => B2): These[A2,B2] = 
     this match {

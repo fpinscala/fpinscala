@@ -2,10 +2,10 @@ package fpinscala
 package applicative
 
 import monads.Functor
-import state._
-import State._
-import StateUtil._ // defined at bottom of this file
-import monoids._
+import state.*
+import State.*
+import StateUtil.* // defined at bottom of this file
+import monoids.*
 import language.higherKinds
 import language.implicitConversions
 
@@ -55,7 +55,7 @@ object Monad {
   def stateMonad[S] = new Monad[({type f[x] = State[S, x]})#f] {
     def unit[A](a: => A): State[S, A] = State(s => (a, s))
     override def flatMap[A,B](st: State[S, A])(f: A => State[S, B]): State[S, B] =
-      st flatMap f
+      st.flatMap(f)
   }
 
   def composeM[F[_],N[_]](implicit F: Monad[F], N: Monad[N], T: Traverse[N]):
@@ -101,14 +101,14 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
 
   def map[A,B](fa: F[A])(f: A => B): F[B] = ???
 
-  import Applicative._
+  import Applicative.*
 
   override def foldMap[A,B](as: F[A])(f: A => B)(mb: Monoid[B]): B =
     traverse[({type f[x] = Const[B,x]})#f,A,Nothing](
-      as)(f)(monoidApplicative(mb))
+      as)(f)(using monoidApplicative(mb))
 
   def traverseS[S,A,B](fa: F[A])(f: A => State[S, B]): State[S, F[B]] =
-    traverse[({type f[x] = State[S,x]})#f,A,B](fa)(f)(Monad.stateMonad)
+    traverse[({type f[x] = State[S,x]})#f,A,B](fa)(f)(using Monad.stateMonad)
 
   def mapAccum[S,A,B](fa: F[A], s: S)(f: (A, S) => (B, S)): (F[B], S) =
     traverseS(fa)((a: A) => (for {

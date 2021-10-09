@@ -25,12 +25,12 @@ trait Monad[F[_]] extends Functor[F] {
   def when[A](b: Boolean)(fa: => F[A]): F[Boolean] =
     if (b) as(fa)(true) else unit(false)
   def forever[A,B](a: F[A]): F[B] = {
-    lazy val t: F[B] = a flatMap (_ => t)
+    lazy val t: F[B] = a.flatMap(_ => t)
     t
   }
   def while_(a: F[Boolean])(b: F[Unit]): F[Unit] = {
     lazy val t: F[Unit] = while_(a)(b)
-    a flatMap (c => skip(when(c)(t)))
+    a.flatMap(c => skip(when(c)(t)))
   }
   def doWhile[A](a: F[A])(cond: A => F[Boolean]): F[Unit] = for {
     a1 <- a
@@ -40,7 +40,7 @@ trait Monad[F[_]] extends Functor[F] {
 
   def foldM[A,B](l: LazyList[A])(z: B)(f: (B,A) => F[B]): F[B] =
     l match {
-      case h #:: t => f(z,h) flatMap (z2 => foldM(t)(z2)(f))
+      case h #:: t => f(z,h).flatMap(z2 => foldM(t)(z2)(f))
       case _ => unit(z)
     }
   def foldM_[A,B](l: LazyList[A])(z: B)(f: (B,A) => F[B]): F[Unit] =
@@ -57,7 +57,7 @@ trait Monad[F[_]] extends Functor[F] {
 
 trait Monadic[F[_],A] {
   val F: Monad[F]
-  import F._
+  import F.*
   def get: F[A]
   private val a = get
   def map[B](f: A => B): F[B] = F.map(a)(f)

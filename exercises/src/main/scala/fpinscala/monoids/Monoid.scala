@@ -39,8 +39,8 @@ object Monoid {
   // TODO: Placeholder for `Gen`. Remove once you have implemented the `Gen`
   // data type from Part 2.
 
-  import fpinscala.testing._
-  import Prop._
+  import fpinscala.testing.*
+  import Prop.*
   def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Prop = ???
 
   def trimMonoid(s: String): Monoid[String] = ???
@@ -91,7 +91,7 @@ object Monoid {
 }
 
 trait Foldable[F[_]] {
-  import Monoid._
+  import Monoid.*
 
   def foldRight[A, B](as: F[A])(z: B)(f: (A, B) => B): B =
     ???

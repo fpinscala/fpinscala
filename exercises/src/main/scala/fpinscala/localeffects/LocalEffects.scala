@@ -2,7 +2,7 @@ package fpinscala.localeffects
 
 import scala.reflect.ClassTag
 
-import fpinscala.monads._
+import fpinscala.monads.*
 
 object Mutable {
   def quicksort(xs: List[Int]): List[Int] = if (xs.isEmpty) xs else {

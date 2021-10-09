@@ -16,7 +16,7 @@ object ImperativeAndLazyIO {
   into `IO`.
                              */
 
-  import java.io._
+  import java.io.*
 
   def linesGt40k(filename: String): IO[Boolean] = IO {
     // There are a number of convenience functions in scala.io.Source
@@ -95,7 +95,7 @@ object SimpleLazyListTransducers {
                              */
 
   sealed trait Process[I,O] {
-    import Process._
+    import Process.*
 
     /*
      * A `Process[I,O]` can be used to transform a `LazyList[I]` to a
@@ -119,18 +119,18 @@ object SimpleLazyListTransducers {
 
     def map[O2](f: O => O2): Process[I,O2] = this match {
       case Halt() => Halt()
-      case Emit(h, t) => Emit(f(h), t map f)
-      case Await(recv) => Await(recv andThen (_ map f))
+      case Emit(h, t) => Emit(f(h), t.map(f))
+      case Await(recv) => Await(recv.andThen(_.map(f)))
     }
     def ++(p: => Process[I,O]): Process[I,O] = this match {
       case Halt() => p
       case Emit(h, t) => Emit(h, t ++ p)
-      case Await(recv) => Await(recv andThen (_ ++ p))
+      case Await(recv) => Await(recv.andThen(_ ++ p))
     }
     def flatMap[O2](f: O => Process[I,O2]): Process[I,O2] = this match {
       case Halt() => Halt()
       case Emit(h, t) => f(h) ++ t.flatMap(f)
-      case Await(recv) => Await(recv andThen (_ flatMap f))
+      case Await(recv) => Await(recv.andThen(_.flatMap(f)))
     }
 
     /*
@@ -215,7 +215,7 @@ object SimpleLazyListTransducers {
      * Exercise 6: Implement `zipWithIndex`.
      */
     def zipWithIndex: Process[I,(O,Int)] =
-      this zip (count map (_ - 1))
+      zip(count.map(_ - 1))
 
     /* Add `p` to the fallback branch of this process */
     def orElse(p: Process[I,O]): Process[I,O] = this match {
@@ -253,7 +253,7 @@ object SimpleLazyListTransducers {
       new Monad[({ type f[x] = Process[I,x]})#f] {
         def unit[O](o: => O): Process[I,O] = emit(o)
         def flatMap[O,O2](p: Process[I,O])(f: O => Process[I,O2]): Process[I,O2] =
-          p flatMap f
+          p.flatMap(f)
       }
 
     // enable monadic syntax for `Process` type
@@ -405,7 +405,7 @@ object SimpleLazyListTransducers {
      * Using zip, we can then define `mean`. Again, this definition
      * operates in a single pass.
      */
-    val mean2 = (sum zip count) |> lift { case (s,n) => s / n }
+    val mean2 = (sum.zip(count)) |> lift { case (s, n) => s / n }
 
     /*
      * Exercise 6: Implement `zipWithIndex`.
@@ -512,7 +512,7 @@ object GeneralizedLazyListTransducers {
                              */
 
   trait Process[F[_],O] {
-    import Process._
+    import Process.*
 
     /*
      * Many of the same operations can be defined for this generalized
@@ -521,8 +521,8 @@ object GeneralizedLazyListTransducers {
 
     def map[O2](f: O => O2): Process[F,O2] = this match {
       case Await(req,recv) =>
-        Await(req, recv andThen (_ map f))
-      case Emit(h, t) => Try { Emit(f(h), t map f) }
+        Await(req, recv andThen (_.map(f)))
+      case Emit(h, t) => Try { Emit(f(h), t.map(f)) }
       case Halt(err) => Halt(err)
     }
 
@@ -565,7 +565,7 @@ object GeneralizedLazyListTransducers {
         case Halt(err) => Halt(err)
         case Emit(o, t) => Try(f(o)) ++ t.flatMap(f)
         case Await(req,recv) =>
-          Await(req, recv andThen (_ flatMap f))
+          Await(req, recv andThen (_.flatMap(f)))
       }
 
     def repeat: Process[F,O] =
@@ -668,36 +668,36 @@ object GeneralizedLazyListTransducers {
      */
     def tee[O2,O3](p2: Process[F,O2])(t: Tee[O,O2,O3]): Process[F,O3] = {
       t match {
-        case Halt(e) => this.kill onComplete p2.kill onComplete Halt(e)
-        case Emit(h,t) => Emit(h, (this tee p2)(t))
+        case Halt(e) => this.kill.onComplete(p2.kill).onComplete(Halt(e))
+        case Emit(h,t) => Emit(h, (this.tee(p2))(t))
         case Await(side, recv) => side.get match {
           case Left(isO) => this match {
-            case Halt(e) => p2.kill onComplete Halt(e)
-            case Emit(o,ot) => (ot tee p2)(Try(recv.asInstanceOf[Either[Throwable, O] => Process[T[O,O2]#f, O3]](Right(o))))
+            case Halt(e) => p2.kill.onComplete(Halt(e))
+            case Emit(o,ot) => (ot.tee(p2))(Try(recv.asInstanceOf[Either[Throwable, O] => Process[T[O,O2]#f, O3]](Right(o))))
             case Await(reqL, recvL) =>
-              await(reqL)(recvL andThen (this2 => this2.tee(p2)(t)))
+              await(reqL)(recvL.andThen(this2 => this2.tee(p2)(t)))
           }
           case Right(isO2) => p2 match {
-            case Halt(e) => this.kill onComplete Halt(e)
-            case Emit(o2,ot) => (this tee ot)(Try(recv.asInstanceOf[Either[Throwable, O2] => Process[T[O,O2]#f, O3]](Right(o2))))
+            case Halt(e) => this.kill.onComplete(Halt(e))
+            case Emit(o2,ot) => (this.tee(ot))(Try(recv.asInstanceOf[Either[Throwable, O2] => Process[T[O,O2]#f, O3]](Right(o2))))
             case Await(reqR, recvR) =>
-              await(reqR)(recvR andThen (p3 => this.tee(p3)(t)))
+              await(reqR)(recvR.andThen(p3 => this.tee(p3)(t)))
           }
         }
       }
     }
 
     def zipWith[O2,O3](p2: Process[F,O2])(f: (O,O2) => O3): Process[F,O3] =
-      (this tee p2)(Process.zipWith(f))
+      (this.tee(p2))(Process.zipWith(f))
 
     def zip[O2](p2: Process[F,O2]): Process[F,(O,O2)] =
       zipWith(p2)((_,_))
 
     def to[O2](sink: Sink[F,O]): Process[F,Unit] =
-      join { (this zipWith sink)((o,f) => f(o)) }
+      join { (this.zipWith(sink))((o,f) => f(o)) }
 
     def through[O2](p2: Channel[F, O, O2]): Process[F,O2] =
-      join { (this zipWith p2)((o,f) => f(o)) }
+      join { (this.zipWith(p2))((o,f) => f(o)) }
   }
 
   object Process {
@@ -1117,9 +1117,9 @@ object GeneralizedLazyListTransducers {
 }
 
 object ProcessTest extends App {
-  import GeneralizedLazyListTransducers._
+  import GeneralizedLazyListTransducers.*
   import fpinscala.iomonad.IO
-  import Process._
+  import Process.*
 
   val p = eval(IO { println("woot"); 1 }).repeat
   val p2 = eval(IO { println("cleanup"); 2 } ).onHalt {

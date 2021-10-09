@@ -1,7 +1,7 @@
 package fpinscala
 package parsing
 
-import SliceableTypes._
+import SliceableTypes.*
 import scala.util.matching.Regex
 
 /*

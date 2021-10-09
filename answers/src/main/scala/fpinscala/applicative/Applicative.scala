@@ -2,9 +2,9 @@ package fpinscala
 package applicative
 
 import monads.Functor
-import state._
-import State._
-import monoids._
+import state.*
+import State.*
+import monoids.*
 import language.higherKinds
 import language.implicitConversions
 
@@ -177,16 +177,16 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] { self =>
   }
 
   def map[A,B](fa: F[A])(f: A => B): F[B] =
-    traverse[Id, A, B](fa)(f)(idMonad)
+    traverse[Id, A, B](fa)(f)(using idMonad)
 
-  import Applicative._
+  import Applicative.*
 
   override def foldMap[A,B](as: F[A])(f: A => B)(mb: Monoid[B]): B =
     traverse[({type f[x] = Const[B,x]})#f,A,Nothing](
-      as)(f)(monoidApplicative(mb))
+      as)(f)(using monoidApplicative(mb))
 
   def traverseS[S,A,B](fa: F[A])(f: A => State[S, B]): State[S, F[B]] =
-    traverse[({type f[x] = State[S, x]})#f, A, B](fa)(f)(Monad.stateMonad)
+    traverse[({type f[x] = State[S, x]})#f, A, B](fa)(f)(using Monad.stateMonad)
 
   def zipWithIndex_[A](ta: F[A]): F[(A,Int)] =
     traverseS(ta)((a: A) => (for {
@@ -239,7 +239,7 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F] { self =>
 
   def fuse[M[_],N[_],A,B](fa: F[A])(f: A => M[B], g: A => N[B])
                          (implicit M: Applicative[M], N: Applicative[N]): (M[F[B]], N[F[B]]) =
-    traverse[({type f[x] = (M[x], N[x])})#f, A, B](fa)(a => (f(a), g(a)))(M product N)
+    traverse[({type f[x] = (M[x], N[x])})#f, A, B](fa)(a => (f(a), g(a)))(using M.product(N))
 
   def compose[G[_]](implicit G: Traverse[G]): Traverse[({type f[x] = F[G[x]]})#f] =
     new Traverse[({type f[x] = F[G[x]]})#f] {

@@ -1,6 +1,6 @@
 package fpinscala.monoids
 
-import fpinscala.parallelism.Nonblocking._
+import fpinscala.parallelism.Nonblocking.*
 import language.higherKinds
 
 trait Monoid[A] {
@@ -69,8 +69,8 @@ object Monoid {
     val zero = (a: A) => a
   }
 
-  import fpinscala.testing._
-  import Prop._
+  import fpinscala.testing.*
+  import Prop.*
 
   def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Prop =
     // Associativity
@@ -211,7 +211,7 @@ object Monoid {
 }
 
 trait Foldable[F[_]] {
-  import Monoid._
+  import Monoid.*
 
   def foldRight[A,B](as: F[A])(z: B)(f: (A, B) => B): B =
     foldMap(as)(f.curried)(endoMonoid[B])(z)
@@ -240,7 +240,7 @@ object ListFoldable extends Foldable[List] {
 }
 
 object IndexedSeqFoldable extends Foldable[IndexedSeq] {
-  import Monoid._
+  import Monoid.*
   override def foldRight[A, B](as: IndexedSeq[A])(z: B)(f: (A, B) => B) =
     as.foldRight(z)(f)
   override def foldLeft[A, B](as: IndexedSeq[A])(z: B)(f: (B, A) => B) =

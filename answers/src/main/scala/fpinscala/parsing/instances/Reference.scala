@@ -1,7 +1,7 @@
 package fpinscala
 package parsing
 
-import ReferenceTypes._
+import ReferenceTypes.*
 import scala.util.matching.Regex
 
 object ReferenceTypes {

@@ -8,7 +8,7 @@ package fpinscala.iomonad
  * and catches these exceptions to force the computation.
  */
 trait Throw[+A] {
-  import Throw._
+  import Throw.*
 
   @annotation.tailrec
   final def run: A = this match {
@@ -56,10 +56,10 @@ object Throw extends Monad[Throw] {
     a match {
       case Done(a) => f(a)
       case More(thunk) =>
-        try thunk() flatMap f
+        try thunk().flatMap(f)
         catch { case Call(a0,g) => more {
           defer(a0)(g.asInstanceOf[Any => Throw[A]].
-                    andThen(_ flatMap f))
+                    andThen(_.flatMap(f)))
         }}
     }
 }

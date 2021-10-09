@@ -1,9 +1,9 @@
 package fpinscala.parsing
 
-import java.util.regex._
+import java.util.regex.*
 import scala.util.matching.Regex
-import fpinscala.testing._
-import fpinscala.testing.Prop._
+import fpinscala.testing.*
+import fpinscala.testing.Prop.*
 import language.higherKinds
 import language.implicitConversions
 
@@ -16,7 +16,7 @@ trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trai
     ParserOps[String] = ParserOps(f(a))
 
   def char(c: Char): Parser[Char] =
-    string(c.toString) map (_.charAt(0))
+    string(c.toString).map(_.charAt(0))
 
   /*
    * A default `succeed` implementation in terms of `string` and `map`.
@@ -26,7 +26,7 @@ trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trai
    * (say if they provide a custom implementation of `map`, breaking the cycle)
    */
   def defaultSucceed[A](a: A): Parser[A] =
-    string("") map (_ => a)
+    string("").map(_ => a)
 
   def succeed[A](a: A): Parser[A]
 
@@ -40,7 +40,7 @@ trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trai
     else map2(p, listOfN(n-1, p))(_ :: _)
 
   def many[A](p: Parser[A]): Parser[List[A]] =
-    map2(p, many(p))(_ :: _) or succeed(List())
+    map2(p, many(p))(_ :: _).or(succeed(List()))
 
   def or[A](p1: Parser[A], p2: => Parser[A]): Parser[A]
 
@@ -77,7 +77,7 @@ trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trai
     map2(p, slice(p2))((a,b) => a)
 
   def opt[A](p: Parser[A]): Parser[Option[A]] =
-    p.map(Some(_)) or succeed(None)
+    p.map(Some(_)).or(succeed(None))
 
   /** Parser which consumes zero or more whitespace characters. */
   def whitespace: Parser[String] = "\\s*".r
@@ -95,7 +95,7 @@ trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trai
   def escapedQuoted: Parser[String] =
     // rather annoying to write, left as an exercise
     // we'll just use quoted (unescaped literals) for now
-    token(quoted label "string literal")
+    token(quoted.label("string literal"))
 
   /** C/Java style floating point literals, e.g .1, -1.0, 1e9, 1E-23, etc.
     * Result is left as a string to keep full precision
@@ -105,7 +105,7 @@ trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trai
 
   /** Floating point literals, converted to a `Double`. */
   def double: Parser[Double] =
-    doubleString map (_.toDouble) label "double literal"
+    doubleString.map(_.toDouble).label("double literal")
 
   /** Attempts `p` and strips trailing whitespace, usually used for the tokens of a grammar. */
   def token[A](p: Parser[A]): Parser[A] =
@@ -113,7 +113,7 @@ trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trai
 
   /** Zero or more repetitions of `p`, separated by `p2`, whose results are ignored. */
   def sep[A](p: Parser[A], p2: Parser[Any]): Parser[List[A]] = // use `Parser[Any]` since don't care about result type of separator
-    sep1(p,p2) or succeed(List())
+    sep1(p,p2).or(succeed(List()))
 
   /** One or more repetitions of `p`, separated by `p2`, whose results are ignored. */
   def sep1[A](p: Parser[A], p2: Parser[Any]): Parser[List[A]] =

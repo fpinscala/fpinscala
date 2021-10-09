@@ -1,18 +1,11 @@
-ThisBuild / scalaVersion := "3.0.1"
-ThisBuild / scalacOptions ++= List("-feature", "-deprecation", "-Ykind-projector")
+ThisBuild / scalaVersion := "3.0.2"
+ThisBuild / scalacOptions ++= List("-feature", "-deprecation", "-Ykind-projector", "-source:future")
 
-lazy val root = (project in file("."))
+lazy val root = project
   .aggregate(exercises, answers)
   .settings(
     name := "fpinscala"
   )
 
-lazy val exercises = (project in file("exercises"))
-  .settings(
-    name := "exercises"
-  )
-
-lazy val answers = (project in file("answers"))
-  .settings(
-    name := "answers"
-  )
+lazy val exercises = project
+lazy val answers = project

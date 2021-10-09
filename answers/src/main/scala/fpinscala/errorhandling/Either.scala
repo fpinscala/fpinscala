@@ -1,7 +1,7 @@
 package fpinscala.errorhandling
 
 // Hide std library `Either` since we are writing our own in this chapter
-import scala.{Either => _, Left => _, Right => _}
+import scala.{Either as _, Left as _, Right as _}
 import scala.util.control.NonFatal
 
 enum Either[+E,+A]:
@@ -41,15 +41,15 @@ object Either:
     try Right(a)
     catch case NonFatal(t) => Left(t)
 
-  def traverse[E,A,B](es: List[A])(f: A => Either[E, B]): Either[E, List[B]] = 
+  def traverse[E, A, B](es: List[A])(f: A => Either[E, B]): Either[E, List[B]] = 
     es match
       case Nil => Right(Nil)
-      case h::t => (f(h) map2 traverse(t)(f))(_ :: _)
+      case h :: t => (f(h).map2(traverse(t)(f)))(_ :: _)
   
-  def traverse_1[E,A,B](es: List[A])(f: A => Either[E, B]): Either[E, List[B]] = 
+  def traverse_1[E, A, B](es: List[A])(f: A => Either[E, B]): Either[E, List[B]] = 
     es.foldRight[Either[E, List[B]]](Right(Nil))((a, b) => f(a).map2(b)(_ :: _))
   
-  def sequence[E,A](es: List[Either[E,A]]): Either[E,List[A]] = 
+  def sequence[E, A](es: List[Either[E, A]]): Either[E, List[A]] = 
     traverse(es)(x => x)
 
   def map2All[E, A, B, C](a: Either[List[E], A], b: Either[List[E], B], f: (A, B) => C): Either[List[E], C] = 

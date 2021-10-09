@@ -1,7 +1,7 @@
 package fpinscala.errorhandling
 
 // Hide std library `Option` since we are writing our own in this chapter
-import scala.{Option => _, Some => _, None => _}
+import scala.{Option as _, Some as _, None as _}
 
 enum Option[+A]:
   case Some(get: A)
@@ -16,7 +16,7 @@ enum Option[+A]:
     case Some(a) => a
 
   def flatMap[B](f: A => Option[B]): Option[B] =
-    map(f) getOrElse None
+    map(f).getOrElse(None)
 
   /* Of course, we can also implement `flatMap` with explicit pattern matching. */
   def flatMap_1[B](f: A => Option[B]): Option[B] = this match
@@ -24,7 +24,7 @@ enum Option[+A]:
     case Some(a) => f(a)
 
   def orElse[B>:A](ob: => Option[B]): Option[B] =
-    this map (Some(_)) getOrElse ob
+    map(Some(_)).getOrElse(ob)
 
   /* Again, we can implement this with explicit pattern matching. */
   def orElse_1[B>:A](ob: => Option[B]): Option[B] = this match
@@ -63,18 +63,18 @@ object Option:
     else Some(xs.sum / xs.length)
 
   def variance(xs: Seq[Double]): Option[Double] =
-    mean(xs) flatMap (m => mean(xs.map(x => math.pow(x - m, 2))))
+    mean(xs).flatMap(m => mean(xs.map(x => math.pow(x - m, 2))))
 
   // a bit later in the chapter we'll learn nicer syntax for
   // writing functions like this
   def map2[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] =
-    a flatMap (aa => b map (bb => f(aa, bb)))
+    a.flatMap(aa => b.map(bb => f(aa, bb)))
 
   /* Here's an explicit recursive version: */
   def sequence[A](as: List[Option[A]]): Option[List[A]] =
     as match
       case Nil => Some(Nil)
-      case h :: t => h flatMap (hh => sequence(t) map (hh :: _))
+      case h :: t => h.flatMap(hh => sequence(t).map(hh :: _))
 
   /*
   It can also be implemented using `foldRight` and `map2`. The type annotation on `foldRight` is needed here; otherwise
