@@ -38,7 +38,7 @@ object Prop:
     def fromString(s: String): FailedCase = s
 
   enum Status:
-    case Exhausted, Proven, Unfalsified
+    case Proven, Unfalsified
 
   enum Result:
     case Falsified(failure: FailedCase)
@@ -62,7 +62,7 @@ object Prop:
         case Falsified(e) => Falsified(FailedCase.fromString(s"$msg($e)"))
         case x => x
 
-    def run(p: Prop,
+    def run(
           maxSize: MaxSize = 100,
           testCases: TestCases = 100,
           rng: RNG = RNG.Simple(System.currentTimeMillis)): Unit =
@@ -72,8 +72,8 @@ object Prop:
           println(s"+ OK, property unfalsified, ran $n tests.")
         case Passed(Proven, n) =>
           println(s"+ OK, property proven, ran $n tests.")
-        case Passed(Exhausted, n) =>
-          println(s"+ OK, property unfalsified up to max size, ran $n tests.")
+        // case Passed(Exhausted, n) =>
+        //   println(s"+ OK, property unfalsified up to max size, ran $n tests.")
 
   def forAll[A](a: Gen[A])(f: A => Boolean): Prop =
     (max, n, rng) => {
@@ -88,10 +88,11 @@ object Prop:
               case e: Exception => Falsified(buildMsg(h, e))
           case None #:: _ => Passed(Unfalsified, i)
           case _ => onEnd(i)
-      go(0, TestCases.fromInt(n.toInt / 3), a.exhaustive, i => Passed(Proven, i)) match
+      val numFromExhaustiveList = TestCases.fromInt(n.toInt / 3)
+      go(0, numFromExhaustiveList, a.exhaustive, i => Passed(Proven, i)) match
         case Passed(Unfalsified, _) =>
           val rands = randomLazyList(a)(rng).map(Some(_))
-          go(TestCases.fromInt(n.toInt / 3), n, rands, i => Passed(Unfalsified, i))
+          go(numFromExhaustiveList, n, rands, i => Passed(Unfalsified, i))
         case s => s // If proven or failed, stop immediately
     }
 
@@ -100,7 +101,7 @@ object Prop:
     s"generated an exception: ${e.getMessage}\n" +
     s"stack trace:\n ${e.getStackTrace.mkString("\n")}"
 
-  def apply(f: (TestCases,RNG) => Result): Prop =
+  def apply(f: (TestCases, RNG) => Result): Prop =
     (_, n, rng) => f(n,rng)
 
   /* We pattern match on the `SGen`, and delegate to our `Gen` version of `forAll`
@@ -108,11 +109,11 @@ object Prop:
    */
   @targetName("forAllSized")
   def forAll[A](g: SGen[A])(f: A => Boolean): Prop = g match
-    case Unsized(g2) => forAll(g2)(f)
-    case Sized(gs) => forAll(gs)(f)
+    case SGen.Unsized(g2) => forAll(g2)(f)
+    case SGen.Sized(gs) => forAll(gs)(f)
 
   /* The sized case of `forAll` is as before, though we convert from `Proven` to
-   * `Exhausted`. A sized generator can never be proven, since there are always
+   * `Unfalsified`. A sized generator can never be proven, since there are always
    * larger-sized tests that were not run which may have failed.
    */
   def forAll[A](g: Int => Gen[A])(f: A => Boolean): Prop =
@@ -123,7 +124,7 @@ object Prop:
       val p: Prop = props.map[Prop](p => (max, n, rng) => p(max, casesPerSize, rng)).
             reduceLeft(_ && _)
       p(max, n, rng) match
-        case Passed(Proven, n) => Passed(Exhausted, n)
+        case Passed(Proven, n) => Passed(Unfalsified, n)
         case x => x
 
   val executor: ExecutorService = Executors.newCachedThreadPool
@@ -186,7 +187,7 @@ case class Gen[+A](sample: State[RNG, A], exhaustive: LazyList[Option[A]]):
 
   def map2[B,C](g: Gen[B])(f: (A,B) => C): Gen[C] =
     Gen(sample.map2(g.sample)(f),
-        map2LazyList(exhaustive,g.exhaustive)(map2Option(_,_)(f)))
+        map2LazyList(exhaustive, g.exhaustive)(map2Option(_, _)(f)))
 
   def flatMap[B](f: A => Gen[B]): Gen[B] =
     Gen(sample.flatMap(a => f(a).sample),
@@ -203,10 +204,10 @@ case class Gen[+A](sample: State[RNG, A], exhaustive: LazyList[Option[A]]):
   def listOfN(size: Gen[Int]): Gen[List[A]] =
     size.flatMap(n => this.listOfN(n))
 
-  def list: SGen[List[A]] = Sized(n => listOfN(n))
-  def nonEmptyList: SGen[List[A]] = Sized(n => listOfN(n.max(1)))
+  def list: SGen[List[A]] = SGen.Sized(n => listOfN(n))
+  def nonEmptyList: SGen[List[A]] = SGen.Sized(n => listOfN(n.max(1)))
 
-  def unsized: SGen[A] = Unsized(this)
+  def unsized: SGen[A] = SGen.Unsized(this)
 
   def **[B](g: Gen[B]): Gen[(A, B)] =
     map2(g)((_, _))
@@ -244,21 +245,21 @@ object Gen:
     s.foldRight(LazyList(LazyList[A]()))((hs,ts) => map2LazyList(hs,ts)(LazyList.cons(_,_)))
 
   /* `map2Option` and `map2LazyList`. Notice the duplication! */
-  def map2Option[A,B,C](oa: Option[A], ob: Option[B])(f: (A,B) => C): Option[C] =
+  def map2Option[A, B, C](oa: Option[A], ob: Option[B])(f: (A, B) => C): Option[C] =
     for
       a <- oa
       b <- ob
-    yield f(a,b)
+    yield f(a, b)
 
   /* This is not the same as `zipWith`, a function we've implemented before.
    * We are generating all (A,B) combinations and using each to produce a `C`.
    * This implementation desugars to sa.flatMap(a => sb.map(b => f(a,b))).
    */
-  def map2LazyList[A,B,C](sa: LazyList[A], sb: => LazyList[B])(f: (A,=>B) => C): LazyList[C] =
+  def map2LazyList[A, B, C](sa: LazyList[A], sb: => LazyList[B])(f: (A, =>B) => C): LazyList[C] =
     for
       a <- sa
       b <- sb
-    yield f(a,b)
+    yield f(a, b)
 
   /* This is a function we've implemented before. Unfortunately, it does not
    * exist in the standard library. This implementation is uses a foldLeft,
@@ -356,10 +357,7 @@ object Gen:
   def stringN(n: Int): Gen[String] =
     listOfN(n, choose(0,127)).map(_.map(_.toChar).mkString)
 
-  def string: SGen[String] = Sized(stringN)
-
-  case class Sized[+A](forSize: Int => Gen[A]) extends SGen[A]
-  case class Unsized[+A](get: Gen[A]) extends SGen[A]
+  def string: SGen[String] = SGen.Sized(stringN)
 
   val smallInt = Gen.choose(-10,10)
   val maxProp = forAll(smallInt.list) { l =>
@@ -392,7 +390,10 @@ object Gen:
   def genStringIntFn(g: Gen[Int]): Gen[String => Int] =
     g.map(i => (s => i))
 
-trait SGen[+A]:
+enum SGen[+A]:
+  case Sized(forSize: Int => Gen[A])
+  case Unsized(get: Gen[A])
+
   def map[B](f: A => B): SGen[B] = this match
     case Sized(g) => Sized(g.andThen(_.map(f)))
     case Unsized(g) => Unsized(g.map(f))
@@ -404,3 +405,5 @@ trait SGen[+A]:
     case (Unsized(g), Unsized(g2)) => Unsized(g ** g2)
     case (Sized(g), Unsized(g2)) => Sized(n => g(n) ** g2)
     case (Unsized(g), Sized(g2)) => Sized(n => g ** g2(n))
+
+
