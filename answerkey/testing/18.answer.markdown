@@ -1,2 +1,5 @@
-* `l.takeWhile(f) ++ l.dropWhile(f) == l`
-* We want to enforce that `takeWhile` returns the _longest_ prefix whose elements satisfy the predicate. There are various ways to state this, but the general idea is that the remaining list, if non-empty, should start with an element that does _not_ satisfy the predicate.
+Requiring `as.takeWhile(f).forall(f) == true` doesn't enforce that `takeWhile` returns the _longest_ possible prefix for which the property holds. To verify that, we could introduce another property which says the head of the remaining list, if not empty, must fail the predicate -- something like `!f(as(as.takeWhile(f).size))`, but handling the case where `as.size == as.takeWhile(f).size`.
+
+Another property describes how `takeWhile` and `dropWhile` relate -- concatenating the result of calling `takeWhile` with the result of calling `dropWhile` on the same list should result in that same list.
+
+If we try to write any of these properties using our library, we'll run in to an issue. Each of these properties requires a `Gen[Int => Boolean]`, but we don't have a way of generating functions.
