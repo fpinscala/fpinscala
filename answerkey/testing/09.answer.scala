@@ -1,24 +1,28 @@
-def &&(p: Prop) = Prop {
-  (max,n,rng) => run(max,n,rng) match {
-    case Passed => p.run(max, n, rng)
-    case x => x
-  }
-}
+// First without tagging
 
-def ||(p: Prop) = Prop {
-  (max,n,rng) => run(max,n,rng) match {
-    // In case of failure, run the other prop.
-    case Falsified(msg, _) => p.tag(msg).run(max,n,rng)
+extension (self: Prop) def &&(that: Prop): Prop = 
+  (max, n, rng) => self(max, n, rng) match
+    case Passed => that(max, n, rng)
     case x => x
-  }
-}
 
-/* This is rather simplistic - in the event of failure, we simply prepend
- * the given message on a newline in front of the existing message.
- */
-def tag(msg: String) = Prop {
-  (max,n,rng) => run(max,n,rng) match {
-    case Falsified(e, c) => Falsified(msg + "\n" + e, c)
+extension (self: Prop) def ||(that: Prop): Prop = 
+  (max, n, rng) => self(max, n, rng) match
+    case Falsified(_, _) => that(max, n, rng)
     case x => x
-  }
-}
+
+// Then with tagging
+
+extension (self: Prop) def tag(msg: String): Prop = 
+  (max, n, rng) => self(max, n, rng) match
+    case Falsified(e, c) => Falsified(FailedCase.fromString(s"$msg($e)"), c)
+    case x => x
+
+extension (self: Prop) def &&(that: Prop): Prop = 
+  (max, n, rng) => self.tag("and-left")(max, n, rng) match
+    case Passed => that.tag("and-right")(max, n, rng)
+    case x => x
+
+extension (self: Prop) def ||(that: Prop): Prop =
+  (max, n, rng) => self.tag("or-left")(max, n, rng) match
+    case Falsified(msg, _) => that.tag("or-right").tag(msg.string)(max, n, rng)
+    case x => x

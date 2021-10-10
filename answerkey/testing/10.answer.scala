@@ -1,1 +1,2 @@
-def unsized: SGen[A] = SGen(_ => this)
+extension [A](self: Gen[A]) def unsized: SGen[A] = 
+  _ => self

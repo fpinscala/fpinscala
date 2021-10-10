@@ -3,6 +3,7 @@
  * result. This is not the most compelling example, but it provides at least some 
  * variation in structure to use for testing. 
  */
-val pint2: Gen[Par[Int]] = choose(-100,100).listOfN(choose(0,20)).map(l => 
-  l.foldLeft(Par.unit(0))((p,i) => 
-    Par.fork { Par.map2(p, Par.unit(i))(_ + _) }))
+val gpy2: Gen[Par[Int]] = 
+  choose(-100, 100).listOfN(choose(0, 20)).map(ys =>
+    ys.foldLeft(Par.unit(0))((p, y) =>
+      Par.fork(p.map2(Par.unit(y))(_ + _))))

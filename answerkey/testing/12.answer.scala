@@ -1,2 +1,2 @@
-def listOf[A](g: Gen[A]): SGen[List[A]] = 
-  SGen(n => g.listOfN(n))
+extension [A](self: Gen[A]) def list: SGen[List[A]] =
+  n => self.listOfN(n)

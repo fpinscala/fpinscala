@@ -269,11 +269,10 @@ object Gen:
     !l.exists(_ > max) // No value greater than `max` should exist in `l`
   }
 
-  // We specify that every sorted list is either empty, has one element,
-  // or has no two consecutive elements `(a,b)` such that `a` is greater than `b`.
   val sortedProp = Prop.forAll(smallInt.list) { l =>
     val ls = l.sorted
-    l.isEmpty || ls.zip(ls.tail).forall((a, b) => a <= b)
+    val ordered = l.isEmpty || ls.zip(ls.tail).forall { (a, b) => a <= b }
+    ordered && l.forall(ls.contains) && ls.forall(l.contains)
   }
 
   object ** :

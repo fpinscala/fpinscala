@@ -1,4 +1,6 @@
-/* We can refer to the enclosing `Prop` instance with `Prop.this` */
-def &&(p: Prop): Prop = new Prop {
-  def check = Prop.this.check && p.check
-}
+trait Prop:
+  self =>
+  def check: Boolean
+  def &&(that: Prop): Prop =
+    new Prop:
+      def check = self.check && that.check

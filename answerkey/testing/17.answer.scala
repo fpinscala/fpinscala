@@ -1,1 +1,1 @@
-val forkProp = Prop.forAllPar(pint2)(i => equal(Par.fork(i), i)) tag "fork"
+val forkProp = Prop.forAllPar(gpy2)(y => equal(Par.fork(y), y))

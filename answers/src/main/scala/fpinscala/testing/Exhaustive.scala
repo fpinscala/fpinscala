@@ -370,9 +370,10 @@ object Gen:
     !l.exists(_ > max) // No value greater than `max` should exist in `l`
   }
 
-  val sortedProp = forAll(smallInt.list) { l =>
+  val sortedProp = Prop.forAll(smallInt.list) { l =>
     val ls = l.sorted
-    l.isEmpty || ls.tail.isEmpty || !l.zip(ls.tail).exists { case (a,b) => a > b }
+    val ordered = l.isEmpty || ls.zip(ls.tail).forall { (a, b) => a <= b }
+    ordered && l.forall(ls.contains) && ls.forall(l.contains)
   }
 
   object ** :
