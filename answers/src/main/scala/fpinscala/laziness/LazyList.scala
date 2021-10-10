@@ -80,7 +80,7 @@ enum LazyList[+A]:
     foldRight(true)((a,b) => p(a) && b)
 
   def takeWhile_1(p: A => Boolean): LazyList[A] =
-    foldRight(empty[A])((a, b) => if p(a) then cons(a, b) else empty)
+    foldRight(empty)((a, b) => if p(a) then cons(a, b) else empty)
 
   def headOption: Option[A] =
     foldRight(None: Option[A])((h, _) => Some(h))
