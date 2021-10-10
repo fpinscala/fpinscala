@@ -78,10 +78,9 @@ object RNG:
     rng => (a, rng)
 
   def map[A,B](s: Rand[A])(f: A => B): Rand[B] =
-    rng => {
+    rng =>
       val (a, rng2) = s(rng)
       (f(a), rng2)
-    }
 
   val _double: Rand[Double] =
     map(nonNegativeInt)(_ / (Int.MaxValue.toDouble + 1))
@@ -95,11 +94,10 @@ object RNG:
   // like this, it's important to consider how we would test them for
   // correctness.
   def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
-    rng0 => {
+    rng0 =>
       val (a, rng1) = ra(rng0)
       val (b, rng2) = rb(rng1)
       (f(a, b), rng2)
-    }
 
   def both[A,B](ra: Rand[A], rb: Rand[B]): Rand[(A,B)] =
     map2(ra, rb)((_, _))

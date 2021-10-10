@@ -35,7 +35,7 @@ object List: // `List` companion object. Contains functions for creating and wor
       case Nil => a2
       case Cons(h,t) => Cons(h, append(t, a2))
 
-  def foldRight[A,B](as: List[A], z: B, f: (A, B) => B): B = // Utility functions
+  def foldRight[A, B](as: List[A], z: B, f: (A, B) => B): B = // Utility functions
     as match
       case Nil => z
       case Cons(x, xs) => f(x, foldRight(xs, z, f))
@@ -131,10 +131,10 @@ object List: // `List` companion object. Contains functions for creating and wor
   is it replaces the `Nil` constructor of the list with the `z` argument, and it replaces the `Cons` constructor with
   the given function, `f`. If we just supply `Nil` for `z` and `Cons` for `f`, then we get back the input list.
 
-  foldRight(Cons(1, Cons(2, Cons(3, Nil))), Nil:List[Int])(Cons(_,_))
-  Cons(1, foldRight(Cons(2, Cons(3, Nil)), Nil:List[Int])(Cons(_,_)))
-  Cons(1, Cons(2, foldRight(Cons(3, Nil), Nil:List[Int])(Cons(_,_))))
-  Cons(1, Cons(2, Cons(3, foldRight(Nil, Nil:List[Int])(Cons(_,_)))))
+  foldRight(Cons(1, Cons(2, Cons(3, Nil))), Nil: List[Int])(Cons(_,_))
+  Cons(1, foldRight(Cons(2, Cons(3, Nil)), Nil: List[Int])(Cons(_,_)))
+  Cons(1, Cons(2, foldRight(Cons(3, Nil), Nil: List[Int])(Cons(_,_))))
+  Cons(1, Cons(2, Cons(3, foldRight(Nil, Nil: List[Int])(Cons(_,_)))))
   Cons(1, Cons(2, Cons(3, Nil)))
   */
 
@@ -147,16 +147,16 @@ object List: // `List` companion object. Contains functions for creating and wor
   in greater stack space usage at runtime.
   */
   @annotation.tailrec
-  def foldLeft[A,B](l: List[A], z: B, f: (B, A) => B): B = l match
-    case Nil => z
-    case Cons(h,t) => foldLeft(t, f(z,h), f)
+  def foldLeft[A, B](l: List[A], acc: B, f: (B, A) => B): B = l match
+    case Nil => acc
+    case Cons(h, t) => foldLeft(t, f(acc, h), f)
 
   def sumViaFoldLeft(l: List[Int]) = foldLeft(l, 0, _ + _)
   def productViaFoldLeft(l: List[Double]) = foldLeft(l, 1.0, _ * _)
 
-  def lengthViaFoldLeft[A](l: List[A]): Int = foldLeft(l, 0, (acc,h) => acc + 1)
+  def lengthViaFoldLeft[A](l: List[A]): Int = foldLeft(l, 0, (acc, h) => acc + 1)
 
-  def reverse[A](l: List[A]): List[A] = foldLeft(l, List[A](), (acc,h) => Cons(h,acc))
+  def reverse[A](l: List[A]): List[A] = foldLeft(l, List[A](), (acc, h) => Cons(h,acc))
 
   /*
   The implementation of `foldRight` in terms of `reverse` and `foldLeft` is a common trick for avoiding stack overflows
@@ -169,14 +169,14 @@ object List: // `List` companion object. Contains functions for creating and wor
   using a simple example, like `foldLeft(List(1,2,3), 0)(_ + _)` if this isn't clear. Note these implementations are
   more of theoretical interest - they aren't stack-safe and won't work for large lists.
   */
-  def foldRightViaFoldLeft[A,B](l: List[A], z: B, f: (A,B) => B): B =
-    foldLeft(reverse(l), z, (b,a) => f(a,b))
+  def foldRightViaFoldLeft[A, B](l: List[A], acc: B, f: (A, B) => B): B =
+    foldLeft(reverse(l), acc, (b, a) => f(a, b))
 
-  def foldRightViaFoldLeft_1[A,B](l: List[A], z: B, f: (A,B) => B): B =
-    foldLeft(l, (b:B) => b, (g,a) => b => g(f(a,b)))(z)
+  def foldRightViaFoldLeft_1[A, B](l: List[A], acc: B, f: (A, B) => B): B =
+    foldLeft(l, (b: B) => b, (g, a) => b => g(f(a, b)))(acc)
 
-  def foldLeftViaFoldRight[A,B](l: List[A], z: B, f: (B,A) => B): B =
-    foldRight(l, (b:B) => b, (a,g) => b => g(f(b,a)))(z)
+  def foldLeftViaFoldRight[A, B](l: List[A], acc: B, f: (B,A) => B): B =
+    foldRight(l, (b: B) => b, (a, g) => b => g(f(b, a)))(acc)
 
   /*
   `append` simply replaces the `Nil` constructor of the first list with the second list, which is exactly the operation
@@ -198,13 +198,13 @@ object List: // `List` companion object. Contains functions for creating and wor
   or even `(x: List[A], y: List[A]) => append(x,y)` if the function is polymorphic and the type arguments aren't known.
   */
   def concat[A](l: List[List[A]]): List[A] =
-    foldRight(l, Nil:List[A], append)
+    foldRight(l, Nil: List[A], append)
 
   def incrementEach(l: List[Int]): List[Int] =
-    foldRight(l, Nil:List[Int], (h,t) => Cons(h+1,t))
+    foldRight(l, Nil: List[Int], (i, acc) => Cons(i + 1, acc))
 
   def doubleToString(l: List[Double]): List[String] =
-    foldRight(l, Nil:List[String], (h,t) => Cons(h.toString,t))
+    foldRight(l, Nil: List[String], (d, acc) => Cons(d.toString, acc))
 
   /*
   A natural solution is using `foldRight`, but our implementation of `foldRight` is not stack-safe. We can
@@ -212,13 +212,13 @@ object List: // `List` companion object. Contains functions for creating and wor
   implementation of `List`, `map` will just be implemented using local mutation (variation 2). Again, note that the
   mutation isn't observable outside the function, since we're only mutating a buffer that we've allocated.
   */
-  def map[A,B](l: List[A])(f: A => B): List[B] =
-    foldRight(l, Nil:List[B], (h,t) => Cons(f(h),t))
+  def map[A, B](l: List[A])(f: A => B): List[B] =
+    foldRight(l, Nil: List[B], (h,t) => Cons(f(h),t))
 
-  def map_1[A,B](l: List[A])(f: A => B): List[B] =
-    foldRightViaFoldLeft(l, Nil:List[B], (h,t) => Cons(f(h),t))
+  def map_1[A, B](l: List[A])(f: A => B): List[B] =
+    foldRightViaFoldLeft(l, Nil: List[B], (h,t) => Cons(f(h),t))
 
-  def map_2[A,B](l: List[A])(f: A => B): List[B] =
+  def map_2[A, B](l: List[A])(f: A => B): List[B] =
     val buf = new collection.mutable.ListBuffer[B]
     def go(l: List[A]): Unit = l match
       case Nil => ()
@@ -246,7 +246,7 @@ object List: // `List` companion object. Contains functions for creating and wor
   /*
   This could also be implemented directly using `foldRight`.
   */
-  def flatMap[A,B](l: List[A])(f: A => List[B]): List[B] =
+  def flatMap[A, B](l: List[A])(f: A => List[B]): List[B] =
     concat(map(l)(f))
 
   def filterViaFlatMap[A](l: List[A])(f: A => Boolean): List[A] =
@@ -270,7 +270,7 @@ object List: // `List` companion object. Contains functions for creating and wor
   This function is usually called `zipWith`. The discussion about stack usage from the explanation of `map` also
   applies here. By putting the `f` in the second argument list, Scala can infer its type from the previous argument list.
   */
-  def zipWith[A,B,C](a: List[A], b: List[B], f: (A,B) => C): List[C] = (a,b) match
+  def zipWith[A, B,C](a: List[A], b: List[B], f: (A, B) => C): List[C] = (a,b) match
     case (Nil, _) => Nil
     case (_, Nil) => Nil
     case (Cons(h1, t1), Cons(h2, t2)) => Cons(f(h1, h2), zipWith(t1, t2, f))
@@ -278,7 +278,7 @@ object List: // `List` companion object. Contains functions for creating and wor
   /*
   Tail recursive implementation of `zipWith`. 
   */
-  def zipWith_1[A,B,C](a: List[A], b: List[B], f: (A,B) => C): List[C] =
+  def zipWith_1[A, B,C](a: List[A], b: List[B], f: (A, B) => C): List[C] =
     @annotation.tailrec
     def loop(a: List[A], b: List[B], acc: List[C]): List[C] =
       (a, b) match
