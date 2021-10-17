@@ -1,3 +1,5 @@
-def many[A](p: Parser[A]): Parser[List[A]] =
-  map2(p, many(p))(_ :: _) or succeed(List())
+extension [A](p: Parser[A])
+  def many: Parser[List[A]] =
+    p.map2(p.many)(_ :: _) | succeed(Nil)
+
 

@@ -24,10 +24,9 @@ trait Parsers[Parser[+_]]:
 
   def succeed[A](a: A): Parser[A]
 
-  def regex(r: Regex): Parser[String]
+  def fail(msg: String): Parser[Nothing]
 
-  def opt[A](p: Parser[A]): Parser[Option[A]] =
-    p.map(Some(_)) | succeed(None)
+  def regex(r: Regex): Parser[String]
 
   /** Parser which consumes zero or more whitespace characters. */
   def whitespace: Parser[String] = regex("\\s*".r)
@@ -82,24 +81,21 @@ trait Parsers[Parser[+_]]:
       p.flatMap(f andThen succeed)
 
     def map2[B, C](p2: => Parser[B])(f: (A, B) => C): Parser[C] =
-      for
-        a <- p
-        b <- p2
-      yield f(a, b)
+      p.product(p2).map((a, b) => f(a, b))
 
     def many: Parser[List[A]] =
-      p.map2(p.many)(_ :: _).or(succeed(List()))
+      p.map2(p.many)(_ :: _) | succeed(Nil)
 
     def many1: Parser[List[A]] =
       p.map2(p.many)(_ :: _)
 
     def slice: Parser[String]
 
-    /*
-    These can be implemented using a for-comprehension, which delegates to the `flatMap` and `map` implementations we've provided on `ParserOps`, or they can be implemented in terms of these functions directly.
-    */
-    def product[B](p2: => Parser[B]): Parser[(A,B)] =
-      p.flatMap(a => p2.map(b => (a,b)))
+    def opt: Parser[Option[A]] =
+      p.map(Some(_)) | succeed(None)
+
+    def product[B](p2: => Parser[B]): Parser[(A, B)] =
+      p.flatMap(a => p2.map(b => (a, b)))
 
     def **[B](p2: => Parser[B]): Parser[(A,B)] = product(p2)
 
@@ -221,3 +217,15 @@ case class ParseError(stack: List[(Location, String)] = Nil):
       toList.sortBy(_._1.offset)
 
   def formatLoc(l: Location): String = s"${l.line}.${l.col}"
+
+class Examples[Parser[+_]](P: Parsers[Parser]):
+  import P.*
+  def nConsecutiveAs: Parser[Int] = 
+    for
+      nString <- regex("[0-9]+".r)
+      n <- nString.toIntOption match
+        case Some(n) => succeed(n)
+        case None => fail("expected an integer")
+      _ <- char('a').listOfN(n)
+    yield n
+

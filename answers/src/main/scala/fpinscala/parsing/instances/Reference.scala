@@ -68,7 +68,7 @@ object Reference extends Parsers[Reference.Parser]:
       case None => Failure(l.toError("regex " + r), false)
       case Some(m) => Success(m, m.length)
 
-  def fail[A](msg: String): Parser[A] =
+  def fail(msg: String): Parser[Nothing] =
     l => Failure(l.toError(msg), true)
   
   extension [A](p: Parser[A])

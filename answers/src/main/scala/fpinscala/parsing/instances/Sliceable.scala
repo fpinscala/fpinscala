@@ -225,6 +225,6 @@ object Sliceable extends Parsers[Sliceable.Parser]:
         if s.isSliced then Slice(m.length)
         else Success(m, m.length)
 
-  def fail[A](msg: String): Parser[A] =
+  def fail(msg: String): Parser[Nothing] =
     s => Failure(s.loc.toError(msg), true)
 

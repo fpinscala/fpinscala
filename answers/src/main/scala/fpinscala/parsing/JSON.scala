@@ -66,13 +66,10 @@ object JSON:
 ]
 """
 
-  val P = fpinscala.parsing.Reference
-  import P.run
-
   def printResult[E](e: Either[E,JSON]) =
     e.fold(println, println)
 
-  val parser = JSON.jsonParser(P)
+  val parser = JSON.jsonParser(Reference)
   printResult(parser.run(jsonTxt))
   println("--")
   printResult(parser.run(malformedJson1))
