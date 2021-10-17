@@ -1,45 +1,45 @@
 package fpinscala.parsing
 
 import language.higherKinds
-import language.implicitConversions
 
-trait JSON
+enum JSON:
+  case JNull
+  case JNumber(get: Double)
+  case JString(get: String)
+  case JBool(get: Boolean)
+  case JArray(get: IndexedSeq[JSON])
+  case JObject(get: Map[String, JSON])
 
-object JSON {
-  case object JNull extends JSON
-  case class JNumber(get: Double) extends JSON
-  case class JString(get: String) extends JSON
-  case class JBool(get: Boolean) extends JSON
-  case class JArray(get: IndexedSeq[JSON]) extends JSON
-  case class JObject(get: Map[String, JSON]) extends JSON
+object JSON:
+  def jsonParser[Parser[+_]](P: Parsers[Parser]): Parser[JSON] =
+    import P.*
 
-  def jsonParser[Parser[+_]](P: Parsers[Parser]): Parser[JSON] = {
-    // we'll hide the string implicit conversion and promote strings to tokens instead
-    // this is a bit nicer than having to write token everywhere
-    import P.{string as _, *}
-    implicit def tok(s: String): Parser[String] = token(P.string(s))
+    def str(s: String) = string(s).token
 
-    def array = surround("[","]")(
-      value.sep(",").map(vs => JArray(vs.toIndexedSeq))).scope("array")
-    def obj = surround("{","}")(
-      keyval.sep(",").map(kvs => JObject(kvs.toMap))).scope("object")
-    def keyval = escapedQuoted ** (":" *> value)
-    def lit = scope("literal") {
-      "null".as(JNull) |
+    def array = surround(str("["), str("]"))(
+      value.sep(str(",")).map(vs => JArray(vs.toIndexedSeq))).scope("array")
+
+    def obj = surround(str("{"), str("}"))(
+      keyval.sep(str(",")).map(kvs => JObject(kvs.toMap))).scope("object")
+
+    def keyval = escapedQuoted ** (str(":") *> value)
+
+    def lit = (
+      str("null").as(JNull) |
       double.map(JNumber(_)) |
       escapedQuoted.map(JString(_)) |
-      "true".as(JBool(true)) |
-      "false".as(JBool(false))
-    }
+      str("true").as(JBool(true)) |
+      str("false").as(JBool(false))
+    ).scope("literal")
+
     def value: Parser[JSON] = lit | obj | array
-    root(whitespace *> (obj | array))
-  }
-}
+
+    (whitespace *> (obj | array)).root
 
 /**
  * JSON parsing example.
  */
-object JSONExample extends App {
+@main def jsonExample =
   val jsonTxt = """
 {
   "Company name" : "Microsoft Corporation",
@@ -67,15 +67,14 @@ object JSONExample extends App {
 """
 
   val P = fpinscala.parsing.Reference
-  import fpinscala.parsing.ReferenceTypes.Parser
+  import P.run
 
   def printResult[E](e: Either[E,JSON]) =
     e.fold(println, println)
 
-  val json: Parser[JSON] = JSON.jsonParser(P)
-  printResult { P.run(json)(jsonTxt) }
+  val parser = JSON.jsonParser(P)
+  printResult(parser.run(jsonTxt))
   println("--")
-  printResult { P.run(json)(malformedJson1) }
+  printResult(parser.run(malformedJson1))
   println("--")
-  printResult { P.run(json)(malformedJson2) }
-}
+  printResult(parser.run(malformedJson2))
