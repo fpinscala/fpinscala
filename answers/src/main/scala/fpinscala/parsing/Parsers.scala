@@ -7,8 +7,6 @@ import language.higherKinds
 
 trait Parsers[Parser[+_]]:
 
-  extension [A](p: Parser[A]) def run(input: String): Either[ParseError, A]
-
   def string(s: String): Parser[String]
 
   def char(c: Char): Parser[Char] =
@@ -68,6 +66,9 @@ trait Parsers[Parser[+_]]:
     regex("\\z".r).label("unexpected trailing characters")
 
   extension [A](p: Parser[A])
+
+    def run(input: String): Either[ParseError, A]
+
     infix def or(p2: => Parser[A]): Parser[A]
     def |(p2: => Parser[A]): Parser[A] = p.or(p2)
 
