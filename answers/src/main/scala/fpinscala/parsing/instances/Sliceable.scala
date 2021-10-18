@@ -45,10 +45,6 @@ object Sliceable extends Parsers[Sliceable.Parser]:
     *   - Failure(n,isCommitted): a failing parse
     *
     * As usual, we define some helper functions on `Result`.
-    * Defining functions on `Result` gives us better type
-    * information--there are cases (see `map` and `map2` below) where
-    * Scala will not appropriately refine type information when
-    * pattern matching on `Result`.
     */
   sealed trait Result[+A]:
     def extract(input: String): Either[ParseError,A]
@@ -85,6 +81,10 @@ object Sliceable extends Parsers[Sliceable.Parser]:
     def slice = this
     def advanceSuccess(n: Int) = this
 
+  // consume no characters and succeed with the given value
+  def succeed[A](a: A): Parser[A] =
+    s => Success(a, 0)
+
   /** Returns -1 if s.startsWith(s2), otherwise returns the
     * first index where the two strings differed. If s2 is
     * longer than s1, returns s.length. */
@@ -96,9 +96,25 @@ object Sliceable extends Parsers[Sliceable.Parser]:
     if s.length - offset >= s2.length then -1
     else s.length - offset
 
-      // consume no characters and succeed with the given value
-  def succeed[A](a: A): Parser[A] =
-    s => Success(a, 0)
+  def string(w: String): Parser[String] =
+    s =>
+      val i = firstNonmatchingIndex(s.loc.input, w, s.loc.offset)
+      if i == -1 then // they matched
+        if s.isSliced then Slice(w.length)
+        else Success(w, w.length)
+      else Failure(s.loc.advanceBy(i).toError(s"'$w'"), i != 0)
+
+  // note, regex matching is 'all-or-nothing' - failures are
+  // uncommitted
+  def regex(r: Regex): Parser[String] =
+    s => r.findPrefixOf(s.input) match
+      case None => Failure(s.loc.toError(s"regex $r"), false)
+      case Some(m) =>
+        if s.isSliced then Slice(m.length)
+        else Success(m, m.length)
+
+  def fail(msg: String): Parser[Nothing] =
+    s => Failure(s.loc.toError(msg), true)
 
   extension [A](p: Parser[A])
     def run(s: String): Either[ParseError, A] =
@@ -207,24 +223,3 @@ object Sliceable extends Parsers[Sliceable.Parser]:
 
     def label(msg: String): Parser[A] =
       s => p(s).mapError(_.label(msg))
-
-  def string(w: String): Parser[String] =
-    s =>
-      val i = firstNonmatchingIndex(s.loc.input, w, s.loc.offset)
-      if i == -1 then // they matched
-        if s.isSliced then Slice(w.length)
-        else Success(w, w.length)
-      else Failure(s.loc.advanceBy(i).toError("'" + w + "'"), i != 0)
-
-  // note, regex matching is 'all-or-nothing' - failures are
-  // uncommitted
-  def regex(r: Regex): Parser[String] =
-    s => r.findPrefixOf(s.input) match
-      case None => Failure(s.loc.toError("regex " + r), false)
-      case Some(m) =>
-        if s.isSliced then Slice(m.length)
-        else Success(m, m.length)
-
-  def fail(msg: String): Parser[Nothing] =
-    s => Failure(s.loc.toError(msg), true)
-

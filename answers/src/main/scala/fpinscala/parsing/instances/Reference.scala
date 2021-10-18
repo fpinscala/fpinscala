@@ -37,21 +37,20 @@ object Reference extends Parsers[Reference.Parser]:
       case Success(a,m) => Success(a,n+m)
       case _ => this
 
+  // consume no characters and succeed with the given value
+  def succeed[A](a: A): Parser[A] =
+    _ => Success(a, 0)
+
   /** Returns -1 if s1.startsWith(s2), otherwise returns the
     * first index where the two strings differed. If s2 is
     * longer than s1, returns s1.length. */
   def firstNonmatchingIndex(s1: String, s2: String, offset: Int): Int =
     var i = 0
     while (i < s1.length && i < s2.length)
-      if s1.charAt(i+offset) != s2.charAt(i) then return i
+      if s1.charAt(i + offset) != s2.charAt(i) then return i
       i += 1
-    if s1.length-offset >= s2.length then -1
-    else s1.length-offset
-
-
-  // consume no characters and succeed with the given value
-  def succeed[A](a: A): Parser[A] =
-    _ => Success(a, 0)
+    if s1.length - offset >= s2.length then -1
+    else s1.length - offset
 
   def string(w: String): Parser[String] =
     l =>
@@ -59,13 +58,13 @@ object Reference extends Parsers[Reference.Parser]:
       if i == -1 then // they matched
         Success(w, w.length)
       else
-        Failure(l.advanceBy(i).toError("'" + w + "'"), i != 0)
+        Failure(l.advanceBy(i).toError(s"'$w'"), i != 0)
 
   /* note, regex matching is 'all-or-nothing':
    * failures are uncommitted */
   def regex(r: Regex): Parser[String] =
     l => r.findPrefixOf(l.remaining) match
-      case None => Failure(l.toError("regex " + r), false)
+      case None => Failure(l.toError(s"regex $r"), false)
       case Some(m) => Success(m, m.length)
 
   def fail(msg: String): Parser[Nothing] =

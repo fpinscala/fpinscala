@@ -1,5 +1,5 @@
 /** In the event of an error, returns the error that occurred after consuming the most number of characters. */
-def furthest[A](p: Parser[A]): Parser[A]
+extension [A](p: Parser[A]) def furthest: Parser[A]
 
 /** In the event of an error, returns the error that occurred most recently. */
-def latest[A](p: Parser[A]): Parser[A]
+extension [A](p: Parser[A]) def latest: Parser[A]

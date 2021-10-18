@@ -196,6 +196,7 @@ case class ParseError(stack: List[(Location, String)] = Nil):
   5.10 ':'
 
   { "MSFT" ; 24,
+           ^
   */
   override def toString =
     if stack.isEmpty then "no error message"
@@ -204,8 +205,7 @@ case class ParseError(stack: List[(Location, String)] = Nil):
       val context =
         collapsed.lastOption.map("\n\n" + _._1.currentLine).getOrElse("") +
         collapsed.lastOption.map("\n" + _._1.columnCaret).getOrElse("")
-      collapsed.map((loc, msg) => loc.line.toString + "." + loc.col + " " + msg).mkString("\n") +
-      context
+      collapsed.map((loc, msg) => s"${formatLoc(loc)} $msg").mkString("\n") + context
 
   /* Builds a collapsed version of the given error stack -
    * messages at the same location have their messages merged,
@@ -220,12 +220,18 @@ case class ParseError(stack: List[(Location, String)] = Nil):
 
 class Examples[Parser[+_]](P: Parsers[Parser]):
   import P.*
-  def nConsecutiveAs: Parser[Int] = 
+
+  val nonNegativeInt: Parser[Int] =
     for
       nString <- regex("[0-9]+".r)
       n <- nString.toIntOption match
         case Some(n) => succeed(n)
         case None => fail("expected an integer")
+    yield n
+
+  val nConsecutiveAs: Parser[Int] = 
+    for
+      n <- nonNegativeInt
       _ <- char('a').listOfN(n)
     yield n
 
