@@ -45,10 +45,25 @@ object Sliceable extends Parsers[Sliceable.Parser]:
     *   - Failure(n,isCommitted): a failing parse
     *
     * As usual, we define some helper functions on `Result`.
+    * 
+    * `Result` is an example of a Generalized Algebraic Data Type (GADT),
+    * which means that not all the data constructors of `Result` have
+    * the same type. In particular, `Slice` _refines_ the `A` type
+    * parameter to be `String`. If we pattern match on a `Result`
+    * and obtain a `Slice`, we expect to be able to assume that `A` was
+    * in fact `String` and use this type information elsewhere.
     */
   sealed trait Result[+A]:
-    def extract(input: String): Either[ParseError,A]
-    def slice: Result[String]
+    def extract(input: String): Either[ParseError, A] = this match
+      case Slice(length) => Right(input.substring(0, length))
+      case Success(get, _) => Right(get)
+      case Failure(get, _) => Left(get)
+
+    def slice: Result[String] = this match
+      case s @ Slice(_) => s
+      case Success(_, length) => Slice(length)
+      case f @ Failure(_, _) => f
+
     /* Used by `attempt`. */
     def uncommit: Result[A] = this match
       case Failure(e,true) => Failure(e, false)
@@ -64,22 +79,14 @@ object Sliceable extends Parsers[Sliceable.Parser]:
       case Failure(e,c) => Failure(f(e), c)
       case _ => this
 
-    def advanceSuccess(n: Int): Result[A]
+    def advanceSuccess(n: Int): Result[A] = this match
+      case Slice(length) => Slice(length + n)
+      case Success(get, length) => Success(get, length + n)
+      case f @ Failure(_, _) => f
 
-  case class Slice(length: Int) extends Result[String]:
-    def extract(s: String) = Right(s.substring(0,length))
-    def slice = this
-    def advanceSuccess(n: Int) = Slice(length+n)
-
-  case class Success[+A](get: A, length: Int) extends Result[A]:
-    def extract(s: String) = Right(get)
-    def slice = Slice(length)
-    def advanceSuccess(n: Int) = Success(get, length+n)
-
-  case class Failure(get: ParseError, isCommitted: Boolean) extends Result[Nothing]:
-    def extract(s: String) = Left(get)
-    def slice = this
-    def advanceSuccess(n: Int) = this
+  case class Slice(length: Int) extends Result[String]
+  case class Success[+A](get: A, length: Int) extends Result[A]
+  case class Failure(get: ParseError, isCommitted: Boolean) extends Result[Nothing]
 
   // consume no characters and succeed with the given value
   def succeed[A](a: A): Parser[A] =
@@ -125,15 +132,6 @@ object Sliceable extends Parsers[Sliceable.Parser]:
         case Failure(e,false) => p2(s)
         case r => r // committed failure or success skips running `p2`
 
-    /*
-    * `Result` is an example of a Generalized Algebraic Data Type (GADT),
-    * which means that not all the data constructors of `Result` have
-    * the same type. In particular, `Slice` _refines_ the `A` type
-    * parameter to be `String`. If we pattern match on a `Result`
-    * and obtain a `Slice`, we expect to be able to assume that `A` was
-    * in fact `String` and use this type information elsewhere.
-    */
-
     /* This implementation is rather delicate. Since we need an `A`
     * to generate the second parser, we need to run the first parser
     * 'unsliced', even if the `flatMap` is wrapped in a `slice` call.
@@ -175,21 +173,21 @@ object Sliceable extends Parsers[Sliceable.Parser]:
 
     override def map2[B, C](p2: => Parser[B])(f: (A, B) => C): Parser[C] =
       s => p(s) match
-        case Success(a,n) => 
+        case Success(a, n) => 
           val s2 = s.advanceBy(n)
           p2(s2) match
-            case Success(b,m) => Success(f(a, b), n + m)
-            case Slice(m) => Success(f(a,s2.slice(m)), n + m)
-            case f@Failure(_,_) => f
+            case Success(b, m) => Success(f(a, b), n + m)
+            case Slice(m) => Success(f(a, s2.slice(m)), n + m)
+            case f @ Failure(_, _) => f
         case Slice(n) => 
           val s2 = s.advanceBy(n)
           p2(s2) match
-            case Success(b,m) => Success(f(s.slice(n), b), n + m)
+            case Success(b, m) => Success(f(s.slice(n), b), n + m)
             case Slice(m) =>
               if s.isSliced then Slice(n + m).asInstanceOf[Result[C]]
               else Success(f(s.slice(n), s2.slice(m)), n + m)
-            case f@Failure(_,_) => f
-        case f@Failure(_,_) => f
+            case f @ Failure(_, _) => f
+        case f @ Failure(_, _) => f
 
     /* We provide an overridden version of `many` that accumulates
     * the list of results using a monolithic loop. This avoids
@@ -201,21 +199,23 @@ object Sliceable extends Parsers[Sliceable.Parser]:
         if s.isSliced then
           def go(p: Parser[String], offset: Int): Result[String] =
             p(s.advanceBy(offset)) match
-              case f@Failure(e,true) => f
-              case Failure(e,_) => Slice(offset)
-              case Slice(n) => go(p, offset+n)
-              case Success(_,_) => sys.error("sliced parser should not return success, only slice")
+              case f @ Failure(e, true) => f
+              case Failure(e, _) => Slice(offset)
+              case Slice(n) => go(p, offset + n)
+              case Success(_, _) => sys.error("sliced parser should not return success, only slice")
           go(p.slice, 0).asInstanceOf[Result[List[A]]]
         else
           val buf = new collection.mutable.ListBuffer[A]
           def go(p: Parser[A], offset: Int): Result[List[A]] =
             p(s.advanceBy(offset)) match
-              case Success(a,n) => buf += a; go(p, offset+n)
-              case f@Failure(e,true) => f
-              case Failure(e,_) => Success(buf.toList,offset)
+              case Success(a, n) =>
+                buf += a
+                go(p, offset + n)
+              case f @ Failure(e, true) => f
+              case Failure(e, _) => Success(buf.toList, offset)
               case Slice(n) =>
-                buf += s.input.substring(offset,offset+n)
-                go(p, offset+n)
+                buf += s.input.substring(offset, offset + n)
+                go(p, offset + n)
           go(p, 0)
 
     def scope(msg: String): Parser[A] =
