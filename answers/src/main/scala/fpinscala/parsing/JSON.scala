@@ -16,11 +16,11 @@ object JSON:
 
     def token(s: String) = string(s).token
 
-    def array: Parser[JArray] = (
+    def array: Parser[JSON] = (
       token("[") *> value.sep(token(",")).map(vs => JArray(vs.toIndexedSeq)) <* token("]")
     ).scope("array")
 
-    def obj: Parser[JObject] = (
+    def obj: Parser[JSON] = (
       token("{") *> keyval.sep(token(",")).map(kvs => JObject(kvs.toMap)) <* token("}")
     ).scope("object")
 

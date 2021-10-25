@@ -19,7 +19,8 @@ object Sliceable extends Parsers[Sliceable.Parser]:
    * a `slice` combinator, the `isSliced` field of `ParseState` will
    * be `true`, and we return a `Slice` output.
    */
-  opaque type Parser[+A] = ParseState => Result[A]
+  // https://github.com/lampepfl/dotty/issues/13761
+  /*opaque*/ type Parser[+A] = ParseState => Result[A]
 
   /** `isSliced` indicates if the current parser is surround by a
     * `slice` combinator. This lets us avoid building up values that

@@ -8,7 +8,8 @@ import Reference.Result.{Success, Failure}
 object Reference extends Parsers[Reference.Parser]:
 
   /** A parser is a kind of state action that can fail. */
-  opaque type Parser[+A] = Location => Result[A]
+  // https://github.com/lampepfl/dotty/issues/13761
+  /*opaque*/ type Parser[+A] = Location => Result[A]
 
   enum Result[+A]:
     case Success(get: A, length: Int)
