@@ -54,7 +54,11 @@ object Sliceable extends Parsers[Sliceable.Parser]:
     * and obtain a `Slice`, we expect to be able to assume that `A` was
     * in fact `String` and use this type information elsewhere.
     */
-  sealed trait Result[+A]:
+  enum Result[+A]:
+    case Success(get: A, length: Int)
+    case Failure(get: ParseError, isCommitted: Boolean) extends Result[Nothing]
+    case Slice(length: Int) extends Result[String]
+
     def extract(input: String): Either[ParseError, A] = this match
       case Slice(length) => Right(input.substring(0, length))
       case Success(get, _) => Right(get)
@@ -85,9 +89,7 @@ object Sliceable extends Parsers[Sliceable.Parser]:
       case Success(get, length) => Success(get, length + n)
       case f @ Failure(_, _) => f
 
-  case class Slice(length: Int) extends Result[String]
-  case class Success[+A](get: A, length: Int) extends Result[A]
-  case class Failure(get: ParseError, isCommitted: Boolean) extends Result[Nothing]
+  import Result.{Slice, Success, Failure}
 
   // consume no characters and succeed with the given value
   def succeed[A](a: A): Parser[A] =

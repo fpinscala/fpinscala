@@ -13,7 +13,7 @@ object Reference extends Parsers[Reference.Parser]:
 
   enum Result[+A]:
     case Success(get: A, length: Int)
-    case Failure(get: ParseError, isCommitted: Boolean)
+    case Failure(get: ParseError, isCommitted: Boolean) extends Result[Nothing]
 
     def extract: Either[ParseError, A] = this match
       case Failure(e,_) => Left(e)
@@ -89,12 +89,12 @@ object Reference extends Parsers[Reference.Parser]:
           f(a)(l.advanceBy(n))
             .addCommit(n != 0)
             .advanceSuccess(n)
-        case Failure(e, isCommitted) => Failure(e, isCommitted)
+        case f @ Failure(_, _) => f
 
     def slice: Parser[String] =
       l => p(l) match
         case Success(_, n) => Success(l.slice(n), n)
-        case Failure(e, isCommitted) => Failure(e, isCommitted)
+        case f @ Failure(_, _) => f
 
     /* We provide an overridden version of `many` that accumulates
     * the list of results using a monolithic loop. This avoids
@@ -110,7 +110,7 @@ object Reference extends Parsers[Reference.Parser]:
               buf += a
               go(p, offset + n)
             case Failure(e, true) => Failure(e, true)
-            case Failure(e, _) => Success(buf.toList, offset)
+            case Failure(_, _) => Success(buf.toList, offset)
         go(p, 0)
 
     def scope(msg: String): Parser[A] =
