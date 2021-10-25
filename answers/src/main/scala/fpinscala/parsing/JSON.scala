@@ -14,22 +14,24 @@ object JSON:
   def jsonParser[Parser[+_]](P: Parsers[Parser]): Parser[JSON] =
     import P.*
 
-    def str(s: String) = string(s).token
+    def token(s: String) = string(s).token
 
-    def array = surround(str("["), str("]"))(
-      value.sep(str(",")).map(vs => JArray(vs.toIndexedSeq))).scope("array")
+    def array: Parser[JArray] = (
+      token("[") *> value.sep(token(",")).map(vs => JArray(vs.toIndexedSeq)) <* token("]")
+    ).scope("array")
 
-    def obj = surround(str("{"), str("}"))(
-      keyval.sep(str(",")).map(kvs => JObject(kvs.toMap))).scope("object")
+    def obj: Parser[JObject] = (
+      token("{") *> keyval.sep(token(",")).map(kvs => JObject(kvs.toMap)) <* token("}")
+    ).scope("object")
 
-    def keyval = escapedQuoted ** (str(":") *> value)
+    def keyval: Parser[(String, JSON)] = escapedQuoted ** (token(":") *> value)
 
-    def lit = (
-      str("null").as(JNull) |
+    def lit: Parser[JSON] = (
+      token("null").as(JNull) |
       double.map(JNumber(_)) |
       escapedQuoted.map(JString(_)) |
-      str("true").as(JBool(true)) |
-      str("false").as(JBool(false))
+      token("true").as(JBool(true)) |
+      token("false").as(JBool(false))
     ).scope("literal")
 
     def value: Parser[JSON] = lit | obj | array

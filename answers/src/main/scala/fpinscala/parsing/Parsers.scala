@@ -56,10 +56,6 @@ trait Parsers[Parser[+_]]:
   def double: Parser[Double] =
     doubleString.map(_.toDouble).label("double literal")
 
-  /** Wraps `p` in start/stop delimiters. */
-  def surround[A](start: Parser[Any], stop: Parser[Any])(p: => Parser[A]) =
-    start *> p <* stop
-
   /** A parser that succeeds when given empty input. */
   def eof: Parser[String] =
     regex("\\z".r).label("unexpected trailing characters")
@@ -166,7 +162,10 @@ case class Location(input: String, offset: Int = 0):
 
   /* Returns the line corresponding to this location */
   def currentLine: String =
-    if input.length > 1 then input.linesIterator.drop(line - 1).next()
+    if input.length > 1
+    then
+      val itr = input.linesIterator.drop(line - 1)
+      if (itr.hasNext) itr.next() else ""
     else ""
 
   def columnCaret = (" " * (col - 1)) + "^"
