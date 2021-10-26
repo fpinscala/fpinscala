@@ -3,22 +3,19 @@ package fpinscala.monoids
 import fpinscala.parallelism.Nonblocking.*
 import language.higherKinds
 
-trait Monoid[A] {
-  def op(a1: A, a2: A): A
-  def zero: A
-}
+trait Monoid[A]:
+  def combine(a1: A, a2: A): A
+  def empty: A
 
-object Monoid {
+object Monoid:
 
-  val stringMonoid = new Monoid[String] {
-    def op(a1: String, a2: String) = a1 + a2
-    val zero = ""
-  }
+  val stringMonoid = new Monoid[String]:
+    def combine(a1: String, a2: String) = a1 + a2
+    val empty = ""
 
-  def listMonoid[A] = new Monoid[List[A]] {
-    def op(a1: List[A], a2: List[A]) = a1 ++ a2
-    val zero = Nil
-  }
+  def listMonoid[A] = new Monoid[List[A]]:
+    def combine(a1: List[A], a2: List[A]) = a1 ++ a2
+    val empty = Nil
 
   val intAddition: Monoid[Int] = ???
 
@@ -32,15 +29,9 @@ object Monoid {
 
   def endoMonoid[A]: Monoid[A => A] = ???
 
-  // TODO: Placeholder for `Prop`. Remove once you have implemented the `Prop`
-  // data type from Part 2.
-  trait Prop {}
-
-  // TODO: Placeholder for `Gen`. Remove once you have implemented the `Gen`
-  // data type from Part 2.
-
   import fpinscala.testing.*
   import Prop.*
+
   def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Prop = ???
 
   def trimMonoid(s: String): Monoid[String] = ???
@@ -88,9 +79,9 @@ object Monoid {
 
   def bag[A](as: IndexedSeq[A]): Map[A, Int] =
     ???
-}
+end Monoid
 
-trait Foldable[F[_]] {
+trait Foldable[F[_]]:
   import Monoid.*
 
   def foldRight[A, B](as: F[A])(z: B)(f: (A, B) => B): B =
@@ -107,52 +98,46 @@ trait Foldable[F[_]] {
 
   def toList[A](as: F[A]): List[A] =
     ???
-}
 
-object ListFoldable extends Foldable[List] {
+object ListFoldable extends Foldable[List]:
   override def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B) =
     ???
   override def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B) =
     ???
   override def foldMap[A, B](as: List[A])(f: A => B)(mb: Monoid[B]): B =
     ???
-}
 
-object IndexedSeqFoldable extends Foldable[IndexedSeq] {
+object IndexedSeqFoldable extends Foldable[IndexedSeq]:
   override def foldRight[A, B](as: IndexedSeq[A])(z: B)(f: (A, B) => B) =
     ???
   override def foldLeft[A, B](as: IndexedSeq[A])(z: B)(f: (B, A) => B) =
     ???
   override def foldMap[A, B](as: IndexedSeq[A])(f: A => B)(mb: Monoid[B]): B =
     ???
-}
 
-object LazyListFoldable extends Foldable[LazyList] {
+object LazyListFoldable extends Foldable[LazyList]:
   override def foldRight[A, B](as: LazyList[A])(z: B)(f: (A, B) => B) =
     ???
   override def foldLeft[A, B](as: LazyList[A])(z: B)(f: (B, A) => B) =
     ???
-}
 
-sealed trait Tree[+A]
-case class Leaf[A](value: A) extends Tree[A]
-case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]
+enum Tree[+A]:
+  case Leaf(value: A)
+  case Branch(left: Tree[A], right: Tree[A])
 
-object TreeFoldable extends Foldable[Tree] {
+object TreeFoldable extends Foldable[Tree]:
   override def foldMap[A, B](as: Tree[A])(f: A => B)(mb: Monoid[B]): B =
     ???
   override def foldLeft[A, B](as: Tree[A])(z: B)(f: (B, A) => B) =
     ???
   override def foldRight[A, B](as: Tree[A])(z: B)(f: (A, B) => B) =
     ???
-}
 
-object OptionFoldable extends Foldable[Option] {
+object OptionFoldable extends Foldable[Option]:
   override def foldMap[A, B](as: Option[A])(f: A => B)(mb: Monoid[B]): B =
     ???
   override def foldLeft[A, B](as: Option[A])(z: B)(f: (B, A) => B) =
     ???
   override def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B) =
     ???
-}
 

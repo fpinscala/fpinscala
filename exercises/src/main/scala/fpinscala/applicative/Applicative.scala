@@ -88,8 +88,8 @@ object Applicative {
 
   implicit def monoidApplicative[M](M: Monoid[M]): Applicative[Const[M, *]] =
     new Applicative[Const[M, *]] {
-      def unit[A](a: => A): M = M.zero
-      override def apply[A,B](m1: M)(m2: M): M = M.op(m1, m2)
+      def unit[A](a: => A): M = M.empty
+      override def apply[A,B](m1: M)(m2: M): M = M.combine(m1, m2)
     }
 }
 

@@ -110,8 +110,8 @@ object Applicative {
 
   implicit def monoidApplicative[M](M: Monoid[M]): Applicative[Const[M, *]] =
     new Applicative[Const[M, *]] {
-      def unit[A](a: => A): M = M.zero
-      override def apply[A,B](m1: M)(m2: M): M = M.op(m1, m2)
+      def unit[A](a: => A): M = M.empty
+      override def apply[A,B](m1: M)(m2: M): M = M.combine(m1, m2)
     }
 
 }
@@ -274,7 +274,7 @@ object Traverse {
     def foldMap[B](g: A => B)(M: Monoid[B]): B = {
       def iterate(n: Int, b: B, c: A): B =
         if (n <= 0) b else iterate(n-1, g(c), f(a))
-      iterate(n, M.zero, a)
+      iterate(n, M.empty, a)
     }
   }
 }
