@@ -61,15 +61,13 @@ object Monoid:
 
   import fpinscala.testing.*
   import Prop.*
+  import Gen.*
 
   def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Prop =
     // Associativity
-    forAll(for
-      x <- gen
-      y <- gen
-      z <- gen
-    yield (x, y, z))(p =>
-      m.combine(p._1, m.combine(p._2, p._3)) == m.combine(m.combine(p._1, p._2), p._3)) &&
+    forAll(gen ** gen ** gen) { case x ** y ** z =>
+      m.combine(x, m.combine(y, z)) == m.combine(m.combine(x, y), y)
+     } &&
     // Identity
     forAll(gen)((a: A) =>
       m.combine(a, m.empty) == a && m.combine(m.empty, a) == a)
