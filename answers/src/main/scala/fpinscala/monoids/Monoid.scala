@@ -9,27 +9,27 @@ trait Monoid[A]:
 
 object Monoid:
 
-  val stringMonoid = new Monoid[String]:
+  val stringMonoid: Monoid[String] = new:
     def combine(a1: String, a2: String) = a1 + a2
     val empty = ""
 
-  def listMonoid[A] = new Monoid[List[A]]:
+  def listMonoid[A]: Monoid[List[A]] = new:
     def combine(a1: List[A], a2: List[A]) = a1 ++ a2
     val empty = Nil
 
-  val intAddition: Monoid[Int] = new Monoid[Int]:
+  val intAddition: Monoid[Int] = new:
     def combine(x: Int, y: Int) = x + y
     val empty = 0
 
-  val intMultiplication: Monoid[Int] = new Monoid[Int]:
+  val intMultiplication: Monoid[Int] = new:
     def combine(x: Int, y: Int) = x * y
     val empty = 1
 
-  val booleanOr: Monoid[Boolean] = new Monoid[Boolean]:
+  val booleanOr: Monoid[Boolean] = new:
     def combine(x: Boolean, y: Boolean) = x || y
     val empty = false
 
-  val booleanAnd: Monoid[Boolean] = new Monoid[Boolean]:
+  val booleanAnd: Monoid[Boolean] = new:
     def combine(x: Boolean, y: Boolean) = x && y
     val empty = true
 
@@ -40,39 +40,48 @@ object Monoid:
   // `combine` combines things in the opposite order. Monoids like `booleanOr` and
   // `intAddition` are equivalent to their duals because their `combine` is commutative
   // as well as associative.
-  def optionMonoid[A]: Monoid[Option[A]] = new Monoid[Option[A]]:
+  def optionMonoid[A]: Monoid[Option[A]] = new:
     def combine(x: Option[A], y: Option[A]) = x orElse y
     val empty = None
 
   // We can get the dual of any monoid just by flipping the `combine`.
-  def dual[A](m: Monoid[A]): Monoid[A] = new Monoid[A]:
+  def dual[A](m: Monoid[A]): Monoid[A] = new:
     def combine(x: A, y: A): A = m.combine(y, x)
     val empty = m.empty
 
   // Now we can have both monoids on hand
-  def firstOptionMonoid[A]: Monoid[Option[A]] = optionMonoid[A]
+  def firstOptionMonoid[A]: Monoid[Option[A]] = optionMonoid
   def lastOptionMonoid[A]: Monoid[Option[A]] = dual(firstOptionMonoid)
+
+  def combineOptionMonoid[A](f: (A, A) => A): Monoid[Option[A]] = new:
+    def combine(x: Option[A], y: Option[A]) = x.map2(y)(f)
+    val empty = None
+
+  extension [A](optA: Option[A]) def map2[B, C](optB: Option[B])(f: (A, B) => C): Option[C] =
+    for
+      a <- optA
+      b <- optB
+    yield f(a, b)
 
   // There is a choice of implementation here as well.
   // Do we implement it as `f compose g` or `f andThen g`? We have to pick one.
-  def endoMonoid[A]: Monoid[A => A] = new Monoid[A => A]:
-    def combine(f: A => A, g: A => A) = f compose g
-    val empty = (a: A) => a
+  def endoMonoid[A]: Monoid[A => A] = new:
+    def combine(f: A => A, g: A => A) = f andThen g
+    val empty = identity
 
-  import fpinscala.testing.*
-  import Prop.*
-  import Gen.*
+  import fpinscala.testing.{Prop, Gen}
+  import Gen.`**`
 
   def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Prop =
-    // Associativity
-    forAll(gen ** gen ** gen) { case x ** y ** z =>
-      m.combine(x, m.combine(y, z)) == m.combine(m.combine(x, y), y)
-     } &&
-    // Identity
-    forAll(gen)((a: A) =>
-      m.combine(a, m.empty) == a && m.combine(m.empty, a) == a)
+    val associativity = Prop.forAll(gen ** gen ** gen) { case a ** b ** c =>
+      m.combine(a, m.combine(b, c)) == m.combine(m.combine(a, b), c)
+    }.tag("associativity")
+    val identity = Prop.forAll(gen) { a =>
+      m.combine(a, m.empty) == a && m.combine(m.empty, a) == a
+    }.tag("identity")
+    associativity && identity
 
-  def concatenate[A](as: List[A], m: Monoid[A]): A =
+  def combineAll[A](as: List[A], m: Monoid[A]): A =
     as.foldLeft(m.empty)(m.combine)
 
   // Notice that this function does not require the use of `map` at all.
@@ -82,14 +91,14 @@ object Monoid:
 
   // The function type `(A, B) => B`, when curried, is `A => (B => B)`.
   // And of course, `B => B` is a monoid for any `B` (via function composition).
-  def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B =
-    foldMap(as, endoMonoid[B])(f.curried)(z)
+  def foldRight[A, B](as: List[A])(acc: B)(f: (A, B) => B): B =
+    foldMap(as, endoMonoid)(f.curried)(acc)
 
   // Folding to the left is the same except we flip the arguments to
   // the function `f` to put the `B` on the correct side.
   // Then we have to also "flip" the monoid so that it operates from left to right.
-  def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B): B =
-    foldMap(as, dual(endoMonoid[B]))(a => b => f(b, a))(z)
+  def foldLeft[A, B](as: List[A])(acc: B)(f: (B, A) => B): B =
+    foldMap(as, dual(endoMonoid))(a => b => f(b, a))(acc)
 
   def foldMapV[A, B](as: IndexedSeq[A], m: Monoid[B])(f: A => B): B =
     if as.length == 0 then
@@ -100,24 +109,6 @@ object Monoid:
       val (l, r) = as.splitAt(as.length / 2)
       m.combine(foldMapV(l, m)(f), foldMapV(r, m)(f))
 
-  // This implementation detects only ascending order,
-  // but you can write a monoid that detects both ascending and descending
-  // order if you like.
-  def ordered(ints: IndexedSeq[Int]): Boolean =
-    // Our monoid tracks the minimum and maximum element seen so far
-    // as well as whether the elements are so far ordered.
-    val mon = new Monoid[Option[(Int, Int, Boolean)]]:
-      def combine(o1: Option[(Int, Int, Boolean)], o2: Option[(Int, Int, Boolean)]) =
-        (o1, o2) match
-          // The ranges should not overlap if the sequence is ordered.
-          case (Some((x1, y1, p)), Some((x2, y2, q))) =>
-            Some((x1 min x2, y1 max y2, p && q && y1 <= x2))
-          case (x, None) => x
-          case (None, x) => x
-      val empty = None
-    // The empty sequence is ordered, and each element by itself is ordered.
-    foldMapV(ints, mon)(i => Some((i, i, true))).map(_._3).getOrElse(true)
-
   // This ability to 'lift' a monoid any monoid to operate within
   // some context (here `Par`) is something we'll discuss more in
   // chapters 11 & 12
@@ -126,10 +117,18 @@ object Monoid:
     def combine(a: Par[A], b: Par[A]) = a.map2(b)(m.combine)
 
   // we perform the mapping and the reducing both in parallel
-  def parFoldMap[A,B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] =
-    Par.parMap(v)(f).flatMap { bs =>
+  def parFoldMap[A,B](as: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] =
+    Par.parMap(as)(f).flatMap { bs =>
       foldMapV(bs, par(m))(b => Par.lazyUnit(b))
     }
+
+  val orderedMonoid: Monoid[(Boolean, Int)] = new:
+    def combine(a1: (Boolean, Int), a2: (Boolean, Int)) =
+      (a1(0) && a2(0) && a1(1) <= a2(1), a1(1) max a2(1))
+    val empty = (true, Int.MinValue)
+
+  def ordered(ints: IndexedSeq[Int]): Boolean =
+    foldMapV(ints, orderedMonoid)(i => (true, i))(0)
 
   enum WC:
     case Stub(chars: String)
@@ -140,12 +139,24 @@ object Monoid:
     // The empty result, where we haven't seen any characters yet.
     val empty = Stub("")
 
-    def combine(a: WC, b: WC) = (a, b) match
-      case (Stub(c), Stub(d)) => Stub(c + d)
-      case (Stub(c), Part(l, w, r)) => Part(c + l, w, r)
-      case (Part(l, w, r), Stub(c)) => Part(l, w, r + c)
+    def combine(wc1: WC, wc2: WC) = (wc1, wc2) match
+      case (Stub(a), Stub(b)) => Stub(a + b)
+      case (Stub(a), Part(l, w, r)) => Part(a + l, w, r)
+      case (Part(l, w, r), Stub(a)) => Part(l, w, r + a)
       case (Part(l1, w1, r1), Part(l2, w2, r2)) =>
         Part(l1, w1 + (if (r1 + l2).isEmpty then 0 else 1) + w2, r2)
+
+  def wcGen: Gen[WC] = 
+    val smallString = Gen.choose(0, 10).flatMap(Gen.stringN)
+    val genStub = smallString.map(s => WC.Stub(s))
+    val genPart = for
+      lStub <- smallString 
+      words <- Gen.choose(0, 10)
+      rStub <- smallString
+    yield WC.Part(lStub, words, rStub)
+    Gen.union(genStub, genPart)
+
+  val wcMonoidTest = monoidLaws(wcMonoid, wcGen)
 
   def count(s: String): Int =
     import WC.{Stub, Part}
