@@ -1,8 +1,5 @@
 package fpinscala.monoids
 
-import fpinscala.parallelism.Nonblocking.*
-import language.higherKinds
-
 trait Monoid[A]:
   def combine(a1: A, a2: A): A
   def empty: A
@@ -112,6 +109,8 @@ object Monoid:
   // This ability to 'lift' a monoid any monoid to operate within
   // some context (here `Par`) is something we'll discuss more in
   // chapters 11 & 12
+  import fpinscala.parallelism.Nonblocking.Par
+
   def par[A](m: Monoid[A]): Monoid[Par[A]] = new Monoid[Par[A]]:
     def empty = Par.unit(m.empty)
     def combine(a: Par[A], b: Par[A]) = a.map2(b)(m.combine)
@@ -169,13 +168,14 @@ object Monoid:
       case WC.Stub(s) => unstub(s)
       case WC.Part(l, w, r) => unstub(l) + w + unstub(r)
 
+  // Variant of foldMap which takes Monoid[B] as a context param
   def foldMapG[A, B](as: List[A])(f: A => B)(using m: Monoid[B]): B =
     foldMap(as, m)(f)
 
+  // Variant of foldMapV which takes Monoid[B] as a context param
   def foldMapVG[A, B](as: IndexedSeq[A])(f: A => B)(using m: Monoid[B]): B =
     foldMapV(as, m)(f)
 
-  // given Monoid[Int] = intAddition
   given Monoid[Int] with
     def combine(x: Int, y: Int) = x + y
     val empty = 0
@@ -203,91 +203,3 @@ object Monoid:
     foldMapVG(as)(a => Map(a -> 1))
 
 end Monoid
-
-trait Foldable[F[_]]:
-  import Monoid.{endoMonoid, dual}
-
-  extension [A](as: F[A])
-    def foldRight[B](acc: B)(f: (A, B) => B): B =
-      as.foldMap(f.curried)(using endoMonoid[B])(acc)
-
-    def foldLeft[B](acc: B)(f: (B, A) => B): B =
-      as.foldMap(a => b => f(b, a))(using dual(endoMonoid[B]))(acc)
-
-    def foldMap[B](f: A => B)(using mb: Monoid[B]): B =
-      as.foldRight(mb.empty)((a, b) => mb.combine(f(a), b))
-
-    def combineAll(using m: Monoid[A]): A =
-      as.foldLeft(m.empty)(m.combine)
-
-    def toList: List[A] =
-      as.foldRight(List[A]())(_ :: _)
-
-object Foldable:
-
-  given Foldable[List] with
-    extension [A](as: List[A])
-      override def foldRight[B](acc: B)(f: (A, B) => B) =
-        as.foldRight(acc)(f)
-      override def foldLeft[B](acc: B)(f: (B, A) => B) =
-        as.foldLeft(acc)(f)
-      override def foldMap[B](f: A => B)(using mb: Monoid[B]): B =
-        as.foldLeft(mb.empty)((b, a) => mb.combine(b, f(a)))
-      override def toList: List[A] = as
-
-  given Foldable[IndexedSeq] with
-    extension [A](as: IndexedSeq[A])
-      override def foldRight[B](acc: B)(f: (A, B) => B) =
-        as.foldRight(acc)(f)
-      override def foldLeft[B](acc: B)(f: (B, A) => B) =
-        as.foldLeft(acc)(f)
-      override def foldMap[B](f: A => B)(using mb: Monoid[B]): B =
-        Monoid.foldMapV(as, mb)(f)
-
-  given Foldable[LazyList] with
-    extension [A](as: LazyList[A])
-      override def foldRight[B](acc: B)(f: (A, B) => B) =
-        as.foldRight(acc)(f)
-      override def foldLeft[B](acc: B)(f: (B, A) => B) =
-        as.foldLeft(acc)(f)
-
-  import fpinscala.datastructures.Tree
-
-  given Foldable[Tree] with
-    import Tree.{Leaf, Branch}
-
-    extension [A](as: Tree[A])
-
-      override def foldMap[B](f: A => B)(using mb: Monoid[B]): B = as match
-        case Leaf(a) => f(a)
-        case Branch(l, r) => mb.combine(l.foldMap(f), r.foldMap(f))
-
-      override def foldLeft[B](acc: B)(f: (B, A) => B) = as match
-        case Leaf(a) => f(acc, a)
-        case Branch(l, r) => r.foldLeft(l.foldLeft(acc)(f))(f)
-
-      override def foldRight[B](acc: B)(f: (A, B) => B) = as match
-        case Leaf(a) => f(a, acc)
-        case Branch(l, r) => l.foldRight(r.foldRight(acc)(f))(f)
-
-  // Notice that in `Foldable[Tree].foldMap`, we don't actually use the `empty`
-  // from the `Monoid`. This is because there is no empty tree.
-  // This suggests that there might be a class of types that are foldable
-  // with something "smaller" than a monoid, consisting only of an
-  // associative `combine`. That kind of object (a monoid without a `empty`) is
-  // called a semigroup. `Tree` itself is not a monoid, but it is a semigroup.
-
-  given Foldable[Option] with
-    extension [A](as: Option[A])
-      override def foldMap[B](f: A => B)(using mb: Monoid[B]): B =
-        as match
-          case None => mb.empty
-          case Some(a) => f(a)
-
-      override def foldLeft[B](acc: B)(f: (B, A) => B) = as match
-        case None => acc
-        case Some(a) => f(acc, a)
-
-      override def foldRight[B](acc: B)(f: (A, B) => B) = as match
-        case None => acc
-        case Some(a) => f(a, acc)
