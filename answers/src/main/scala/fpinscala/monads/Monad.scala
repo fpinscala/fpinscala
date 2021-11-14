@@ -130,7 +130,7 @@ object Monad {
   // But we don't have to create a full class like `StateMonads`. We can create
   // an anonymous class inline, inside parentheses, and project out its type member,
   // `lambda`:
-  def stateMonad[S] = new Monad[({type lambda[x] = State[S, x]})#lambda] {
+  def stateMonad[S] = new Monad[State[S, *]] {
     def unit[A](a: => A): State[S, A] = State(s => (a, s))
     override def flatMap[A,B](st: State[S, A])(f: A => State[S, B]): State[S, B] =
       st.flatMap(f)
@@ -171,7 +171,7 @@ object Monad {
   // This means the Reader monad can override replicateM to provide a very efficient
   // implementation.
 
-  def readerMonad[R] = new Monad[({type f[x] = Reader[R,x]})#f] {
+  def readerMonad[R] = new Monad[Reader[R, *]] {
     def unit[A](a: => A): Reader[R, A] = Reader(_ => a)
     override def flatMap[A,B](st: Reader[R, A])(f: A => Reader[R, B]): Reader[R, B] =
       Reader(r => f(st.run(r)).run(r))

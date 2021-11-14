@@ -135,16 +135,14 @@ object Monoid:
     case Part(lStub: String, words: Int, rStub: String)
 
   val wcMonoid: Monoid[WC] = new Monoid[WC]:
-    import WC.{Stub, Part}
-    // The empty result, where we haven't seen any characters yet.
-    val empty = Stub("")
+    val empty = WC.Stub("")
 
     def combine(wc1: WC, wc2: WC) = (wc1, wc2) match
-      case (Stub(a), Stub(b)) => Stub(a + b)
-      case (Stub(a), Part(l, w, r)) => Part(a + l, w, r)
-      case (Part(l, w, r), Stub(a)) => Part(l, w, r + a)
-      case (Part(l1, w1, r1), Part(l2, w2, r2)) =>
-        Part(l1, w1 + (if (r1 + l2).isEmpty then 0 else 1) + w2, r2)
+      case (WC.Stub(a), WC.Stub(b)) => WC.Stub(a + b)
+      case (WC.Stub(a), WC.Part(l, w, r)) => WC.Part(a + l, w, r)
+      case (WC.Part(l, w, r), WC.Stub(a)) => WC.Part(l, w, r + a)
+      case (WC.Part(l1, w1, r1), WC.Part(l2, w2, r2)) =>
+        WC.Part(l1, w1 + (if (r1 + l2).isEmpty then 0 else 1) + w2, r2)
 
   def wcGen: Gen[WC] = 
     val smallString = Gen.choose(0, 10).flatMap(Gen.stringN)
@@ -159,123 +157,137 @@ object Monoid:
   val wcMonoidTest = monoidLaws(wcMonoid, wcGen)
 
   def count(s: String): Int =
-    import WC.{Stub, Part}
     // A single character's count. Whitespace does not count,
     // and non-whitespace starts a new Stub.
     def wc(c: Char): WC =
       if c.isWhitespace then
-        Part("", 0, "")
+        WC.Part("", 0, "")
       else
-        Stub(c.toString)
-    // `unstub(s)` is 0 if `s` is empty, otherwise 1.
-    def unstub(s: String) = s.length min 1
+        WC.Stub(c.toString)
+    def unstub(s: String) = if s.isEmpty then 0 else 1
     foldMapV(s.toIndexedSeq, wcMonoid)(wc) match
-      case Stub(s) => unstub(s)
-      case Part(l, w, r) => unstub(l) + w + unstub(r)
+      case WC.Stub(s) => unstub(s)
+      case WC.Part(l, w, r) => unstub(l) + w + unstub(r)
 
-  def productMonoid[A, B](A: Monoid[A], B: Monoid[B]): Monoid[(A, B)] =
-    new Monoid[(A, B)]:
-      def combine(x: (A, B), y: (A, B)) =
-        (A.combine(x._1, y._1), B.combine(x._2, y._2))
-      val empty = (A.empty, B.empty)
+  def foldMapG[A, B](as: List[A])(f: A => B)(using m: Monoid[B]): B =
+    foldMap(as, m)(f)
 
-  def functionMonoid[A, B](B: Monoid[B]): Monoid[A => B] =
-    new Monoid[A => B]:
-      def combine(f: A => B, g: A => B) = a => B.combine(f(a), g(a))
-      val empty: A => B = a => B.empty
+  def foldMapVG[A, B](as: IndexedSeq[A])(f: A => B)(using m: Monoid[B]): B =
+    foldMapV(as, m)(f)
 
-  def mapMergeMonoid[K, V](V: Monoid[V]): Monoid[Map[K, V]] =
-    new Monoid[Map[K, V]]:
-      def empty = Map[K,V]()
-      def combine(a: Map[K, V], b: Map[K, V]) =
-        (a.keySet ++ b.keySet).foldLeft(empty) { (acc,k) =>
-          acc.updated(k, V.combine(a.getOrElse(k, V.empty),
-                              b.getOrElse(k, V.empty)))
-        }
+  // given Monoid[Int] = intAddition
+  given Monoid[Int] with
+    def combine(x: Int, y: Int) = x + y
+    val empty = 0
+
+  val charCount = foldMapG(List("abra", "ca", "dabra"))(_.length)
+
+  given productMonoid[A, B](using A: Monoid[A], B: Monoid[B]): Monoid[(A, B)] with
+    def combine(x: (A, B), y: (A, B)) =
+      (A.combine(x._1, y._1), B.combine(x._2, y._2))
+    val empty = (A.empty, B.empty)
+
+  given mapMergeMonoid[K, V](using V: Monoid[V]): Monoid[Map[K, V]] with
+    def combine(a: Map[K, V], b: Map[K, V]) =
+      (a.keySet ++ b.keySet).foldLeft(empty) { (acc,k) =>
+        acc.updated(k, V.combine(a.getOrElse(k, V.empty),
+                            b.getOrElse(k, V.empty)))
+      }
+    val empty = Map[K,V]()
+
+  given functionMonoid[A, B](using B: Monoid[B]): Monoid[A => B] with
+    def combine(f: A => B, g: A => B) = a => B.combine(f(a), g(a))
+    val empty: A => B = a => B.empty
 
   def bag[A](as: IndexedSeq[A]): Map[A, Int] =
-    foldMapV(as, mapMergeMonoid[A, Int](intAddition))((a: A) => Map(a -> 1))
+    foldMapVG(as)(a => Map(a -> 1))
 
 end Monoid
 
 trait Foldable[F[_]]:
-  import Monoid.*
+  import Monoid.{endoMonoid, dual}
 
-  def foldRight[A,B](as: F[A])(z: B)(f: (A, B) => B): B =
-    foldMap(as)(f.curried)(endoMonoid[B])(z)
+  extension [A](as: F[A])
+    def foldRight[B](acc: B)(f: (A, B) => B): B =
+      as.foldMap(f.curried)(using endoMonoid[B])(acc)
 
-  def foldLeft[A,B](as: F[A])(z: B)(f: (B, A) => B): B =
-    foldMap(as)(a => (b: B) => f(b, a))(dual(endoMonoid[B]))(z)
+    def foldLeft[B](acc: B)(f: (B, A) => B): B =
+      as.foldMap(a => b => f(b, a))(using dual(endoMonoid[B]))(acc)
 
-  def foldMap[A, B](as: F[A])(f: A => B)(mb: Monoid[B]): B =
-    foldRight(as)(mb.empty)((a, b) => mb.combine(f(a), b))
+    def foldMap[B](f: A => B)(using mb: Monoid[B]): B =
+      as.foldRight(mb.empty)((a, b) => mb.combine(f(a), b))
 
-  def concatenate[A](as: F[A])(m: Monoid[A]): A =
-    foldLeft(as)(m.empty)(m.combine)
+    def combineAll(using m: Monoid[A]): A =
+      as.foldLeft(m.empty)(m.combine)
 
-  def toList[A](as: F[A]): List[A] =
-    foldRight(as)(List[A]())(_ :: _)
+    def toList: List[A] =
+      as.foldRight(List[A]())(_ :: _)
 
-object ListFoldable extends Foldable[List]:
-  override def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B) =
-    as.foldRight(z)(f)
-  override def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B) =
-    as.foldLeft(z)(f)
-  override def foldMap[A, B](as: List[A])(f: A => B)(mb: Monoid[B]): B =
-    foldLeft(as)(mb.empty)((b, a) => mb.combine(b, f(a)))
-  override def toList[A](as: List[A]): List[A] = as
+object Foldable:
 
-object IndexedSeqFoldable extends Foldable[IndexedSeq]:
-  import Monoid.*
-  override def foldRight[A, B](as: IndexedSeq[A])(z: B)(f: (A, B) => B) =
-    as.foldRight(z)(f)
-  override def foldLeft[A, B](as: IndexedSeq[A])(z: B)(f: (B, A) => B) =
-    as.foldLeft(z)(f)
-  override def foldMap[A, B](as: IndexedSeq[A])(f: A => B)(mb: Monoid[B]): B =
-    foldMapV(as, mb)(f)
+  given Foldable[List] with
+    extension [A](as: List[A])
+      override def foldRight[B](acc: B)(f: (A, B) => B) =
+        as.foldRight(acc)(f)
+      override def foldLeft[B](acc: B)(f: (B, A) => B) =
+        as.foldLeft(acc)(f)
+      override def foldMap[B](f: A => B)(using mb: Monoid[B]): B =
+        as.foldLeft(mb.empty)((b, a) => mb.combine(b, f(a)))
+      override def toList: List[A] = as
 
-object LazyListFoldable extends Foldable[LazyList]:
-  override def foldRight[A, B](as: LazyList[A])(z: B)(f: (A, B) => B) =
-    as.foldRight(z)(f)
-  override def foldLeft[A, B](as: LazyList[A])(z: B)(f: (B, A) => B) =
-    as.foldLeft(z)(f)
+  given Foldable[IndexedSeq] with
+    extension [A](as: IndexedSeq[A])
+      override def foldRight[B](acc: B)(f: (A, B) => B) =
+        as.foldRight(acc)(f)
+      override def foldLeft[B](acc: B)(f: (B, A) => B) =
+        as.foldLeft(acc)(f)
+      override def foldMap[B](f: A => B)(using mb: Monoid[B]): B =
+        Monoid.foldMapV(as, mb)(f)
 
-enum Tree[+A]:
-  case Leaf(value: A)
-  case Branch(left: Tree[A], right: Tree[A])
+  given Foldable[LazyList] with
+    extension [A](as: LazyList[A])
+      override def foldRight[B](acc: B)(f: (A, B) => B) =
+        as.foldRight(acc)(f)
+      override def foldLeft[B](acc: B)(f: (B, A) => B) =
+        as.foldLeft(acc)(f)
 
-object TreeFoldable extends Foldable[Tree]:
-  import Tree.{Leaf, Branch}
+  import fpinscala.datastructures.Tree
 
-  override def foldMap[A, B](as: Tree[A])(f: A => B)(mb: Monoid[B]): B = as match
-    case Leaf(a) => f(a)
-    case Branch(l, r) => mb.combine(foldMap(l)(f)(mb), foldMap(r)(f)(mb))
+  given Foldable[Tree] with
+    import Tree.{Leaf, Branch}
 
-  override def foldLeft[A, B](as: Tree[A])(z: B)(f: (B, A) => B) = as match
-    case Leaf(a) => f(z, a)
-    case Branch(l, r) => foldLeft(r)(foldLeft(l)(z)(f))(f)
+    extension [A](as: Tree[A])
 
-  override def foldRight[A, B](as: Tree[A])(z: B)(f: (A, B) => B) = as match
-    case Leaf(a) => f(a, z)
-    case Branch(l, r) => foldRight(l)(foldRight(r)(z)(f))(f)
+      override def foldMap[B](f: A => B)(using mb: Monoid[B]): B = as match
+        case Leaf(a) => f(a)
+        case Branch(l, r) => mb.combine(l.foldMap(f), r.foldMap(f))
 
-// Notice that in `TreeFoldable.foldMap`, we don't actually use the `empty`
-// from the `Monoid`. This is because there is no empty tree.
-// This suggests that there might be a class of types that are foldable
-// with something "smaller" than a monoid, consisting only of an
-// associative `combine`. That kind of object (a monoid without a `empty`) is
-// called a semigroup. `Tree` itself is not a monoid, but it is a semigroup.
+      override def foldLeft[B](acc: B)(f: (B, A) => B) = as match
+        case Leaf(a) => f(acc, a)
+        case Branch(l, r) => r.foldLeft(l.foldLeft(acc)(f))(f)
 
-object OptionFoldable extends Foldable[Option]:
-  override def foldMap[A, B](as: Option[A])(f: A => B)(mb: Monoid[B]): B =
-    as match
-      case None => mb.empty
-      case Some(a) => f(a)
+      override def foldRight[B](acc: B)(f: (A, B) => B) = as match
+        case Leaf(a) => f(a, acc)
+        case Branch(l, r) => l.foldRight(r.foldRight(acc)(f))(f)
 
-  override def foldLeft[A, B](as: Option[A])(z: B)(f: (B, A) => B) = as match
-    case None => z
-    case Some(a) => f(z, a)
+  // Notice that in `Foldable[Tree].foldMap`, we don't actually use the `empty`
+  // from the `Monoid`. This is because there is no empty tree.
+  // This suggests that there might be a class of types that are foldable
+  // with something "smaller" than a monoid, consisting only of an
+  // associative `combine`. That kind of object (a monoid without a `empty`) is
+  // called a semigroup. `Tree` itself is not a monoid, but it is a semigroup.
 
-  override def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B) = as match
-    case None => z
-    case Some(a) => f(a, z)
+  given Foldable[Option] with
+    extension [A](as: Option[A])
+      override def foldMap[B](f: A => B)(using mb: Monoid[B]): B =
+        as match
+          case None => mb.empty
+          case Some(a) => f(a)
+
+      override def foldLeft[B](acc: B)(f: (B, A) => B) = as match
+        case None => acc
+        case Some(a) => f(acc, a)
+
+      override def foldRight[B](acc: B)(f: (A, B) => B) = as match
+        case None => acc
+        case Some(a) => f(a, acc)
