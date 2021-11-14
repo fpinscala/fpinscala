@@ -17,7 +17,7 @@ trait Foldable[F[_]]:
       as.foldLeft(ma.empty)(ma.combine)
 
     def toList: List[A] =
-      as.foldRight(List[A]())(_ :: _)
+      as.foldRight(List.empty[A])(_ :: _)
 
 object Foldable:
 

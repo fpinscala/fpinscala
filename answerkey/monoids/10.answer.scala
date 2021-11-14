@@ -1,16 +1,13 @@
-sealed trait WC
-case class Stub(chars: String) extends WC
-case class Part(lStub: String, words: Int, rStub: String) extends WC
+enum WC:
+  case Stub(chars: String)
+  case Part(lStub: String, words: Int, rStub: String)
 
-val wcMonoid: Monoid[WC] = new Monoid[WC] {
-  // The empty result, where we haven't seen any characters yet.
-  val zero = Stub("")
+val wcMonoid: Monoid[WC] = new Monoid[WC]:
+  val empty = WC.Stub("")
 
-  def op(a: WC, b: WC) = (a, b) match {
-    case (Stub(c), Stub(d)) => Stub(c + d)
-    case (Stub(c), Part(l, w, r)) => Part(c + l, w, r)
-    case (Part(l, w, r), Stub(c)) => Part(l, w, r + c)
-    case (Part(l1, w1, r1), Part(l2, w2, r2)) =>
-      Part(l1, w1 + (if ((r1 + l2).isEmpty) 0 else 1) + w2, r2)
-  }
-}
+  def combine(wc1: WC, wc2: WC) = (wc1, wc2) match
+    case (WC.Stub(a), WC.Stub(b)) => WC.Stub(a + b)
+    case (WC.Stub(a), WC.Part(l, w, r)) => WC.Part(a + l, w, r)
+    case (WC.Part(l, w, r), WC.Stub(a)) => WC.Part(l, w, r + a)
+    case (WC.Part(l1, w1, r1), WC.Part(l2, w2, r2)) =>
+      WC.Part(l1, w1 + (if (r1 + l2).isEmpty then 0 else 1) + w2, r2)

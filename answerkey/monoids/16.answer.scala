@@ -1,6 +1,4 @@
-def productMonoid[A,B](A: Monoid[A], B: Monoid[B]): Monoid[(A, B)] =
-  new Monoid[(A, B)] {
-    def op(x: (A, B), y: (A, B)) =
-      (A.op(x._1, y._1), B.op(x._2, y._2))
-    val zero = (A.zero, B.zero)
-  }
+given productMonoid[A, B](using ma: Monoid[A], mb: Monoid[B]): Monoid[(A, B)] with
+  def combine(x: (A, B), y: (A, B)) =
+    (ma.combine(x(0), y(0)), mb.combine(x(1), y(1)))
+  val empty = (ma.empty, mb.empty)

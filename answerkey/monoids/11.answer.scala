@@ -1,12 +1,12 @@
-def count(s: String): Int = {
+def count(s: String): Int =
+  // A single character's count. Whitespace does not count,
+  // and non-whitespace starts a new Stub.
   def wc(c: Char): WC =
-    if (c.isWhitespace)
-      Part("", 0, "")
+    if c.isWhitespace then
+      WC.Part("", 0, "")
     else
-      Stub(c.toString)
-  def unstub(s: String) = s.length min 1
-  foldMapV(s.toIndexedSeq, wcMonoid)(wc) match {
-    case Stub(s) => unstub(s)
-    case Part(l, w, r) => unstub(l) + w + unstub(r)
-  }
-}
+      WC.Stub(c.toString)
+  def unstub(s: String) = if s.isEmpty then 0 else 1
+  foldMapV(s.toIndexedSeq, wcMonoid)(wc) match
+    case WC.Stub(s) => unstub(s)
+    case WC.Part(l, w, r) => unstub(l) + w + unstub(r)

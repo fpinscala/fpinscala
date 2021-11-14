@@ -1,19 +1,15 @@
-val intAddition: Monoid[Int] = new Monoid[Int] {
-  def op(x: Int, y: Int) = x + y
-  val zero = 0
-}
+val intAddition: Monoid[Int] = new:
+  def combine(x: Int, y: Int) = x + y
+  val empty = 0
 
-val intMultiplication: Monoid[Int] = new Monoid[Int] {
-  def op(x: Int, y: Int) = x * y
-  val zero = 1
-}
+val intMultiplication: Monoid[Int] = new:
+  def combine(x: Int, y: Int) = x * y
+  val empty = 1
 
-val booleanOr: Monoid[Boolean] = new Monoid[Boolean] {
-  def op(x: Boolean, y: Boolean) = x || y
-  val zero = false
-}
+val booleanOr: Monoid[Boolean] = new:
+  def combine(x: Boolean, y: Boolean) = x || y
+  val empty = false
 
-val booleanAnd: Monoid[Boolean] = new Monoid[Boolean] {
-  def op(x: Boolean, y: Boolean) = x && y
-  val zero = true
-}
+val booleanAnd: Monoid[Boolean] = new:
+  def combine(x: Boolean, y: Boolean) = x && y
+  val empty = true
