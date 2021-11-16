@@ -84,40 +84,40 @@ object AnonymousFunctions:
 
 object MonomorphicBinarySearch:
 
-  // First, a binary search implementation, specialized to `Double`,
-  // another primitive type in Scala, representing 64-bit floating
-  // point numbers
-  // Ideally, we could generalize this to work for any `Array` type,
-  // so long as we have some way of comparing elements of the `Array`
-  def binarySearch(ds: Array[Double], key: Double): Int =
+
+  // First, a findFirst, specialized to `String`.
+  // Ideally, we could generalize this to work for any `Array` type.
+  def findFirst(ss: Array[String], key: String): Int =
     @annotation.tailrec
-    def go(low: Int, mid: Int, high: Int): Int =
-      if low > high then -mid - 1
-      else
-        val mid2 = (low + high) / 2
-        val d = ds(mid2) // We index into an array using the same
-                         // syntax as function application
-        if d == key then mid2
-        else if d > key then go(low, mid2, mid2-1)
-        else go(mid2 + 1, mid2, high)
-    go(0, 0, ds.length - 1)
+    def loop(n: Int): Int =
+      // If `n` is past the end of the array, return `-1`
+      // indicating the key doesn't exist in the array.
+      if n >= ss.length then -1
+      // `ss(n)` extracts the n'th element of the array `ss`.
+      // If the element at `n` is equal to the key, return `n`
+      // indicating that the element appears in the array at that index.
+      else if ss(n) == key then n
+      else loop(n + 1) // Otherwise increment `n` and keep looking.
+    // Start the loop at the first element of the array.
+    loop(0)
 
 object PolymorphicFunctions:
 
-  // Here's a polymorphic version of `binarySearch`, parameterized on
-  // a function for testing whether an `A` is greater than another `A`.
-  def binarySearch[A](as: Array[A], key: A, gt: (A,A) => Boolean): Int =
+  // Here's a polymorphic version of `findFirst`, parameterized on
+  // a function for testing whether an `A` is the element we want to find.
+  // Instead of hard-coding `String`, we take a type `A` as a parameter.
+  // And instead of hard-coding an equality check for a given key,
+  // we take a function with which to test each element of the array.
+  def findFirst[A](as: Array[A], p: A => Boolean): Int =
     @annotation.tailrec
-    def go(low: Int, mid: Int, high: Int): Int =
-      if low > high then -mid - 1
-      else
-        val mid2 = (low + high) / 2
-        val a = as(mid2)
-        val greater = gt(a, key)
-        if !greater && !gt(key,a) then mid2
-        else if greater then go(low, mid2, mid2-1)
-        else go(mid2 + 1, mid2, high)
-    go(0, 0, as.length - 1)
+    def loop(n: Int): Int =
+      if n >= as.length then -1
+      // If the function `p` matches the current element,
+      // we've found a match and we return its index in the array.
+      else if p(as(n)) then n
+      else loop(n + 1)
+
+    loop(0)
 
   // Exercise 2: Implement a polymorphic function to check whether
   // an `Array[A]` is sorted
