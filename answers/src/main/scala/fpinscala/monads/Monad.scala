@@ -6,43 +6,43 @@ import testing.*
 import parallelism.*
 import state.*
 import parallelism.Par.*
-import language.higherKinds
 
 
-trait Functor[F[_]] {
-  def map[A,B](fa: F[A])(f: A => B): F[B]
+trait Functor[F[_]]:
+  extension [A](fa: F[A])
+    def map[B](f: A => B): F[B]
 
-  def distribute[A,B](fab: F[(A, B)]): (F[A], F[B]) =
-    (map(fab)(_._1), map(fab)(_._2))
+  extension [A, B](fab: F[(A, B)]) def distribute: (F[A], F[B]) =
+    (fab.map(_(0)), fab.map(_(1)))
 
-  def codistribute[A,B](e: Either[F[A], F[B]]): F[Either[A, B]] = e match {
-    case Left(fa) => map(fa)(Left(_))
-    case Right(fb) => map(fb)(Right(_))
-  }
-}
+  extension [A, B](e: Either[F[A], F[B]]) def codistribute: F[Either[A, B]] =
+    e match
+      case Left(fa) => fa.map(Left(_))
+      case Right(fb) => fb.map(Right(_))
 
-object Functor {
-  val listFunctor = new Functor[List] {
-    def map[A,B](as: List[A])(f: A => B): List[B] = as map f
-  }
-}
+object Functor:
+  given listFunctor: Functor[List] with
+    extension [A](as: List[A])
+      def map[B](f: A => B): List[B] = as.map(f)
 
-trait Monad[F[_]] extends Functor[F] {
+trait Monad[F[_]] extends Functor[F]:
   def unit[A](a: => A): F[A]
 
-  def flatMap[A,B](ma: F[A])(f: A => F[B]): F[B] =
-    join(map(ma)(f))
+  extension [A](fa: F[A])
+    def flatMap[B](f: A => F[B]): F[B] =
+      fa.map(f).join
+    
+    def map[B](f: A => B): F[B] =
+      fa.flatMap(a => unit(f(a)))
 
-  def map[A,B](ma: F[A])(f: A => B): F[B] =
-    flatMap(ma)(a => unit(f(a)))
-  def map2[A,B,C](ma: F[A], mb: F[B])(f: (A, B) => C): F[C] =
-    flatMap(ma)(a => map(mb)(b => f(a, b)))
+    def map2[B, C](fb: F[B])(f: (A, B) => C): F[C] =
+      fa.flatMap(a => fb.map(b => f(a, b)))
 
-  def sequence[A](lma: List[F[A]]): F[List[A]] =
-    lma.foldRight(unit(List[A]()))((ma, mla) => map2(ma, mla)(_ :: _))
+  def sequence[A](fas: List[F[A]]): F[List[A]] =
+    fas.foldRight(unit(List[A]()))((fa, acc) => fa.map2(acc)(_ :: _))
 
-  def traverse[A,B](la: List[A])(f: A => F[B]): F[List[B]] =
-    la.foldRight(unit(List[B]()))((a, mlb) => map2(f(a), mlb)(_ :: _))
+  def traverse[A, B](as: List[A])(f: A => F[B]): F[List[B]] =
+    as.foldRight(unit(List[B]()))((a, acc) => f(a).map2(acc)(_ :: _))
 
   // For `List`, the `replicateM` function will generate a list of lists.
   // It will contain all the lists of length `n` with elements selected from the
@@ -51,95 +51,79 @@ trait Monad[F[_]] extends Functor[F] {
   // input is `Some` or `None`. The `Some` case will contain a list of length `n`
   // that repeats the element in the input `Option`.
   // The general meaning of `replicateM` is described very well by the
-  // implementation `sequence(List.fill(n)(ma))`. It repeats the `ma` monadic value
+  // implementation `sequence(List.fill(n)(fa))`. It repeats the `fa` monadic value
   // `n` times and gathers the results in a single value, where the monad `M`
   // determines how values are actually combined.
 
   // Recursive version:
-  def _replicateM[A](n: Int, ma: F[A]): F[List[A]] =
-    if (n <= 0) unit(List[A]()) else map2(ma, _replicateM(n - 1, ma))(_ :: _)
+  def _replicateM[A](n: Int, fa: F[A]): F[List[A]] =
+    if n <= 0 then unit(List[A]()) else fa.map2(_replicateM(n - 1, fa))(_ :: _)
 
   // Using `sequence` and the `List.fill` function of the standard library:
-  def replicateM[A](n: Int, ma: F[A]): F[List[A]] =
-    sequence(List.fill(n)(ma))
+  def replicateM[A](n: Int, fa: F[A]): F[List[A]] =
+    sequence(List.fill(n)(fa))
 
+  def compose[A, B, C](f: A => F[B], g: B => F[C]): A => F[C] =
+    a => f(a).flatMap(g)
 
-  def compose[A,B,C](f: A => F[B], g: B => F[C]): A => F[C] =
-    a => flatMap(f(a))(g)
+  extension [A](fa: F[A]) def _flatMap[B](f: A => F[B]): F[B] =
+    compose((_:Unit) => fa, f)(())
 
-  def _flatMap[A,B](ma: F[A])(f: A => F[B]): F[B] =
-    compose((_:Unit) => ma, f)(())
+  extension [A](ffa: F[F[A]]) def join: F[A] =
+    ffa.flatMap(identity)
 
-  def join[A](mma: F[F[A]]): F[A] = flatMap(mma)(ma => ma)
+  def filterM[A](as: List[A])(f: A => F[Boolean]): F[List[A]] =
+    as.foldRight(unit(List[A]()))((a, acc) =>
+      compose(f, (b: Boolean) => if (b) unit(a).map2(acc)(_ :: _) else acc)(a))
 
-  def filterM[A](ms: List[A])(f: A => F[Boolean]): F[List[A]] =
-    ms.foldRight(unit(List[A]()))((x,y) =>
-      compose(f, (b: Boolean) => if (b) map2(unit(x),y)(_ :: _) else y)(x))
-}
+end Monad      
 
-case class Reader[R, A](run: R => A)
-
-object Monad {
-  val genMonad = new Monad[Gen] {
+object Monad:
+  given genMonad: Monad[Gen] with
     def unit[A](a: => A): Gen[A] = Gen.unit(a)
-    override def flatMap[A,B](ma: Gen[A])(f: A => Gen[B]): Gen[B] =
-      ma.flatMap(f)
-  }
+    extension [A](fa: Gen[A])
+      override def flatMap[B](f: A => Gen[B]): Gen[B] =
+        Gen.flatMap(fa)(f)
 
-  val parMonad = new Monad[Par] {
+  given parMonad: Monad[Par] with
     def unit[A](a: => A) = Par.unit(a)
-    override def flatMap[A,B](ma: Par[A])(f: A => Par[B]) = Par.flatMap(ma)(f)
-  }
+    extension [A](fa: Par[A])
+      override def flatMap[B](f: A => Par[B]): Par[B] =
+        Par.flatMap(fa)(f)
 
-  def parserMonad[P[+_]](p: Parsers[P]) = new Monad[P] {
+  def parserMonad[P[+_]](p: Parsers[P]): Monad[P] = new:
     def unit[A](a: => A) = p.succeed(a)
-    override def flatMap[A,B](ma: P[A])(f: A => P[B]) = p.flatMap(ma)(f)
-  }
+    extension [A](fa: P[A])
+      override def flatMap[B](f: A => P[B]): P[B] =
+        p.flatMap(fa)(f)
 
-  val optionMonad = new Monad[Option] {
+  given optionMonad: Monad[Option] with
     def unit[A](a: => A) = Some(a)
-    override def flatMap[A,B](ma: Option[A])(f: A => Option[B]) = ma flatMap f
-  }
+    extension [A](fa: Option[A])
+      override def flatMap[B](f: A => Option[B]) =
+        fa.flatMap(f)
 
-  val lazyListMonad = new Monad[LazyList] {
+  given lazyListMonad: Monad[LazyList] with
     def unit[A](a: => A) = LazyList(a)
-    override def flatMap[A,B](ma: LazyList[A])(f: A => LazyList[B]) = ma flatMap f
-  }
+    extension [A](fa: LazyList[A])
+      override def flatMap[B](f: A => LazyList[B]) =
+        fa.flatMap(f)
 
-  val listMonad = new Monad[List] {
+  given listMonad: Monad[List] with
     def unit[A](a: => A) = List(a)
-    override def flatMap[A,B](ma: List[A])(f: A => List[B]) = ma flatMap f
-  }
+    extension [A](fa: List[A])
+      override def flatMap[B](f: A => List[B]) =
+        fa.flatMap(f)
 
   // Since `State` is a binary type constructor, we need to partially apply it
   // with the `S` type argument. Thus, it is not just one monad, but an entire
-  // family of monads, one for each type `S`. One solution is to create a class
-  // `StateMonads` that accepts the `S` type argument and then has a _type member_
-  // for the fully applied `State[S, A]` type inside:
-  class StateMonads[S] {
-    type StateS[A] = State[S, A]
-
-    // We can then declare the monad for the `StateS` type constructor:
-    val monad = new Monad[StateS] {
-      def unit[A](a: => A): State[S, A] = State(s => (a, s))
-      override def flatMap[A,B](st: State[S, A])(f: A => State[S, B]): State[S, B] =
-        st.flatMap(f)
-    }
-  }
-
-  // But we don't have to create a full class like `StateMonads`. We can create
-  // an anonymous class inline, inside parentheses, and project out its type member,
-  // `lambda`:
-  def stateMonad[S] = new Monad[State[S, *]] {
+  // family of monads, one for each type `S`.
+  given stateMonad[S]: Monad[State[S, *]] with
     def unit[A](a: => A): State[S, A] = State(s => (a, s))
-    override def flatMap[A,B](st: State[S, A])(f: A => State[S, B]): State[S, B] =
-      st.flatMap(f)
-  }
+    extension [A](fa: State[S, A])
+      override def flatMap[B](f: A => State[S, B]) =
+        State.flatMap(fa)(f)
 
-  val idMonad = new Monad[Id] {
-    def unit[A](a: => A) = Id(a)
-    override def flatMap[A,B](ida: Id[A])(f: A => Id[B]): Id[B] = ida.flatMap(f)
-  }
 
   def getState[S]: State[S,S] = State(s => (s,s))
   def setState[S](s: S): State[S,Unit] = State(_ => ((),s))
@@ -152,6 +136,28 @@ object Monad {
       n  <- getState
       _  <- setState(n + 1)
     } yield (n, a) :: xs).run(0)._1.reverse
+
+end Monad
+
+type Id[+A] = A
+
+object Id:
+  given idMonad: Monad[Id] with
+    def unit[A](a: => A) = a
+    extension [A](fa: Id[A])
+      override def flatMap[B](f: A => Id[B]) =
+        f(fa)
+
+opaque type Reader[-R, +A] = R => A
+
+object Reader:
+  def ask[R]: Reader[R, R] = r => r
+
+  given readerMonad[R]: Monad[Reader[R, *]] with
+    def unit[A](a: => A): Reader[R, A] = _ => a
+    extension [A](fa: Reader[R, A])
+      override def flatMap[B](f: A => Reader[R, B]) =
+      r => f(fa(r))(r)
 
   // The action of Reader's `flatMap` is to pass the `r` argument along to both the
   // outer Reader and also to the result of `f`, the inner Reader. Similar to how
@@ -170,20 +176,3 @@ object Monad {
   // function once and replicating the result instead of calling the function many times.
   // This means the Reader monad can override replicateM to provide a very efficient
   // implementation.
-
-  def readerMonad[R] = new Monad[Reader[R, *]] {
-    def unit[A](a: => A): Reader[R, A] = Reader(_ => a)
-    override def flatMap[A,B](st: Reader[R, A])(f: A => Reader[R, B]): Reader[R, B] =
-      Reader(r => f(st.run(r)).run(r))
-  }
-}
-
-case class Id[A](value: A) {
-  def map[B](f: A => B): Id[B] = Id(f(value))
-  def flatMap[B](f: A => Id[B]): Id[B] = f(value)
-}
-
-object Reader {
-  def ask[R]: Reader[R, R] = Reader(r => r)
-}
-
