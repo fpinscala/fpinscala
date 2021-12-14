@@ -82,6 +82,6 @@ object List: // `List` companion object. Contains functions for creating and wor
 
   def addPairwise(a: List[Int], b: List[Int]): List[Int] = ???
 
-  // def zipWith - TODO determine signature
+  def zipWith[A, B, C](a: List[A], b: List[B], f: (A, B) => C): List[C] = ???
 
   def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = ???
