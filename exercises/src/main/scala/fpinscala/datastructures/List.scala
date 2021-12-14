@@ -64,6 +64,8 @@ object List: // `List` companion object. Contains functions for creating and wor
 
   def productViaFoldLeft(ns: List[Double]) = ???
 
+  def lengthViaFoldLeft[A](l: List[A]): Int = ???
+
   def reverse[A](l: List[A]): List[A] = ???
 
   def appendViaFoldRight[A](l: List[A], r: List[A]): List[A] = ???
