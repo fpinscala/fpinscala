@@ -8,4 +8,7 @@ lazy val root = project
   )
 
 lazy val exercises = project
+  .settings(
+    libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.15.4"
+  )
 lazy val answers = project
