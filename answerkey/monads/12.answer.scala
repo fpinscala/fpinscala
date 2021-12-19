@@ -1,1 +1,2 @@
-def join[A](mma: F[F[A]]): F[A] = flatMap(mma)(ma => ma)
+extension [A](ffa: F[F[A]]) def join: F[A] =
+  ffa.flatMap(identity)

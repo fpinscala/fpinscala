@@ -78,20 +78,19 @@ enum Validation[+E, +A]:
   case Failure(head: E, tail: Vector[E]) extends Validation[E, Nothing]
 
 object Applicative:
-  val lazyListApplicative = new Applicative[LazyList] {
+  val lazyListApplicative: Applicative[LazyList] = new:
 
     def unit[A](a: => A): LazyList[A] =
       LazyList.continually(a) // The infinite, constant stream
 
     extension [A](a: LazyList[A])
-      override def map2[B,C](b: LazyList[B])( // Combine elements pointwise
-                      f: (A,B) => C): LazyList[C] =
+      override def map2[B, C](b: LazyList[B])( // Combine elements pointwise
+                              f: (A, B) => C): LazyList[C] =
         a.zip(b).map(f.tupled)
-  }
 
-  def validationApplicative[E]: Applicative[Validation[E, *]] =
+  def validationApplicative[E]: Applicative[Validation[E, _]] =
     import Validation.{Success, Failure}
-    new Applicative[Validation[E, *]] {
+    new Applicative[Validation[E, _]] {
       def unit[A](a: => A) = Success(a)
       extension [A](fa: Validation[E, A])
         override def map2[B, C](fb: Validation[E, B])(f: (A, B) => C) =
@@ -106,8 +105,8 @@ object Applicative:
 
   type Const[A, B] = A
 
-  implicit def monoidApplicative[M](M: Monoid[M]): Applicative[Const[M, *]] =
-    new Applicative[Const[M, *]] {
+  implicit def monoidApplicative[M](M: Monoid[M]): Applicative[Const[M, _]] =
+    new Applicative[Const[M, _]] {
       def unit[A](a: => A): M = M.empty
       override def apply[A,B](m1: M)(m2: M): M = M.combine(m1, m2)
     }
@@ -134,15 +133,15 @@ trait Monad[F[_]] extends Applicative[F]:
 object Monad:
 
   // Notice that in the case of a `Left`, flatMap does nothing.
-  def eitherMonad[E]: Monad[Either[E, *]] =
-    new Monad[Either[E, *]]:
+  def eitherMonad[E]: Monad[Either[E, _]] =
+    new Monad[Either[E, _]]:
       def unit[A](a: => A): Either[E, A] = Right(a)
       extension [A](eea: Either[E, A])
         override def flatMap[B](f: A => Either[E, B]) = eea match
           case Right(a) => f(a)
           case Left(b) => Left(b)
 
-  def stateMonad[S] = new Monad[State[S, *]] {
+  def stateMonad[S] = new Monad[State[S, _]] {
     def unit[A](a: => A): State[S, A] = State(s => (a, s))
     extension [A](st: State[S, A])
       override def flatMap[B](f: A => State[S, B]): State[S, B] =
@@ -179,7 +178,7 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F]:
 
   extension [A](fa: F[A])
     override def foldMap[B](f: A => B)(using mb: Monoid[B]): B =
-      traverse[Const[B, *], A, Nothing](fa)(f)(using monoidApplicative(mb))
+      traverse[Const[B, _], A, Nothing](fa)(f)(using monoidApplicative(mb))
 
     override def foldLeft[B](acc: B)(f: (B, A) => B): B =
       mapAccum(fa, acc)((a, b) => ((), f(b, a)))._2
@@ -188,7 +187,7 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F]:
       mapAccum(fa, List[A]())((a, s) => ((), a :: s))._2.reverse
 
   def traverseS[S,A,B](fa: F[A])(f: A => State[S, B]): State[S, F[B]] =
-    traverse[State[S, *], A, B](fa)(f)(using Monad.stateMonad)
+    traverse[State[S, _], A, B](fa)(f)(using Monad.stateMonad)
 
   def zipWithIndex_[A](ta: F[A]): F[(A,Int)] =
     traverseS(ta)((a: A) => (for {

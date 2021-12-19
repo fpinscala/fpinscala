@@ -1,2 +1,3 @@
-def flatMap[A,B](ma: F[A])(f: A => F[B]): F[B] =
-  compose((_:Unit) => ma, f)(())
+extension [A](fa: F[A])
+  def flatMap[B](f: A => F[B]): F[B] =
+    compose(_ => fa, f)(())

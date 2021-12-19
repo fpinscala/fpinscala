@@ -1,24 +1,29 @@
-val parMonad = new Monad[Par] {
-  def unit[A](a: => A) = Par.unit(a)
-  def flatMap[A,B](ma: Par[A])(f: A => Par[B]) = Par.flatMap(ma)(f)
-}
-
-def parserMonad[P[+_]](p: Parsers[P]) = new Monad[P] {
-  def unit[A](a: => A) = p.succeed(a)
-  def flatMap[A,B](ma: P[A])(f: A => P[B]) = p.flatMap(ma)(f)
-}
-
-val optionMonad = new Monad[Option] {
+given optionMonad: Monad[Option] with
   def unit[A](a: => A) = Some(a)
-  def flatMap[A,B](ma: Option[A])(f: A => Option[B]) = ma flatMap f
-}
+  extension [A](fa: Option[A])
+    override def flatMap[B](f: A => Option[B]) =
+      fa.flatMap(f)
 
-val streamMonad = new Monad[Stream] {
-  def unit[A](a: => A) = Stream(a)
-  def flatMap[A,B](ma: Stream[A])(f: A => Stream[B]) = ma flatMap f
-}
-
-val listMonad = new Monad[List] {
+given listMonad: Monad[List] with
   def unit[A](a: => A) = List(a)
-  def flatMap[A,B](ma: List[A])(f: A => List[B]) = ma flatMap f
-}
+  extension [A](fa: List[A])
+    override def flatMap[B](f: A => List[B]) =
+      fa.flatMap(f)
+
+given lazyListMonad: Monad[LazyList] with
+  def unit[A](a: => A) = LazyList(a)
+  extension [A](fa: LazyList[A])
+    override def flatMap[B](f: A => LazyList[B]) =
+      fa.flatMap(f)
+
+given parMonad: Monad[Par] with
+  def unit[A](a: => A) = Par.unit(a)
+  extension [A](fa: Par[A])
+    override def flatMap[B](f: A => Par[B]): Par[B] =
+      Par.flatMap(fa)(f)
+
+def parserMonad[P[+_]](p: Parsers[P]): Monad[P] = new:
+  def unit[A](a: => A) = p.succeed(a)
+  extension [A](fa: P[A])
+    override def flatMap[B](f: A => P[B]): P[B] =
+      p.flatMap(fa)(f)

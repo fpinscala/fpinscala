@@ -1,17 +1,17 @@
 // Getting and setting the same state does nothing:
-getState.flatMap(setState) == unit(())
+State.get.flatMap(State.set) == unit(())
 
 // written as for-comprehension:
-for {
-  x <- getState
-  _ <- setState(x)
-} yield ()
+for
+  x <- State.get
+  _ <- State.set(x)
+yield ()
 
 // Setting the state to `s` and getting it back out yields `s`.
-setState(s).flatMap(_ => getState) == unit(s)
+State.set(s).flatMap(_ => State.get) == unit(s)
 
 // alternatively:
-for {
-  _ <- setState(s)
-  x <- getState
-} yield x
+for
+  _ <- State.set(s)
+  x <- State.get
+yield x
