@@ -207,4 +207,7 @@ object Monoid:
     val bagMonoid = mapMergeMonoid[A, Int](using intAddition)
     foldMapV(as, bagMonoid)(a => Map(a -> 1))
 
+  // We'll need this given instance in later chapters
+  given _listMonoid[A]: Monoid[List[A]] = listMonoid 
+
 end Monoid
