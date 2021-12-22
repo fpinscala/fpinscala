@@ -11,11 +11,11 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F]:
 
   extension [A](fa: F[A])
     def traverse[G[_]: Applicative, B](f: A => G[B]): G[F[B]] =
-      sequence(map(fa)(f))
+      fa.map(f).sequence
 
   extension [G[_]: Applicative, A](fga: F[G[A]])
     def sequence: G[F[A]] =
-      traverse(fga)(ga => ga)
+      fga.traverse(ga => ga)
 
   type Id[A] = A
   object Id:
@@ -32,10 +32,10 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F]:
       fa.traverse[Const[B, _], Nothing](f)
 
     override def foldLeft[B](acc: B)(f: (B, A) => B): B =
-      fa.mapAccum(acc)((a, b) => ((), f(b, a)))._2
+      fa.mapAccum(acc)((a, b) => ((), f(b, a)))(1)
 
     override def toList: List[A] =
-      fa.mapAccum(List[A]())((a, s) => ((), a :: s))._2.reverse
+      fa.mapAccum(List[A]())((a, s) => ((), a :: s))(1).reverse
 
     def traverseS[S, B](f: A => State[S, B]): State[S, F[B]] =
       fa.traverse[State[S, _], B](f)(using Monad.stateMonad)
