@@ -34,3 +34,9 @@ object Either:
   def catchNonFatal[A](a: => A): Either[Throwable, A] =
     try Right(a)
     catch case NonFatal(t) => Left(t)
+
+  def map2All[E, A, B, C](a: Either[List[E], A], b: Either[List[E], B], f: (A, B) => C): Either[List[E], C] = ???
+
+  def traverseAll[E, A, B](es: List[A], f: A => Either[List[E], B]): Either[List[E], List[B]] = ???
+
+  def sequenceAll[E, A](es: List[Either[List[E], A]]): Either[List[E], List[A]] = ???

@@ -128,10 +128,9 @@ object RNG:
     sequence(List.fill(count)(int))
 
   def flatMap[A, B](r: Rand[A])(f: A => Rand[B]): Rand[B] =
-    rng0 => {
+    rng0 =>
       val (a, rng1) = r(rng0)
       f(a)(rng1)
-    }
 
   def nonNegativeLessThan(n: Int): Rand[Int] =
     flatMap(nonNegativeInt) { i =>
@@ -155,16 +154,15 @@ object State:
       flatMap(a => unit(f(a)))
 
     def map2[B, C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
-      for {
+      for
         a <- underlying
         b <- sb
-      } yield f(a, b)
+      yield f(a, b)
 
     def flatMap[B](f: A => State[S, B]): State[S, B] = 
-      s => {
+      s =>
         val (a, s1) = underlying(s)
         f(a)(s1)
-      }
 
   def apply[S, A](f: S => (A, S)): State[S, A] = f
 

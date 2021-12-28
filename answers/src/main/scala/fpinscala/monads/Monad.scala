@@ -44,37 +44,33 @@ trait Monad[F[_]] extends Functor[F]:
   def traverse[A, B](as: List[A])(f: A => F[B]): F[List[B]] =
     as.foldRight(unit(List[B]()))((a, acc) => f(a).map2(acc)(_ :: _))
 
-  // For `List`, the `replicateM` function will generate a list of lists.
-  // It will contain all the lists of length `n` with elements selected from the
-  // input list.
-  // For `Option`, it will generate either `Some` or `None` based on whether the
-  // input is `Some` or `None`. The `Some` case will contain a list of length `n`
-  // that repeats the element in the input `Option`.
-  // The general meaning of `replicateM` is described very well by the
-  // implementation `sequence(List.fill(n)(fa))`. It repeats the `fa` monadic value
-  // `n` times and gathers the results in a single value, where the monad `M`
-  // determines how values are actually combined.
+  def replicateMViaRecursion[A](n: Int, fa: F[A]): F[List[A]] =
+    if n <= 0 then unit(List[A]())
+    else fa.map2(replicateMViaRecursion(n - 1, fa))(_ :: _)
 
-  // Recursive version:
-  def _replicateM[A](n: Int, fa: F[A]): F[List[A]] =
-    if n <= 0 then unit(List[A]()) else fa.map2(_replicateM(n - 1, fa))(_ :: _)
-
-  // Using `sequence` and the `List.fill` function of the standard library:
   def replicateM[A](n: Int, fa: F[A]): F[List[A]] =
     sequence(List.fill(n)(fa))
 
   def compose[A, B, C](f: A => F[B], g: B => F[C]): A => F[C] =
     a => f(a).flatMap(g)
 
-  extension [A](fa: F[A]) def _flatMap[B](f: A => F[B]): F[B] =
-    compose((_:Unit) => fa, f)(())
+  extension [A](fa: F[A])
+    def flatMapViaCompose[B](f: A => F[B]): F[B] =
+      compose(_ => fa, f)(())
+
+  def filterM[A](as: List[A])(f: A => F[Boolean]): F[List[A]] =
+    as.foldRight(unit(List[A]()))((a, acc) =>
+      f(a).flatMap(b => if b then unit(a).map2(acc)(_ :: _) else acc))
 
   extension [A](ffa: F[F[A]]) def join: F[A] =
     ffa.flatMap(identity)
 
-  def filterM[A](as: List[A])(f: A => F[Boolean]): F[List[A]] =
-    as.foldRight(unit(List[A]()))((a, acc) =>
-      compose(f, (b: Boolean) => if (b) unit(a).map2(acc)(_ :: _) else acc)(a))
+  extension [A](fa: F[A])
+    def flatMapViaJoinAndMap[B](f: A => F[B]): F[B] =
+      fa.map(f).join
+
+  def composeViaJoinAndMap[A, B, C](f: A => F[B], g: B => F[C]): A => F[C] =
+    a => f(a).map(g).join
 
 end Monad      
 
@@ -117,62 +113,73 @@ object Monad:
 
   // Since `State` is a binary type constructor, we need to partially apply it
   // with the `S` type argument. Thus, it is not just one monad, but an entire
-  // family of monads, one for each type `S`.
-  given stateMonad[S]: Monad[State[S, *]] with
+  // family of monads, one for each type `S`. One solution is to create a class
+  // `StateMonads` that accepts the `S` type argument and then has a _type member_
+  // for the fully applied `State[S, A]` type inside:
+  trait StateMonads[S]:
+    type StateS[A] = State[S, A]
+
+    // We can then declare the monad for the `StateS` type constructor:
+    given stateMonad: Monad[StateS] with
+      def unit[A](a: => A): State[S, A] = State(s => (a, s))
+      extension [A](fa: State[S, A])
+        override def flatMap[B](f: A => State[S, B]) =
+          State.flatMap(fa)(f)
+
+  // Using a type lambda, we can define a single given that provides a monad
+  // instance for any state type `S`:
+  object StateMonadViaTypeLambda: // Wrapping in an object so this instance doesn't conflict with one below
+    given stateMonadViaTypeLambda[S]: Monad[[X] =>> State[S, X]] with
+      def unit[A](a: => A): State[S, A] = State(s => (a, s))
+      extension [A](fa: State[S, A])
+        override def flatMap[B](f: A => State[S, B]) =
+          State.flatMap(fa)(f)
+
+  // With the -Ykind-projector:underscores scalacOption, we can define a single given that
+  // provides a monad instance for any state type `S`:
+  given stateMonad[S]: Monad[State[S, _]] with
     def unit[A](a: => A): State[S, A] = State(s => (a, s))
     extension [A](fa: State[S, A])
       override def flatMap[B](f: A => State[S, B]) =
         State.flatMap(fa)(f)
 
-
-  def getState[S]: State[S,S] = State(s => (s,s))
-  def setState[S](s: S): State[S,Unit] = State(_ => ((),s))
-
   val F = stateMonad[Int]
 
-  def zipWithIndex[A](as: List[A]): List[(Int,A)] =
-    as.foldLeft(F.unit(List[(Int, A)]()))((acc,a) => for {
-      xs <- acc
-      n  <- getState
-      _  <- setState(n + 1)
-    } yield (n, a) :: xs).run(0)._1.reverse
+  def zipWithIndex[A](as: List[A]): List[(Int, A)] =
+    as.foldLeft(F.unit(List[(Int, A)]()))((acc, a) =>
+      for
+        xs <- acc
+        n  <- State.get
+        _  <- State.set(n + 1)
+      yield (n, a) :: xs
+    ).run(0)._1.reverse
 
 end Monad
 
-type Id[+A] = A
+case class Id[+A](value: A):
+  def map[B](f: A => B): Id[B] =
+    Id(f(value))
+  def flatMap[B](f: A => Id[B]): Id[B] =
+    f(value)
 
 object Id:
   given idMonad: Monad[Id] with
-    def unit[A](a: => A) = a
+    def unit[A](a: => A) = Id(a)
     extension [A](fa: Id[A])
       override def flatMap[B](f: A => Id[B]) =
-        f(fa)
+        fa.flatMap(f)
 
 opaque type Reader[-R, +A] = R => A
 
 object Reader:
   def ask[R]: Reader[R, R] = r => r
+  def apply[R, A](f: R => A): Reader[R, A] = f
 
-  given readerMonad[R]: Monad[Reader[R, *]] with
+  extension [R, A](ra: Reader[R, A])
+    def run(r: R): A = ra(r)
+
+  given readerMonad[R]: Monad[Reader[R, _]] with
     def unit[A](a: => A): Reader[R, A] = _ => a
     extension [A](fa: Reader[R, A])
       override def flatMap[B](f: A => Reader[R, B]) =
-      r => f(fa(r))(r)
-
-  // The action of Reader's `flatMap` is to pass the `r` argument along to both the
-  // outer Reader and also to the result of `f`, the inner Reader. Similar to how
-  // `State` passes along a state, except that in `Reader` the "state" is read-only.
-
-  // The meaning of `sequence` here is that if you have a list of functions, you can
-  // turn it into a function that takes one argument and passes it to all the functions
-  // in the list, returning a list of the results.
-
-  // The meaning of `join` is simply to pass the same value as both arguments to a
-  // binary function.
-
-  // The meaning of `replicateM` is to apply the same function a number of times to
-  // the same argument, returning a list of the results. Note that if this function
-  // is _pure_, (which it should be), this can be exploited by only applying the
-  // function once and replicating the result instead of calling the function many times.
-  // This means the Reader monad can override replicateM to provide a very efficient
-  // implementation.
+        r => f(fa(r))(r)
