@@ -53,5 +53,14 @@ object LazyList:
 
   def from(n: Int): LazyList[Int] = ???
 
+  val fibs: LazyList[Int] = ???
+
   def unfold[A, S](state: S)(f: S => Option[(A, S)]): LazyList[A] = ???
 
+  val fibsViaUnfold: LazyList[Int] = ???
+
+  def fromViaUnfold(n: Int): LazyList[Int] = ???
+
+  def continuallyViaUnfold[A](a: A): LazyList[A] = ???
+
+  val onesViaUnfold: LazyList[Int] = ???
