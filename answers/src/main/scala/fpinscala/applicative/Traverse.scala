@@ -6,7 +6,7 @@ import state.State
 import monoids.{Monoid, Foldable}
 import Applicative.Const
 
-trait Traverse[F[_]] extends Functor[F] with Foldable[F]:
+trait Traverse[F[_]] extends Functor[F], Foldable[F]:
   self =>
 
   extension [A](fa: F[A])
@@ -37,11 +37,8 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F]:
     override def toList: List[A] =
       fa.mapAccum(List[A]())((a, s) => ((), a :: s))(1).reverse
 
-    def traverseS[S, B](f: A => State[S, B]): State[S, F[B]] =
-      fa.traverse[State[S, _], B](f)(using Monad.stateMonad)
-
     def zipWithIndex_ : F[(A, Int)] =
-      fa.traverseS(a => 
+      fa.traverse(a => 
         for
           i <- State.get[Int]
           _ <- State.set(i + 1)
@@ -49,7 +46,7 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F]:
       ).run(0)(0)
 
     def toList_ : List[A] =
-      fa.traverseS(a => 
+      fa.traverse(a => 
         for
           as <- State.get[List[A]] // Get the current state, the accumulated list.
           _  <- State.set(a :: as) // Add the current element and set the new list as the new state.
@@ -57,7 +54,7 @@ trait Traverse[F[_]] extends Functor[F] with Foldable[F]:
       ).run(Nil)(1).reverse
 
     def mapAccum[S, B](s: S)(f: (A, S) => (B, S)): (F[B], S) =
-      fa.traverseS(a => 
+      fa.traverse(a => 
         for
           s1 <- State.get[S]
           (b, s2) = f(a, s1)

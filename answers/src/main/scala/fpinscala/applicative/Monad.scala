@@ -25,19 +25,6 @@ trait Monad[F[_]] extends Applicative[F]:
 
 object Monad:
 
-  given eitherMonad[E]: Monad[Either[E, _]] with
-    def unit[A](a: => A): Either[E, A] = Right(a)
-    extension [A](eea: Either[E, A])
-      override def flatMap[B](f: A => Either[E, B]) = eea match
-        case Right(a) => f(a)
-        case Left(b) => Left(b)
-
-  given stateMonad[S]: Monad[State[S, _]] with
-    def unit[A](a: => A): State[S, A] = State(s => (a, s))
-    extension [A](st: State[S, A])
-      override def flatMap[B](f: A => State[S, B]): State[S, B] =
-        State.flatMap(st)(f)
-
   // Monad composition
   def composeM[G[_], H[_]](using G: Monad[G], H: Monad[H], T: Traverse[H]): Monad[[X] =>> G[H[X]]] = new:
     def unit[A](a: => A): G[H[A]] = G.unit(H.unit(a))

@@ -8,21 +8,9 @@ import state.State
 import java.time.LocalDate
 
 trait Applicative[F[_]] extends Functor[F]:
+  self =>
 
   def unit[A](a: => A): F[A]
-
-  extension [A](fa: F[A])
-    // `map2` is implemented by first currying `f` so we get a function
-    // of type `A => B => C`. This is a function that takes `A` and returns
-    // another function of type `B => C`. So if we map `f.curried` over an
-    // `F[A]`, we get `F[B => C]`. Passing that to `apply` along with the
-    // `F[B]` will give us the desired `F[C]`.
-    def map2[B, C](fb: F[B])(f: (A, B) => C): F[C] =
-      apply(fa.map(f.curried)).apply(fb)
-
-    def map[B](f: A => B): F[B] =
-      apply(unit(f))(fa)
-
 
   // We simply use `map2` to lift a function into `F` so we can apply it
   // to both `fab` and `fa`. The function being lifted here is `_(_)`,
@@ -33,6 +21,20 @@ trait Applicative[F[_]] extends Functor[F]:
   // and it simply applies `f` to `x`.
   def apply[A, B](fab: F[A => B])(fa: F[A]): F[B] =
     fab.map2(fa)(_(_))
+
+  extension [A](fa: F[A])
+    // `map2` is implemented by first currying `f` so we get a function
+    // of type `A => B => C`. This is a function that takes `A` and returns
+    // another function of type `B => C`. We could map `f.curried` over
+    // `F[A]` but let's stick with just `apply` and `unit`. We can lift
+    // `f.curried` in to `F` via `unit`, giving us `F[A => B => C]`. Then
+    // we can use `apply` along with `F[A]` to get `F[B => C]`. Passing
+    // that to `apply` along with the `F[B]` will give us the desired `F[C]`.
+    def map2[B, C](fb: F[B])(f: (A, B) => C): F[C] =
+      apply(apply(unit(f.curried))(fa))(fb)
+
+    def map[B](f: A => B): F[B] =
+      apply(unit(f))(fa)
 
   def sequence[A](fas: List[F[A]]): F[List[A]] =
     traverse(fas)(fa => fa)
@@ -60,25 +62,21 @@ trait Applicative[F[_]] extends Functor[F]:
     )(f: (A, B, C, D) => E): F[E] =
       apply(apply(apply(apply(unit(f.curried))(fa))(fb))(fc))(fd)
 
-  def product[G[_]](G: Applicative[G]): Applicative[[X] =>> (F[X], G[X])] =
-    val self = this
-    new Applicative[[X] =>> (F[X], G[X])]:
-      def unit[A](a: => A) = (self.unit(a), G.unit(a))
-      override def apply[A,B](fs: (F[A => B], G[A => B]))(p: (F[A], G[A])) =
-        (self.apply(fs(0))(p(0)), G.apply(fs(1))(p(1)))
+  def product[G[_]](G: Applicative[G]): Applicative[[X] =>> (F[X], G[X])] = new:
+    def unit[A](a: => A) = (self.unit(a), G.unit(a))
+    override def apply[A, B](fs: (F[A => B], G[A => B]))(p: (F[A], G[A])) =
+      (self.apply(fs(0))(p(0)), G.apply(fs(1))(p(1)))
 
   // Here we simply use `map2` to lift `apply` and `unit` themselves from one
   // Applicative into the other.
   // If `self` and `G` both satisfy the laws, then so does the composite.
   // The full proof can be found at
   // https://github.com/runarorama/sannanir/blob/master/Applicative.v
-  def compose[G[_]](G: Applicative[G]): Applicative[[X] =>> F[G[X]]] =
-    val self = this
-    new Applicative[[X] =>> F[G[X]]]:
-      def unit[A](a: => A) = self.unit(G.unit(a))
-      extension [A](fga: F[G[A]])
-        override def map2[B,C](fgb: F[G[B]])(f: (A,B) => C) =
-          self.map2(fga)(fgb)(G.map2(_)(_)(f))
+  def compose[G[_]](G: Applicative[G]): Applicative[[X] =>> F[G[X]]] = new:
+    def unit[A](a: => A) = self.unit(G.unit(a))
+    extension [A](fga: F[G[A]])
+      override def map2[B, C](fgb: F[G[B]])(f: (A, B) => C) =
+        self.map2(fga)(fgb)(G.map2(_)(_)(f))
 
   def sequenceMap[K, V](ofv: Map[K, F[V]]): F[Map[K, V]] =
     ofv.foldLeft(unit(Map.empty[K, V])) { case (acc, (k, fv)) =>
@@ -198,3 +196,21 @@ object Applicative:
   given monoidApplicative[M](using m: Monoid[M]): Applicative[Const[M, _]] with
     def unit[A](a: => A): M = m.empty
     override def apply[A, B](m1: M)(m2: M): M = m.combine(m1, m2)
+
+  given optionMonad: Monad[Option] with
+    def unit[A](a: => A): Option[A] = Some(a)
+    extension [A](oa: Option[A])
+      override def flatMap[B](f: A => Option[B]) = oa.flatMap(f)
+
+  given eitherMonad[E]: Monad[Either[E, _]] with
+    def unit[A](a: => A): Either[E, A] = Right(a)
+    extension [A](eea: Either[E, A])
+      override def flatMap[B](f: A => Either[E, B]) = eea match
+        case Right(a) => f(a)
+        case Left(b) => Left(b)
+
+  given stateMonad[S]: Monad[State[S, _]] with
+    def unit[A](a: => A): State[S, A] = State(s => (a, s))
+    extension [A](st: State[S, A])
+      override def flatMap[B](f: A => State[S, B]): State[S, B] =
+        State.flatMap(st)(f)
