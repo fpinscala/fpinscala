@@ -98,7 +98,7 @@ To run unit-tests for a file you can do:
 
 To run all unit-tests:
 
-    > test:runMain fpinscala.checkAll
+    > test
 
 All code in this repository is
 [MIT-licensed](http://opensource.org/licenses/mit-license.php). See the
