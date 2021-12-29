@@ -92,9 +92,13 @@ to get a Scala REPL with access to your exercises, and
 
 To get a menu of possible main methods to execute.
 
-To run unit-tests for a package (for example: `fpinscala.gettingstarted`) you can do:
+To run unit-tests for a file you can do:
 
-    > runMain fpinscala.gettingstarted.checkAll
+    > test:runMain fpinscala.gettingstarted.GettingStartedProps
+
+To run all unit-tests:
+
+    > test:runMain fpinscala.checkAll
 
 All code in this repository is
 [MIT-licensed](http://opensource.org/licenses/mit-license.php). See the
