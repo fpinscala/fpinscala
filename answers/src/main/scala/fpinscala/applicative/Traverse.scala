@@ -86,9 +86,7 @@ trait Traverse[F[_]] extends Functor[F], Foldable[F]:
         case (b, a :: as) => ((Some(a): Option[A], b), as)
       }(0)
 
-    def fuse[M[_]: Applicative, N[_]: Applicative, B](f: A => M[B], g: A => N[B]): (M[F[B]], N[F[B]]) =
-      val m = summon[Applicative[M]]
-      val n = summon[Applicative[N]]
+    def fuse[M[_], N[_], B](f: A => M[B], g: A => N[B])(using m: Applicative[M], n: Applicative[N]): (M[F[B]], N[F[B]]) =
       fa.traverse[[X] =>> (M[X], N[X]), B](a => (f(a), g(a)))(using m.product(n))
 
   def compose[G[_]: Traverse]: Traverse[[X] =>> F[G[X]]] = new:
@@ -116,10 +114,24 @@ object Traverse:
     extension [A](ta: Tree[A])
       override def traverse[G[_]: Applicative, B](f: A => G[B]): G[Tree[B]] =
         f(ta.head).map2(ta.tail.traverse(a => a.traverse(f)))(Tree(_, _))
+  
+  given mapTraverse[K]: Traverse[Map[K, _]] with
+    extension [A](m: Map[K, A])
+      override def traverse[G[_]: Applicative, B](f: A => G[B]): G[Map[K, B]] =
+        m.foldLeft(summon[Applicative[G]].unit(Map.empty[K, B])) { case (acc, (k, a)) =>
+          acc.map2(f(a))((m, b) => m + (k -> b))
+        }
 
   // An example of a Foldable that is not a functor
-  case class Iteration[A](a: A, f: A => A, n: Int):
-    def foldMap[B](g: A => B)(using m: Monoid[B]): B =
-      def iterate(n: Int, b: B, c: A): B =
-        if n <= 0 then b else iterate(n - 1, g(c), f(a))
-      iterate(n, m.empty, a)
+  case class Iteration[A](a: A, f: A => A, n: Int)
+  object Iteration:
+    given iterationFoldable: Foldable[Iteration] with
+      extension [A](i: Iteration[A])
+        override def foldMap[B](g: A => B)(using m: Monoid[B]): B =
+          def iterate(n: Int, b: B, c: A): B =
+            if n <= 0 then b else iterate(n - 1, g(c), i.f(i.a))
+          iterate(i.n, m.empty, i.a)
+    given iterationFunctor: Functor[Iteration] with
+      extension [A](i: Iteration[A])
+        def map[B](f: A => B): Iteration[B] =
+          Iteration(f(i.a), b => ???, i.n)
