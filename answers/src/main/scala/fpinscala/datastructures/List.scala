@@ -23,6 +23,7 @@ object List: // `List` companion object. Contains functions for creating and wor
     if as.isEmpty then Nil
     else Cons(as.head, apply(as.tail*))
 
+  @annotation.nowarn // Scala gives a hint here via a warning, so let's disable that
   val x = List(1,2,3,4,5) match
     case Cons(x, Cons(2, Cons(4, _))) => x
     case Nil => 42
