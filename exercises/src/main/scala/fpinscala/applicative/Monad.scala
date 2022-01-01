@@ -9,8 +9,10 @@ trait Monad[F[_]] extends Applicative[F]:
   extension [A](fa: F[A])
     def flatMap[B](f: A => F[B]): F[B] =
       fa.map(f).join
+
     override def map[B](f: A => B): F[B] =
       fa.flatMap(a => unit(f(a)))
+
     override def map2[B,C](fb: F[B])(f: (A, B) => C): F[C] =
       fa.flatMap(a => fb.map(b => f(a, b)))
 
@@ -24,11 +26,8 @@ trait Monad[F[_]] extends Applicative[F]:
     def join: F[A] = ffa.flatMap(identity)
 
 object Monad:
-
-  // Monad composition
   def composeM[G[_], H[_]](using G: Monad[G], H: Monad[H], T: Traverse[H]): Monad[[X] =>> G[H[X]]] = new:
-    def unit[A](a: => A): G[H[A]] = G.unit(H.unit(a))
+    def unit[A](a: => A): G[H[A]] = ???
     extension [A](gha: G[H[A]])
       override def flatMap[B](f: A => G[H[B]]): G[H[B]] =
-        // Note: we must explicitly call `G.flatMap` and `G.map` or else we inadvertently get the extension methods from this composed instance
-        G.flatMap(gha)(ha => G.map(T.traverse(ha)(f))(H.join))
+        ???
