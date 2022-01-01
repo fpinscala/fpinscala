@@ -1,6 +1,5 @@
-def composeM[G[_],H[_]](implicit G: Monad[G], H: Monad[H], T: Traverse[H]):
-  Monad[({type f[x] = G[H[x]]})#f] = new Monad[({type f[x] = G[H[x]]})#f] {
-    def unit[A](a: => A): G[H[A]] = G.unit(H.unit(a))
-    override def flatMap[A,B](mna: G[H[A]])(f: A => G[H[B]]): G[H[B]] =
-      G.flatMap(mna)(na => G.map(T.traverse(na)(f))(H.join))
-  }
+def composeM[G[_], H[_]](using G: Monad[G], H: Monad[H], T: Traverse[H]): Monad[[X] =>> G[H[X]]] = new:
+  def unit[A](a: => A): G[H[A]] = G.unit(H.unit(a))
+  extension [A](gha: G[H[A]])
+    override def flatMap[B](f: A => G[H[B]]): G[H[B]] =
+      G.flatMap(gha)(ha => G.map(T.traverse(ha)(f))(H.join))  

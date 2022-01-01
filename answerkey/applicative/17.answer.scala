@@ -1,2 +1,3 @@
-override def foldLeft[A,B](fa: F[A])(z: B)(f: (B, A) => B): B =
-  mapAccum(fa, z)((a, b) => ((), f(b, a)))._2
+extension [A](fa: F[A])
+  override def foldLeft[B](acc: B)(f: (B, A) => B): B =
+    fa.mapAccum(acc)((a, b) => ((), f(b, a)))(1)
