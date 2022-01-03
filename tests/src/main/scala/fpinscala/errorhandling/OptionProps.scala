@@ -1,27 +1,17 @@
 package fpinscala.errorhandling
 
-import fpinscala.errorhandling.Either.*
 import fpinscala.errorhandling.Option.*
-import org.scalacheck.*
-import org.scalacheck.Gen.*
-import org.scalacheck.Prop.{forAll, propBoolean}
+import fpinscala.testing.exhaustive.*
+import fpinscala.testing.exhaustive.Prop.*
 
-import scala.language.adhocExtensions
 import scala.{Either as SEither, Left as SLeft, None as SNone, Option as SOption, Right as SRight, Some as SSome}
 
-object OptionProps extends Properties("fpinscala.errorhandling.Option"):
+object OptionProps:
   private val genIntOption: Gen[Option[Int]] =
-    for {
-      n <- posNum[Int]
-      opt <- oneOf(None, Some(n))
-    } yield opt
+    Gen.union(Gen.unit(None), Gen.int.map(Some(_)))
 
   private val genDoubleList: Gen[List[Double]] =
-    for {
-      length <- Gen.choose(1, 10)
-      genNonEmptyList <- Gen.listOfN(length, Gen.double)
-      genList <- Gen.oneOf(List.empty[Double], genNonEmptyList)
-    } yield genList
+    Gen.choose(0, 10).flatMap(n => Gen.listOfN(n, Gen.double))
 
   private val genTwoIntOptions: Gen[(Option[Int], Option[Int])] =
     for {
@@ -29,22 +19,36 @@ object OptionProps extends Properties("fpinscala.errorhandling.Option"):
       opt2 <- genIntOption
     } yield (opt1, opt2)
 
-  private val genOptionSeq: Gen[List[Option[Int]]] =
+  private val genNoneSeq: Gen[List[Option[Int]]] = Gen.unit(List(None))
+
+  private val genListWithNone: Gen[List[Option[Int]]] =
     for {
       length <- Gen.choose(0, 10)
-      genListWithNone <- Gen.listOfN[Option[Int]](length, Gen.oneOf(Gen.const(None), Gen.posNum[Int].map(Some(_))))
-      genList <- Gen.listOfN[Option[Int]](length, Gen.posNum[Int].map(Some(_)))
-      genOptList <- Gen.oneOf(List(None), genListWithNone, genList)
-    } yield genOptList
+      genListWithNone <- Gen.listOfN[Option[Int]](length, genIntOption)
+    } yield genListWithNone
+
+  private val genListWithoutNone: Gen[List[Option[Int]]] =
+    for {
+      length <- Gen.choose(0, 10)
+      genList <- Gen.listOfN[Option[Int]](length, Gen.int.map(Some(_)))
+    } yield genList
+
+  private val genOptionSeq: Gen[List[Option[Int]]] =
+    Gen.union(genNoneSeq, Gen.union(genListWithNone, genListWithoutNone))
+
+  private val genListWithRandomString: Gen[List[String]] =
+    Gen.choose(0, 10).flatMap { n =>
+      Gen.listOfN(n, Gen.union(Gen.unit("one"), Gen.int.map(_.toString)))
+    }
+
+  private val genListWithValidNumbers: Gen[List[String]] =
+    Gen.choose(0, 10).flatMap(n => Gen.listOfN(n, Gen.int.map(_.toString)))
 
   private val genStringList: Gen[List[String]] =
-    for {
-      length <- Gen.choose(0, 10)
-      genListWithRandomString <-
-        Gen.listOfN[String](length, Gen.oneOf(Gen.const("one"), Gen.posNum[Int].map(_.toString)))
-      genListWithValidNumbers <- Gen.listOfN[String](length, Gen.posNum[Int].map(_.toString))
-      genStringList <- Gen.oneOf(genListWithRandomString, genListWithValidNumbers)
-    } yield genStringList
+    Gen.union(
+      genListWithRandomString,
+      genListWithValidNumbers
+    )
 
   private val intToString: Int => String = a => a.toString
   private val intToOptString: Int => Option[String] = a => Some(a.toString)
@@ -54,37 +58,37 @@ object OptionProps extends Properties("fpinscala.errorhandling.Option"):
 
   private val otherOpt: Option[Int] = Some(1)
 
-  property("map") = forAll(genIntOption) {
+  private val mapProp: Prop = forAll(genIntOption) {
     case None    => None.map(intToString) == None
     case Some(n) => Some(n).map(intToString) == Some(n.toString)
-  }
+  }.tag("Option.map")
 
-  property("getOrElse") = forAll(genIntOption) {
+  private val getOrElseProp: Prop = forAll(genIntOption) {
     case None    => None.getOrElse(1) == 1
     case Some(n) => Some(n).getOrElse(1) == n
-  }
+  }.tag("Option.getOrElse")
 
-  property("flatMap") = forAll(genIntOption) {
+  private val flatMapProp: Prop = forAll(genIntOption) {
     case None    => None.flatMap(intToOptString) == None
     case Some(n) => Some(n).flatMap(intToOptString) == Some(n.toString)
-  }
+  }.tag("Option.flatMap")
 
-  property("orElse") = forAll(genIntOption) {
+  private val orElseProp: Prop = forAll(genIntOption) {
     case None => None.orElse(otherOpt) == otherOpt
     case opt  => opt.orElse(otherOpt) == opt
-  }
+  }.tag("Option.orElse")
 
-  property("filter") = forAll(genIntOption) {
+  private val filterProp: Prop = forAll(genIntOption) {
     case None => None.filter(a => a == 42) == None
     case Some(n) =>
       Some(n).filter(a => a == n) == Some(n) && Some(n).filter(a => a == n + 1) == None
-  }
+  }.tag("Option.filter")
 
-  property("mean") = forAll(genDoubleList) { list =>
+  private val meanProp: Prop = forAll(genDoubleList) { list =>
     Option.mean(list) == (if list.isEmpty then None else Some(list.sum / list.length))
-  }
+  }.tag("Option.mean")
 
-  property("variance") = forAll(genDoubleList) { list =>
+  private val varianceProp: Prop = forAll(genDoubleList) { list =>
     val expected =
       if list.isEmpty then None
       else
@@ -92,24 +96,36 @@ object OptionProps extends Properties("fpinscala.errorhandling.Option"):
         val newList = list.map(x => math.pow(x - m, 2))
         Some(newList.sum / newList.length)
     Option.variance(list) == expected
-  }
+  }.tag("Option.variance")
 
-  property("map2") = forAll(genTwoIntOptions) { (opt1, opt2) =>
+  private val map2Prop: Prop = forAll(genTwoIntOptions) { (opt1, opt2) =>
     (opt1, opt2) match
       case (Some(a), Some(b)) => Option.map2(opt1, opt2)(_ + _) == Some(a + b)
       case _                  => Option.map2(opt1, opt2)(_ + _) == None
-  }
+  }.tag("Option.map2")
 
-  property("sequence") = forAll(genOptionSeq) { optionList =>
+  private val sequenceProp: Prop = forAll(genOptionSeq) { optionList =>
     val expected: Option[List[Int]] =
       if optionList.contains(None) then None
       else Some(optionList.flatMap(_.map(List(_)).getOrElse(List.empty[Int])))
     Option.sequence(optionList) == expected
-  }
+  }.tag("Option.sequence")
 
-  property("traverse") = forAll(genStringList) { list =>
+  private val traverseProp: Prop = forAll(genStringList) { list =>
     val expected: Option[List[Int]] =
       if list.contains("one") then None
       else Some(list.flatMap(_.toIntOption))
     Option.traverse(list)(strToOptInt) == expected
-  }
+  }.tag("Option.traverse")
+
+  @main def checkOption(): Unit =
+    mapProp.run()
+    getOrElseProp.run()
+    flatMapProp.run()
+    orElseProp.run()
+    filterProp.run()
+    meanProp.run()
+    varianceProp.run()
+    map2Prop.run()
+    sequenceProp.run()
+    traverseProp.run()

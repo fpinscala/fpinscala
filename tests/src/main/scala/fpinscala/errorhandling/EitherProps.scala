@@ -1,15 +1,21 @@
 package fpinscala.errorhandling
 
-import fpinscala.errorhandling.Either.{Left, Right, map2All}
-import fpinscala.errorhandling.EitherProps.property
-import org.scalacheck.Prop.forAll
-import org.scalacheck.{Gen, Properties}
+import fpinscala.errorhandling.Either.*
+import fpinscala.testing.exhaustive.*
+import fpinscala.testing.exhaustive.Prop.*
 
-import scala.language.adhocExtensions
+object EitherProps:
+  private val genChar: Gen[Char] =
+    Gen.choose(0, 26).map(i => ('a' + i).toChar)
 
-object EitherProps extends Properties("fpinscala.errorhandling.Either"):
+  private val genString: Gen[String] =
+    for {
+      n <- Gen.choose(0, 20)
+      list <- Gen.listOfN(n, genChar)
+    } yield list.mkString
+
   private val genEither: Gen[Either[String, Int]] =
-    Gen.oneOf(Gen.asciiStr.map(Left(_)), Gen.posNum[Int].map(Right(_)))
+    Gen.union(genString.map(Left(_)), Gen.int.map(Right(_)))
 
   private val genTwoEither: Gen[(Either[String, Int], Either[String, Int])] =
     for {
@@ -17,30 +23,30 @@ object EitherProps extends Properties("fpinscala.errorhandling.Either"):
       either2 <- genEither
     } yield (either1, either2)
 
-  property("map") = forAll(genEither) { either =>
+  private val mapProp: Prop = forAll(genEither) { either =>
     val expected = either match {
       case Left(_)  => either
       case Right(n) => Right(n / 2)
     }
     either.map(_ / 2) == expected
-  }
+  }.tag("Either.map")
 
-  property("flatMap") = forAll(genEither) { either =>
+  private val flatMapProp: Prop = forAll(genEither) { either =>
     val f: Int => Either[String, Int] =
       n => if n % 2 == 0 then Right(n / 2) else Left("An odd number")
 
     val expected = either match
       case Left(_)                => either
-      case Right(n) if n % 2 == 1 => Left("An odd number")
+      case Right(n) if n % 2 != 0 => Left("An odd number")
       case Right(n)               => Right(n / 2)
 
     either.flatMap(f) == expected
-  }
+  }.tag("Either.flatMap")
 
-  property("orElse") = forAll(genTwoEither) {
+  private val orElseProp: Prop = forAll(genTwoEither) {
     case (Left(l1), either2)  => Left(l1).orElse(either2) == either2
     case (Right(r1), either2) => Right(r1).orElse(either2) == Right(r1)
-  }
+  }.tag("Either.orElse")
 
   case class Name(value: String)
   object Name:
@@ -68,7 +74,10 @@ object EitherProps extends Properties("fpinscala.errorhandling.Either"):
       Name.make(name).map2(Age.make(age))(Person(_, _))
 
   private val genName: Gen[String] =
-    Gen.oneOf(Gen.const(""), Gen.asciiStr)
+    Gen.union(Gen.unit(""), genString)
+
+  private val genPosAge: Gen[Int] =
+    Gen.choose(1, 50)
 
   private val genAge: Gen[Int] =
     Gen.choose(-50, 50)
@@ -79,7 +88,7 @@ object EitherProps extends Properties("fpinscala.errorhandling.Either"):
       age <- genAge
     } yield (name, age)
 
-  property("map2") = forAll(genNameAndAge) { case (name, age) =>
+  private val map2Prop: Prop = forAll(genNameAndAge) { case (name, age) =>
     val expected = (name, age) match {
       case ("", _)         => Left("Name is empty.")
       case (_, n) if n < 0 => Left("Age is out of range.")
@@ -87,33 +96,31 @@ object EitherProps extends Properties("fpinscala.errorhandling.Either"):
     }
 
     Name.make(name).map2(Age.make(age))(Person(_, _)) == expected
-  }
+  }.tag("Either.map2")
 
   private val genAgesList: Gen[List[Int]] =
-    for {
-      length <- Gen.choose(0, 10)
-      posAgesList <- Gen.listOfN(length, Gen.posNum[Int])
-      anyAgesList <- Gen.listOfN(length, genAge)
-      ageList <- Gen.oneOf(posAgesList, anyAgesList)
-    } yield ageList
+    Gen.union(
+      Gen.choose(0, 10).flatMap(n => Gen.listOfN(n, genPosAge)),
+      Gen.choose(0, 10).flatMap(n => Gen.listOfN(n, genAge))
+    )
 
-  property("traverse") = forAll(genAgesList) { ageList =>
+  private val traverseProp: Prop = forAll(genAgesList) { ageList =>
     val expected =
       if ageList.exists(_ < 0) then Left("Age is out of range.")
       else Right(ageList.map(Age(_)))
 
     Either.traverse(ageList)(Age.make) == expected
-  }
+  }.tag("Either.traverse")
 
-  property("sequence") = forAll(genAgesList) { ageList =>
+  private val sequenceProp: Prop = forAll(genAgesList) { ageList =>
     val expected =
       if ageList.exists(_ < 0) then Left("Age is out of range.")
       else Right(ageList.map(Age(_)))
 
     Either.sequence(ageList.map(Age.make)) == expected
-  }
+  }.tag("Either.sequence")
 
-  property("map2All") = forAll(genNameAndAge) { case (name, age) =>
+  private val map2AllProp: Prop = forAll(genNameAndAge) { case (name, age) =>
     val expected = (name, age) match {
       case ("", n) if n < 0 => Left(List("Name is empty.", "Age is out of range."))
       case ("", _)          => Left(List("Name is empty."))
@@ -122,22 +129,33 @@ object EitherProps extends Properties("fpinscala.errorhandling.Either"):
     }
 
     map2All(Name.make2(name), Age.make2(age), Person(_, _)) == expected
-  }
+  }.tag("Either.map2All")
 
-  property("traverseAll") = forAll(genAgesList) { ageList =>
+  private val traverseAllProp: Prop = forAll(genAgesList) { ageList =>
     val negCount = ageList.count(_ < 0)
     val expected =
       if negCount > 0 then Left(List.fill(negCount)("Age is out of range."))
       else Right(ageList.map(Age(_)))
 
     Either.traverseAll(ageList, Age.make2) == expected
-  }
+  }.tag("Either.traverseAll")
 
-  property("sequenceAll") = forAll(genAgesList) { ageList =>
+  private val sequenceAllProp: Prop = forAll(genAgesList) { ageList =>
     val negCount = ageList.count(_ < 0)
     val expected =
       if negCount > 0 then Left(List.fill(negCount)("Age is out of range."))
       else Right(ageList.map(Age(_)))
 
     Either.sequenceAll(ageList.map(Age.make2)) == expected
-  }
+  }.tag("Either.sequenceAll")
+
+  @main def checkEither(): Unit =
+    mapProp.run()
+    flatMapProp.run()
+    orElseProp.run()
+    map2Prop.run()
+    traverseProp.run()
+    sequenceProp.run()
+    map2AllProp.run()
+    traverseAllProp.run()
+    sequenceAllProp.run()
