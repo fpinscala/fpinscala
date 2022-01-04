@@ -99,7 +99,6 @@ To run unit-tests for a file you can do:
 
 To run all unit-tests:
 
-    > project tests
     > runMain fpinscala.checkAll
 
 All code in this repository is

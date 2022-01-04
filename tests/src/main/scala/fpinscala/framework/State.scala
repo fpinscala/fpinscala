@@ -3,10 +3,9 @@ package fpinscala.framework
 import scala.annotation.tailrec
 
 trait RNG:
-  def nextInt: (Int, RNG) // Should generate a random `Int`. We'll later define other functions in terms of `nextInt`.
+  def nextInt: (Int, RNG)
 
 object RNG:
-  // NB - this was called SimpleRNG in the book text
 
   case class Simple(seed: Long) extends RNG:
     def nextInt: (Int, RNG) =
@@ -50,20 +49,7 @@ object RNG:
     val (d3, r3) = double(r2)
     ((d1, d2, d3), r3)
 
-  // There is something terribly repetitive about passing the RNG along
-  // every time. What could we do to eliminate some of this duplication
-  // of effort?
-
-  // A simple recursive solution
   def ints(count: Int)(rng: RNG): (List[Int], RNG) =
-    if count == 0 then (List(), rng)
-    else
-      val (x, r1) = rng.nextInt
-      val (xs, r2) = ints(count - 1)(r1)
-      (x :: xs, r2)
-
-  // A tail-recursive solution
-  def ints2(count: Int)(rng: RNG): (List[Int], RNG) =
     @tailrec
     def go(count: Int, r: RNG, xs: List[Int]): (List[Int], RNG) =
       if count == 0 then (xs, r)
@@ -186,26 +172,3 @@ object State:
   def get[S]: State[S, S] = s => (s, s)
 
   def set[S](s: S): State[S, Unit] = _ => ((), s)
-
-enum Input:
-  case Coin, Turn
-
-case class Machine(locked: Boolean, candies: Int, coins: Int)
-
-object Candy:
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] =
-    for
-      _ <- State.traverse(inputs)(i => State.modify(update(i)))
-      s <- State.get
-    yield (s.coins, s.candies)
-
-  val update = (i: Input) =>
-    (s: Machine) =>
-      (i, s) match
-        case (_, Machine(_, 0, _))              => s
-        case (Input.Coin, Machine(false, _, _)) => s
-        case (Input.Turn, Machine(true, _, _))  => s
-        case (Input.Coin, Machine(true, candy, coin)) =>
-          Machine(false, candy, coin + 1)
-        case (Input.Turn, Machine(false, candy, coin)) =>
-          Machine(true, candy - 1, coin)

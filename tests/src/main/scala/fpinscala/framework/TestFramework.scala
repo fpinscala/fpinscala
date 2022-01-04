@@ -3,10 +3,7 @@ package fpinscala.framework
 import scala.annotation.targetName
 
 /*
-This source file contains the answers to the last two exercises in the section
-"Test Case Minimization" of chapter 8 on property-based testing.
-
-The Gen data type in this file incorporates exhaustive checking of finite domains.
+ A simple test framework implementation based on `fpinscala.testing.exhaustive.Props`
  */
 
 import fpinscala.framework.Gen.*
@@ -101,38 +98,6 @@ object Prop:
   def apply(f: (TestCases, RNG) => Result): Prop =
     (_, n, rng) => f(n, rng)
 
-  /* We pattern match on the `SGen`, and delegate to our `Gen` version of `forAll`
-   * if `g` is unsized; otherwise, we call the sized version of `forAll` (below).
-   */
-  @targetName("forAllSized")
-  def forAll[A](g: SGen[A])(f: A => Boolean): Prop = g match
-    case SGen.Unsized(g2) => forAll(g2)(f)
-    case SGen.Sized(gs)   => forAll(gs)(f)
-
-  /* The sized case of `forAll` is as before, though we convert from `Proven` to
-   * `Unfalsified`. A sized generator can never be proven, since there are always
-   * larger-sized tests that were not run which may have failed.
-   */
-  def forAll[A](g: Int => Gen[A])(f: A => Boolean): Prop =
-    (max, n, rng) =>
-      val casesPerSize = TestCases.fromInt(n.toInt / max + 1)
-      val props: List[Prop] =
-        LazyList.from(0).take(max.toInt + 1).map(i => forAll(g(i))(f)).toList
-      val p: Prop = props.map[Prop](p => (max, n, rng) => p(max, casesPerSize, rng)).reduceLeft(_ && _)
-      p(max, n, rng) match
-        case Passed(Proven, n) => Passed(Unfalsified, n)
-        case x                 => x
-
-  val executor: ExecutorService = Executors.newCachedThreadPool
-
-  def check(p: => Boolean): Prop =
-    (_, _, _) => Passed(Proven, 1)
-
-  val executors: Gen[ExecutorService] = weighted(
-    choose(1, 4).map(Executors.newFixedThreadPool) -> .75,
-    unit(Executors.newCachedThreadPool) -> .25
-  ) // `a -> b` is syntax sugar for `(a, b)`
-
 /*
 The `Gen` type now has a random generator as well as an exhaustive lazy list.
 Infinite domains will simply generate infinite lazy lists of None.
@@ -161,11 +126,6 @@ case class Gen[+A](sample: State[RNG, A], exhaustive: LazyList[Option[A]]):
   /* A version of `listOfN` that generates the size to use dynamically. */
   def listOfN(size: Gen[Int]): Gen[List[A]] =
     size.flatMap(n => this.listOfN(n))
-
-  def list: SGen[List[A]] = SGen.Sized(n => listOfN(n))
-  def nonEmptyList: SGen[List[A]] = SGen.Sized(n => listOfN(n.max(1)))
-
-  def unsized: SGen[A] = SGen.Unsized(this)
 
   def **[B](g: Gen[B]): Gen[(A, B)] =
     map2(g)((_, _))
@@ -239,36 +199,6 @@ object Gen:
   def choose(i: Double, j: Double): Gen[Double] =
     Gen(State(RNG.double).map(d => i + d * (j - i)), unbounded)
 
-  /* Basic idea is add 1 to the result of `choose` if it is of the wrong
-   * parity, but we require some special handling to deal with the maximum
-   * integer in the range.
-   */
-  def even(start: Int, stopExclusive: Int): Gen[Int] =
-    choose(start, if stopExclusive % 2 == 0 then stopExclusive - 1 else stopExclusive).map(n =>
-      if n % 2 != 0 then n + 1 else n
-    )
-
-  def odd(start: Int, stopExclusive: Int): Gen[Int] =
-    choose(start, if stopExclusive % 2 != 0 then stopExclusive - 1 else stopExclusive).map(n =>
-      if n % 2 == 0 then n + 1 else n
-    )
-
-  def sameParity(from: Int, to: Int): Gen[(Int, Int)] = for
-    i <- choose(from, to)
-    j <- if (i % 2 == 0) even(from, to) else odd(from, to)
-  yield (i, j)
-
-  def listOfN_1[A](n: Int, g: Gen[A]): Gen[List[A]] =
-    List.fill(n)(g).foldRight(unit(List[A]()))((a, b) => a.map2(b)(_ :: _))
-
-  /* The simplest possible implementation. This will put all elements of one
-   * `Gen` before the other in the exhaustive traversal. It might be nice to
-   * interleave the two lazy lists, so we get a more representative sample if we
-   * don't get to examine the entire exhaustive lazy list.
-   */
-  def union_1[A](g1: Gen[A], g2: Gen[A]): Gen[A] =
-    boolean.flatMap(b => if b then g1 else g2)
-
   def union[A](g1: Gen[A], g2: Gen[A]): Gen[A] =
     Gen(
       State(RNG.boolean).flatMap(b => if b then g1.sample else g2.sample),
@@ -325,8 +255,6 @@ object Gen:
   def stringN(n: Int): Gen[String] =
     listOfN(n, choose(0, 127)).map(_.map(_.toChar).mkString)
 
-  def string: SGen[String] = SGen.Sized(stringN)
-
   object ** :
     def unapply[A, B](p: (A, B)) = Some(p)
 
@@ -342,35 +270,3 @@ object Gen:
     Gen(sample, unbounded)
 
 end Gen
-
-enum SGen[+A]:
-  case Sized(forSize: Int => Gen[A])
-  case Unsized(get: Gen[A])
-
-  def map[B](f: A => B): SGen[B] = this match
-    case Sized(g)   => Sized(g.andThen(_.map(f)))
-    case Unsized(g) => Unsized(g.map(f))
-  def flatMap[B](f: A => Gen[B]): SGen[B] = this match
-    case Sized(g)   => Sized(g.andThen(_.flatMap(f)))
-    case Unsized(g) => Unsized(g.flatMap(f))
-  def **[B](s2: SGen[B]): SGen[(A, B)] = (this, s2) match
-    case (Sized(g), Sized(g2))     => Sized(n => g(n) ** g2(n))
-    case (Unsized(g), Unsized(g2)) => Unsized(g ** g2)
-    case (Sized(g), Unsized(g2))   => Sized(n => g(n) ** g2)
-    case (Unsized(g), Sized(g2))   => Sized(n => g ** g2(n))
-
-opaque type Cogen[-A] = (A, RNG) => RNG
-
-object Cogen:
-
-  def fn[A, B](in: Cogen[A], out: Gen[B]): Gen[A => B] =
-    val sample = State[RNG, A => B] { rng =>
-      val (seed, rng2) = rng.nextInt
-      val f = (a: A) => out.sample.run(in(a, rng2))._1
-      (f, rng2)
-    }
-    Gen(sample, unbounded)
-
-  def cogenInt: Cogen[Int] = (i, rng) =>
-    val (seed, rng2) = rng.nextInt
-    RNG.Simple(seed.toLong ^ i.toLong)
