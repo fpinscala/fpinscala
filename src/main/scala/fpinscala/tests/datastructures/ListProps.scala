@@ -1,8 +1,8 @@
-package fpinscala.datastructures
+package fpinscala.tests.datastructures
 
-import fpinscala.datastructures.List.*
-import fpinscala.framework.*
-import fpinscala.framework.Prop.*
+import fpinscala.exercises.datastructures.List.*
+import fpinscala.answers.testing.exhaustive.*
+import fpinscala.answers.testing.exhaustive.Prop.*
 
 import scala.util.Try
 import scala.{List as SList, Nil as SNil}

@@ -1,9 +1,9 @@
-package fpinscala.gettingstarted
+package fpinscala.tests.gettingstarted
 
-import fpinscala.framework.*
-import fpinscala.framework.Prop.*
-import fpinscala.gettingstarted.MyProgram.fib
-import fpinscala.gettingstarted.PolymorphicFunctions.{compose, curry, isSorted, uncurry}
+import fpinscala.answers.testing.exhaustive.*
+import fpinscala.answers.testing.exhaustive.Prop.*
+import fpinscala.exercises.gettingstarted.MyProgram.fib
+import fpinscala.exercises.gettingstarted.PolymorphicFunctions.{compose, curry, isSorted, uncurry}
 
 object GettingStartedProps:
 
