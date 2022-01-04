@@ -10,4 +10,4 @@ lazy val root = project
 lazy val exercises = project
 lazy val answers = project
 lazy val tests = project
-  .dependsOn(answers)
+  .dependsOn(exercises)

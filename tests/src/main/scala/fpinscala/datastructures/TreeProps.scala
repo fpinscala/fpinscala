@@ -1,8 +1,8 @@
 package fpinscala.datastructures
 
 import fpinscala.datastructures.Tree.*
-import fpinscala.testing.exhaustive.*
-import fpinscala.testing.exhaustive.Prop.*
+import fpinscala.framework.*
+import fpinscala.framework.Prop.*
 
 import scala.List as SList
 

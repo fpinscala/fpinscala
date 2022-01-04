@@ -1,9 +1,9 @@
 package fpinscala.gettingstarted
 
+import fpinscala.framework.*
+import fpinscala.framework.Prop.*
 import fpinscala.gettingstarted.MyProgram.fib
 import fpinscala.gettingstarted.PolymorphicFunctions.{compose, curry, isSorted, uncurry}
-import fpinscala.testing.exhaustive.*
-import fpinscala.testing.exhaustive.Prop.*
 
 object GettingStartedProps:
 

@@ -1,8 +1,8 @@
 package fpinscala.errorhandling
 
 import fpinscala.errorhandling.Either.*
-import fpinscala.testing.exhaustive.*
-import fpinscala.testing.exhaustive.Prop.*
+import fpinscala.framework.*
+import fpinscala.framework.Prop.*
 
 object EitherProps:
   private val genChar: Gen[Char] =
