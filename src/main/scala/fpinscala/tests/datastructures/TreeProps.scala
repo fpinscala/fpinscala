@@ -1,8 +1,9 @@
 package fpinscala.tests.datastructures
 
+import fpinscala.answers.testing.exhaustive.*
+import fpinscala.answers.testing.exhaustive.Prop.*
 import fpinscala.exercises.datastructures.Tree
 import fpinscala.exercises.datastructures.Tree.*
-import fpinscala.answers.testing.exhaustive.Prop.*
 
 import scala.List as SList
 

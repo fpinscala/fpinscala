@@ -1,8 +1,9 @@
 package fpinscala.tests.errorhandling
 
-import fpinscala.exercises.errorhandling.Option.*
 import fpinscala.answers.testing.exhaustive.*
 import fpinscala.answers.testing.exhaustive.Prop.*
+import fpinscala.exercises.errorhandling.*
+import fpinscala.exercises.errorhandling.Option.*
 
 import scala.{Either as SEither, Left as SLeft, None as SNone, Option as SOption, Right as SRight, Some as SSome}
 
