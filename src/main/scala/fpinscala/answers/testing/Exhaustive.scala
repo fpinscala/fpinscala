@@ -1,6 +1,7 @@
 package fpinscala.answers.testing.exhaustive
 
 import annotation.targetName
+import scala.util.control.NonFatal
 
 /*
 This source file contains the answers to the last two exercises in the section
@@ -85,7 +86,7 @@ object Prop:
               if f(h) then go(i+1, j, t, onEnd)
               else Falsified(h.toString)
             catch
-              case e: Throwable => Falsified(buildMsg(h, e))
+              case NonFatal(e) => Falsified(buildMsg(h, e))
           case None #:: _ => Passed(Unfalsified, i)
           case _ => onEnd(i)
       val numFromExhaustiveList = TestCases.fromInt(n.toInt / 3)
