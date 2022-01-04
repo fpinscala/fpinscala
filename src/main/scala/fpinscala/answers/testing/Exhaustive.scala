@@ -85,7 +85,7 @@ object Prop:
               if f(h) then go(i+1, j, t, onEnd)
               else Falsified(h.toString)
             catch
-              case e: Exception => Falsified(buildMsg(h, e))
+              case e: Throwable => Falsified(buildMsg(h, e))
           case None #:: _ => Passed(Unfalsified, i)
           case _ => onEnd(i)
       val numFromExhaustiveList = TestCases.fromInt(n.toInt / 3)
@@ -96,7 +96,7 @@ object Prop:
         case s => s // If proven or failed, stop immediately
     }
 
-  def buildMsg[A](s: A, e: Exception): String =
+  def buildMsg[A](s: A, e: Throwable): String =
     s"test case: $s\n" +
     s"generated an exception: ${e.getMessage}\n" +
     s"stack trace:\n ${e.getStackTrace.mkString("\n")}"
