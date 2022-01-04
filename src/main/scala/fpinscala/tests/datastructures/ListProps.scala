@@ -117,11 +117,11 @@ object ListProps:
   }.tag("List.map")
 
   private val filterProp: Prop = forAll(genIntList) { list =>
-    List.filter(list, _ % 2 == 0) == scalaListToList(listToScalaList(list).filter(_ % 2 == 0))
+    List.filter(list)(_ % 2 == 0) == scalaListToList(listToScalaList(list).filter(_ % 2 == 0))
   }.tag("List.filter")
 
   private val flatMapProp: Prop = forAll(genIntList) { list =>
-    List.flatMap(list, a => List(a, a)) == scalaListToList(listToScalaList(list).flatMap(a => SList(a, a)))
+    List.flatMap(list)(a => List(a, a)) == scalaListToList(listToScalaList(list).flatMap(a => SList(a, a)))
   }.tag("List.flatMap")
 
   private val addPairwiseProp: Prop = forAll(genTwoIntLists) { (list1, list2) =>

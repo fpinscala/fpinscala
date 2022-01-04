@@ -79,9 +79,9 @@ object List: // `List` companion object. Contains functions for creating and wor
 
   def map[A,B](l: List[A])(f: A => B): List[B] = ???
 
-  def filter[A](as: List[A], f: A => Boolean): List[A] = ???
+  def filter[A](as: List[A])(f: A => Boolean): List[A] = ???
 
-  def flatMap[A,B](as: List[A], f: A => List[B]): List[B] = ???
+  def flatMap[A,B](as: List[A])(f: A => List[B]): List[B] = ???
 
   def addPairwise(a: List[Int], b: List[Int]): List[Int] = ???
 
