@@ -1,12 +1,15 @@
-def validationApplicative[E]: Applicative[({type f[x] = Validation[E,x]})#f] =
-  new Applicative[({type f[x] = Validation[E,x]})#f] {
-    def unit[A](a: => A) = Success(a)
-    override def map2[A,B,C](fa: Validation[E,A], fb: Validation[E,B])(f: (A, B) => C) =
-      (fa, fb) match {
-        case (Success(a), Success(b)) => Success(f(a, b))
-        case (Failure(h1, t1), Failure(h2, t2)) =>
-          Failure(h1, t1 ++ Vector(h2) ++ t2)
-        case (e@Failure(_, _), _) => e
-        case (_, e@Failure(_, _)) => e
-      }
-  }
+enum Validated[+E, +A]:
+  case Valid(get: A) extends Validated[Nothing, A]
+  case Invalid(error: E) extends Validated[E, Nothing]
+
+object Validated:
+  given validatedApplicative[E: Monoid]: Applicative[Validated[E, _]] with
+    def unit[A](a: => A) = Valid(a)
+    extension [A](fa: Validated[E, A])
+      override def map2[B, C](fb: Validated[E, B])(f: (A, B) => C) =
+        (fa, fb) match
+          case (Valid(a), Valid(b)) => Valid(f(a, b))
+          case (Invalid(e1), Invalid(e2)) =>
+            Invalid(summon[Monoid[E]].combine(e1, e2))
+          case (e @ Invalid(_), _) => e
+          case (_, e @ Invalid(_)) => e

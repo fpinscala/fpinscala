@@ -1,3 +1,5 @@
-def fuse[G[_],H[_],A,B](fa: F[A])(f: A => G[B], g: A => H[B])
-                       (implicit G: Applicative[G], H: Applicative[H]): (G[F[B]], H[F[B]]) =
-  traverse[({type f[x] = (G[x], H[x])})#f, A, B](fa)(a => (f(a), g(a)))(G product H)
+extension [A](fa: F[A])
+  def fuse[M[_], N[_], B](
+    f: A => M[B], g: A => N[B])(using m: Applicative[M], n: Applicative[N]
+  ): (M[F[B]], N[F[B]]) =
+      fa.traverse[[X] =>> (M[X], N[X]), B](a => (f(a), g(a)))(using m.product(n))

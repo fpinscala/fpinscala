@@ -1,2 +1,3 @@
-def reverse[A](fa: F[A]): F[A] =
-  mapAccum(fa, toList(fa).reverse)((_, as) => (as.head, as.tail))._1
+extension [A](fa: F[A])
+  def reverse: F[A] =
+    fa.mapAccum(fa.toList.reverse)((_, as) => (as.head, as.tail))(0)

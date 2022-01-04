@@ -17,7 +17,7 @@ Each chapter in the book develops a fully working library of functions
 and data types, built up through a series of exercises and example code
 given in the book text. The shell of this working library and exercise
 stubs live in
-`exercises/src/main/scala/fpinscala/<chapter-description>`, where
+`src/main/scala/fpinscala/exercises/<chapter-description>`, where
 `<chapter-description>` is a package name that corresponds to the
 chapter title (see below). When you begin working on a chapter, we
 recommend you open the exercise file(s) for that chapter, and when you
@@ -32,7 +32,7 @@ answer and any variations in
 `answerkey/<chapter-description>/04.answer.scala` or
 `04.answer.markdown`. The finished Scala modules, with all answers for
 each chapter live in
-`answers/src/main/scala/fpinscala/<chapter-description>`. Please feel
+`src/main/scala/fpinscala/answers/<chapter-description>`. Please feel
 free to submit pull requests for alternate answers, improved hints, and
 so on, so we can make this repo the very best resource for people
 working through the book.
@@ -78,15 +78,13 @@ Once it is finished launching, you'll get a prompt from
 which you can issue commands to build and interact with your code. Try
 the following:
 
-    > project exercises
     > compile
 
-This switches to the exercises project, where your code lives, and
-compiles the code. You can also do:
+This compiles all exercises and answers. You can also do:
 
     > console
 
-to get a Scala REPL with access to your exercises, and
+to get a Scala REPL with access to exercises and answers, and
 
     > run
 

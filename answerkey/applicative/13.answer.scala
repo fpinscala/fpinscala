@@ -1,17 +1,24 @@
-val listTraverse = new Traverse[List] {
-  override def traverse[G[_],A,B](as: List[A])(f: A => G[B])(implicit G: Applicative[G]): G[List[B]] =
-    as.foldRight(G.unit(List[B]()))((a, fbs) => G.map2(f(a), fbs)(_ :: _))
-}
+given listTraverse: Traverse[List] with
+  extension [A](as: List[A])
+    override def traverse[G[_]: Applicative, B](f: A => G[B]): G[List[B]] =
+      val g = summon[Applicative[G]]
+      as.foldRight(g.unit(List[B]()))((a, acc) => f(a).map2(acc)(_ :: _))
 
-val optionTraverse = new Traverse[Option] {
-  override def traverse[G[_],A,B](oa: Option[A])(f: A => G[B])(implicit G: Applicative[G]): G[Option[B]] =
-    oa match {
-      case Some(a) => G.map(f(a))(Some(_))
-      case None    => G.unit(None)
-    }
-}
+given optionTraverse: Traverse[Option] with
+  extension [A](oa: Option[A])
+    override def traverse[G[_]: Applicative, B](f: A => G[B]): G[Option[B]] =
+      oa match
+        case Some(a) => f(a).map(Some(_))
+        case None    => summon[Applicative[G]].unit(None)
 
-val treeTraverse = new Traverse[Tree] {
-  override def traverse[G[_],A,B](ta: Tree[A])(f: A => G[B])(implicit G: Applicative[G]): G[Tree[B]] =
-    G.map2(f(ta.head), listTraverse.traverse(ta.tail)(a => traverse(a)(f)))(Tree(_, _))
-}
+given treeTraverse: Traverse[Tree] = new:
+  extension [A](ta: Tree[A])
+    override def traverse[G[_]: Applicative, B](f: A => G[B]): G[Tree[B]] =
+      f(ta.head).map2(ta.tail.traverse(a => a.traverse(f)))(Tree(_, _))
+
+given mapTraverse[K]: Traverse[Map[K, _]] with
+  extension [A](m: Map[K, A])
+    override def traverse[G[_]: Applicative, B](f: A => G[B]): G[Map[K, B]] =
+      m.foldLeft(summon[Applicative[G]].unit(Map.empty[K, B])) { case (acc, (k, a)) =>
+        acc.map2(f(a))((m, b) => m + (k -> b))
+      }

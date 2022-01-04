@@ -55,7 +55,7 @@ jobs:
         run: sbt --client '++${{ matrix.scala }}; test'
 
       - name: Compress target directories
-        run: tar cf targets.tar target root/target exercises/target answers/target project/target
+        run: tar cf targets.tar target project/target
 
       - name: Upload target directories
         uses: actions/upload-artifact@v2
