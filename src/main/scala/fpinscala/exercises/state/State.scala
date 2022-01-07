@@ -45,6 +45,10 @@ object RNG:
 
   def flatMap[A, B](r: Rand[A])(f: A => Rand[B]): Rand[B] = ???
 
+  def mapViaFlatMap[A, B](r: Rand[A])(f: A => B): Rand[B] = ???
+
+  def map2ViaFlatMap[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = ???
+
 opaque type State[S, +A] = S => (A, S)
 
 object State:
