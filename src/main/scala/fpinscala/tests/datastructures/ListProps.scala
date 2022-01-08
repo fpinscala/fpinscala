@@ -9,15 +9,6 @@ import scala.util.Try
 import scala.{List as SList, Nil as SNil}
 
 object ListProps:
-
-  private def listToScalaList[A](list: List[A]): SList[A] = list match
-    case Nil         => SList.empty[A]
-    case Cons(x, xs) => x +: listToScalaList(xs)
-
-  private def scalaListToList[A](slist: SList[A]): List[A] = slist match
-    case SNil      => Nil
-    case h :: tail => Cons(h, scalaListToList(tail))
-
   private val genIntList: Gen[List[Int]] =
     for {
       length <- Gen.choose(0, 10)
@@ -30,23 +21,13 @@ object ListProps:
       slist <- Gen.listOfN(length, Gen.double)
     } yield scalaListToList(slist)
 
-  private val genTwoIntLists =
-    for {
-      list1 <- genIntList
-      list2 <- genIntList
-    } yield (list1, list2)
-
   private val genListOfLists: Gen[List[List[Int]]] =
     for {
       length <- Gen.choose(0, 10)
       slist <- Gen.listOfN(length, genIntList)
     } yield scalaListToList(slist)
 
-  private val genListAndNum =
-    for {
-      list <- genIntList
-      num <- Gen.choose(-10, 10)
-    } yield (list, num)
+  private val genSmallNum: Gen[Int] = Gen.choose(-10, 10)
 
   private val tailProp: Prop = forAll(genIntList) {
     case Nil         => Try(List.tail(Nil)).isFailure
@@ -58,11 +39,11 @@ object ListProps:
     case Cons(x, xs) => List.setHead(Cons(x, xs), 0) == Cons(0, xs)
   }.tag("List.setHead")
 
-  private val dropProp: Prop = forAll(genListAndNum) { (list, n) =>
+  private val dropProp: Prop = forAll(genIntList ** genSmallNum) { (list, n) =>
     List.drop(list, n) == scalaListToList(listToScalaList(list).drop(n))
   }.tag("List.drop")
 
-  private val dropWhileProp: Prop = forAll(genListAndNum) { (list, n) =>
+  private val dropWhileProp: Prop = forAll(genIntList ** genSmallNum) { (list, n) =>
     val f: Int => Boolean = _ <= n
     List.dropWhile(list, f) == scalaListToList(listToScalaList(list).dropWhile(f))
   }.tag("List.dropWhile")
@@ -96,7 +77,7 @@ object ListProps:
     List.reverse(list) == scalaListToList(listToScalaList(list).reverse)
   }.tag("List.reverse")
 
-  private val appendViaFoldRightProp: Prop = forAll(genTwoIntLists) { (list1, list2) =>
+  private val appendViaFoldRightProp: Prop = forAll(genIntList ** genIntList) { (list1, list2) =>
     List.appendViaFoldRight(list1, list2) == scalaListToList(listToScalaList(list1) ++ listToScalaList(list2))
   }.tag("List.appendViaFoldRight")
 
@@ -124,19 +105,19 @@ object ListProps:
     List.flatMap(list)(a => List(a, a)) == scalaListToList(listToScalaList(list).flatMap(a => SList(a, a)))
   }.tag("List.flatMap")
 
-  private val addPairwiseProp: Prop = forAll(genTwoIntLists) { (list1, list2) =>
+  private val addPairwiseProp: Prop = forAll(genIntList ** genIntList) { (list1, list2) =>
     val expectedSList = listToScalaList(list1).zip(listToScalaList(list2)).map { case (a, b) => a + b }
     List.addPairwise(list1, list2) == scalaListToList(expectedSList)
   }.tag("List.addPairwise")
 
   /*
-  private val zipWithProp: Prop = forAll(genTwoIntLists) { (list1, list2) =>
+  private val zipWithProp: Prop = forAll(genIntList ** genIntList) { (list1, list2) =>
     val expectedSList = listToScalaList(list1).zip(listToScalaList(list2)).map(_ * _)
     List.zipWith(list1, list2, _ * _) == scalaListToList(expectedSList)
   }.tag("List.zipWith")
    */
 
-  private val hasSubsequenceProp: Prop = forAll(genListAndNum) { case (list, n) =>
+  private val hasSubsequenceProp: Prop = forAll(genIntList ** genSmallNum) { case (list, n) =>
     List.hasSubsequence(list, Nil) &&
       List.hasSubsequence(list, list) &&
       List.hasSubsequence(list, Try(List.init(list)).getOrElse(Nil)) &&
@@ -144,7 +125,7 @@ object ListProps:
       List.hasSubsequence(list, List.drop(list, n))
   }.tag("List.hasSubsequence")
 
-  private val hasSubsequenceRandomListsProp: Prop = forAll(genTwoIntLists) { (list1, list2) =>
+  private val hasSubsequenceRandomListsProp: Prop = forAll(genIntList ** genIntList) { (list1, list2) =>
     List.hasSubsequence(list1, list2) == listToScalaList(list1).containsSlice(listToScalaList(list2))
   }.tag("random lists - List.hasSubsequence")
 
@@ -171,3 +152,11 @@ object ListProps:
     // zipWithProp.run()
     hasSubsequenceProp.run()
     hasSubsequenceRandomListsProp.run()
+
+  private def listToScalaList[A](list: List[A]): SList[A] = list match
+    case Nil         => SList.empty[A]
+    case Cons(x, xs) => x +: listToScalaList(xs)
+
+  private def scalaListToList[A](slist: SList[A]): List[A] = slist match
+    case SNil      => Nil
+    case h :: tail => Cons(h, scalaListToList(tail))

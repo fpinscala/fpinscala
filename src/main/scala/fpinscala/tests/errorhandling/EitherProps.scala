@@ -7,7 +7,7 @@ import fpinscala.exercises.errorhandling.Either.*
 
 object EitherProps:
   private val genChar: Gen[Char] =
-    Gen.choose(0, 26).map(i => ('a' + i).toChar)
+    Gen.choose(97, 123).map(_.toChar)
 
   private val genString: Gen[String] =
     for {
@@ -17,12 +17,6 @@ object EitherProps:
 
   private val genEither: Gen[Either[String, Int]] =
     Gen.union(genString.map(Left(_)), Gen.int.map(Right(_)))
-
-  private val genTwoEither: Gen[(Either[String, Int], Either[String, Int])] =
-    for {
-      either1 <- genEither
-      either2 <- genEither
-    } yield (either1, either2)
 
   private val mapProp: Prop = forAll(genEither) { either =>
     val expected = either match {
@@ -44,7 +38,7 @@ object EitherProps:
     either.flatMap(f) == expected
   }.tag("Either.flatMap")
 
-  private val orElseProp: Prop = forAll(genTwoEither) {
+  private val orElseProp: Prop = forAll(genEither ** genEither) {
     case (Left(l1), either2)  => Left(l1).orElse(either2) == either2
     case (Right(r1), either2) => Right(r1).orElse(either2) == Right(r1)
   }.tag("Either.orElse")
@@ -83,13 +77,7 @@ object EitherProps:
   private val genAge: Gen[Int] =
     Gen.choose(-50, 50)
 
-  private val genNameAndAge: Gen[(String, Int)] =
-    for {
-      name <- genName
-      age <- genAge
-    } yield (name, age)
-
-  private val map2Prop: Prop = forAll(genNameAndAge) { case (name, age) =>
+  private val map2Prop: Prop = forAll(genName ** genAge) { case (name, age) =>
     val expected = (name, age) match {
       case ("", _)         => Left("Name is empty.")
       case (_, n) if n < 0 => Left("Age is out of range.")
@@ -121,7 +109,7 @@ object EitherProps:
     Either.sequence(ageList.map(Age.make)) == expected
   }.tag("Either.sequence")
 
-  private val map2AllProp: Prop = forAll(genNameAndAge) { case (name, age) =>
+  private val map2AllProp: Prop = forAll(genName ** genAge) { case (name, age) =>
     val expected = (name, age) match {
       case ("", n) if n < 0 => Left(List("Name is empty.", "Age is out of range."))
       case ("", _)          => Left(List("Name is empty."))

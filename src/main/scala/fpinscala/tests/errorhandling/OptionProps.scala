@@ -14,12 +14,6 @@ object OptionProps:
   private val genDoubleList: Gen[List[Double]] =
     Gen.choose(0, 10).flatMap(n => Gen.listOfN(n, Gen.double))
 
-  private val genTwoIntOptions: Gen[(Option[Int], Option[Int])] =
-    for {
-      opt1 <- genIntOption
-      opt2 <- genIntOption
-    } yield (opt1, opt2)
-
   private val genNoneSeq: Gen[List[Option[Int]]] = Gen.unit(List(None))
 
   private val genListWithNone: Gen[List[Option[Int]]] =
@@ -99,7 +93,7 @@ object OptionProps:
     Option.variance(list) == expected
   }.tag("Option.variance")
 
-  private val map2Prop: Prop = forAll(genTwoIntOptions) { (opt1, opt2) =>
+  private val map2Prop: Prop = forAll(genIntOption ** genIntOption) { (opt1, opt2) =>
     (opt1, opt2) match
       case (Some(a), Some(b)) => Option.map2(opt1, opt2)(_ + _) == Some(a + b)
       case _                  => Option.map2(opt1, opt2)(_ + _) == None

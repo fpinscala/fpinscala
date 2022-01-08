@@ -6,7 +6,6 @@ import fpinscala.exercises.gettingstarted.MyProgram.fib
 import fpinscala.exercises.gettingstarted.PolymorphicFunctions.{compose, curry, isSorted, uncurry}
 
 object GettingStartedProps:
-
   private val theFirst21FibonacciNumbers =
     IndexedSeq(0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765)
   private val genShortNumber = Gen.choose(0, 20)
@@ -34,23 +33,18 @@ object GettingStartedProps:
     forAll(genSortedArray)(array => isSorted[Int](array, _ > _)).tag("PolymorphicFunctions.isSorted") &&
       forAll(genUnsortedArray)(array => !isSorted[Int](array, _ > _)).tag("not PolymorphicFunctions.isSorted")
 
-  private val genSmallNumbers = for {
-    n <- Gen.int
-    m <- Gen.int
-  } yield (n, m)
-
   private val curryProp: Prop =
     def mul: Int => Int => Int = curry[Int, Int, Int]((a: Int, b: Int) => a * b)
-    forAll(genSmallNumbers) { case (n, m) => mul(n)(m) == n * m }
+    forAll(Gen.int ** Gen.int) { case (n, m) => mul(n)(m) == n * m }
       .tag("PolymorphicFunctions.curry")
 
   private val uncurryProp: Prop =
     def mul: (Int, Int) => Int = uncurry[Int, Int, Int]((a: Int) => (b: Int) => a * b)
-    forAll(genSmallNumbers) { case (n, m) => mul(n, m) == n * m }
+    forAll(Gen.int ** Gen.int) { case (n, m) => mul(n, m) == n * m }
       .tag("PolymorphicFunctions.uncurry")
 
   private val composeProp: Prop =
-    forAll(genSmallNumbers) { case (n, m) =>
+    forAll(Gen.int ** Gen.int) { case (n, m) =>
       def aToC = compose[Int, Int, Int]((b: Int) => n * b, (a: Int) => m * a)
       aToC(1) == n * m
     }.tag("PolymorphicFunctions.compose")
