@@ -90,6 +90,14 @@ to get a Scala REPL with access to exercises and answers, and
 
 To get a menu of possible main methods to execute.
 
+To run unit-tests for a file you can do:
+
+    > runMain fpinscala.tests.gettingstarted.checkGettingStarted
+
+To run all unit-tests:
+
+    > runMain fpinscala.tests.checkAll
+
 All code in this repository is
 [MIT-licensed](http://opensource.org/licenses/mit-license.php). See the
 LICENSE file for details.
