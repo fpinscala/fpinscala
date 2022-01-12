@@ -261,12 +261,12 @@ object Gen:
 
   val maxProp = Prop.forAll(smallInt.list) { l =>
     val max = l.max
-    !l.exists(_ > max) // No value greater than `max` should exist in `l`
+    l.forall(_ <= max)
   }
 
   val maxProp1 = Prop.forAll(smallInt.nonEmptyList) { l =>
     val max = l.max
-    !l.exists(_ > max) // No value greater than `max` should exist in `l`
+    l.forall(_ <= max)
   }
 
   val sortedProp = Prop.forAll(smallInt.list) { l =>
