@@ -4,10 +4,11 @@ import fpinscala.answers.testing.exhaustive.*
 import fpinscala.answers.testing.exhaustive.Prop.*
 import fpinscala.exercises.datastructures.Tree
 import fpinscala.exercises.datastructures.Tree.*
+import fpinscala.tests.munit.PropSuite
 
 import scala.List as SList
 
-object TreeProps:
+class TreeProps extends PropSuite:
   private val genIntTree: Gen[Tree[Int]] =
     def loop(): Gen[Tree[Int]] =
       Gen.boolean.flatMap {
@@ -20,66 +21,54 @@ object TreeProps:
       }
     loop()
 
-  private val sizeProp: Prop = forAll(genIntTree) { tree =>
-    tree.size == toScalaList(tree).length
-  }.tag("Tree.size")
+  test("Tree.size")(genIntTree) { tree =>
+    assertEquals(tree.size, toScalaList(tree).length)
+  }
 
-  private val depthProp: Prop = forAll(genIntTree) { tree =>
+  test("Tree.depth")(genIntTree) { tree =>
     tree match
-      case Leaf(_)      => tree.depth == 0
-      case Branch(l, r) => tree.depth == 1 + l.depth.max(r.depth)
-  }.tag("Tree.depth")
+      case Leaf(_)      => assertEquals(tree.depth, 0)
+      case Branch(l, r) => assertEquals(tree.depth, 1 + l.depth.max(r.depth))
+    assertEquals(tree.size, toScalaList(tree).length)
+  }
 
-  private val mapProp: Prop = forAll(genIntTree) { tree =>
-    toScalaList(tree.map(_.toString)) == toScalaList(tree).map(_.map(_.toString))
-  }.tag("Tree.map")
+  test("Tree.map")(genIntTree) { tree =>
+    assertEquals(toScalaList(tree.map(_.toString)), toScalaList(tree).map(_.map(_.toString)))
+  }
 
-  private val foldProp: Prop = forAll(genIntTree) { tree =>
-    tree.fold(_.toString, _ + _) == toScalaList(tree).flatMap(_.map(_.toString)).mkString
-  }.tag("Tree.fold")
+  test("Tree.fold")(genIntTree) { tree =>
+    assertEquals(tree.fold(_.toString, _ + _), toScalaList(tree).flatMap(_.map(_.toString)).mkString)
+  }
 
-  private val sizeViaFoldProp: Prop = forAll(genIntTree) { tree =>
-    tree.sizeViaFold == toScalaList(tree).length
-  }.tag("Tree.sizeViaFold")
+  test("Tree.sizeViaFold")(genIntTree) { tree =>
+    assertEquals(tree.sizeViaFold, toScalaList(tree).length)
+  }
 
-  private val depthViaFoldProp: Prop = forAll(genIntTree) { tree =>
+  test("Tree.depthViaFold")(genIntTree) { tree =>
     tree match
-      case Leaf(_)      => tree.depthViaFold == 0
-      case Branch(l, r) => tree.depthViaFold == 1 + l.depthViaFold.max(r.depthViaFold)
-  }.tag("Tree.depthViaFold")
+      case Leaf(_)      => assertEquals(tree.depthViaFold, 0)
+      case Branch(l, r) => assertEquals(tree.depthViaFold, 1 + l.depthViaFold.max(r.depthViaFold))
+  }
 
-  private val mapViaFoldProp: Prop = forAll(genIntTree) { tree =>
-    toScalaList(tree.mapViaFold(_.toString)) == toScalaList(tree).map(_.map(_.toString))
-  }.tag("Tree.mapViaFold")
+  test("Tree.mapViaFold")(genIntTree) { tree =>
+    assertEquals(toScalaList(tree.mapViaFold(_.toString)), toScalaList(tree).map(_.map(_.toString)))
+  }
 
-  private val sizeOfTreeProp: Prop = forAll(genIntTree) { tree =>
-    Tree.size(tree) == toScalaList(tree).length
-  }.tag("size(tree)")
+  test("size(tree)")(genIntTree) { tree =>
+    assertEquals(Tree.size(tree), toScalaList(tree).length)
+  }
 
-  private val firstPositiveProp: Prop = forAll(genIntTree) { tree =>
-    tree.firstPositive == toScalaList(tree).flatten.find(_ > 0)
-  }.tag("Tree.firstPositive")
+  test("Tree.firstPositive")(genIntTree) { tree =>
+    assertEquals(tree.firstPositive, toScalaList(tree).flatten.find(_ > 0))
+  }
 
-  private val maximumProp: Prop = forAll(genIntTree) { tree =>
-    tree.maximum == toScalaList(tree).max.getOrElse(0)
-  }.tag("Tree.maximum")
+  test("Tree.maximum")(genIntTree) { tree =>
+    assertEquals(tree.maximum, toScalaList(tree).max.getOrElse(0))
+  }
 
-  private val maximumViaFoldProp: Prop = forAll(genIntTree) { tree =>
-    tree.maximumViaFold == toScalaList(tree).max.getOrElse(0)
-  }.tag("Tree.maximumViaFold")
-
-  @main def checkTree(): Unit =
-    sizeProp.run()
-    depthProp.run()
-    mapProp.run()
-    foldProp.run()
-    sizeViaFoldProp.run()
-    depthViaFoldProp.run()
-    mapViaFoldProp.run()
-    sizeOfTreeProp.run()
-    firstPositiveProp.run()
-    maximumProp.run()
-    maximumViaFoldProp.run()
+  test("Tree.maximumViaFold")(genIntTree) { tree =>
+    assertEquals(tree.maximumViaFold, toScalaList(tree).max.getOrElse(0))
+  }
 
   private def toScalaList[A](t: Tree[A]): SList[Option[A]] = t match
     case Leaf(v)      => SList(Some(v))

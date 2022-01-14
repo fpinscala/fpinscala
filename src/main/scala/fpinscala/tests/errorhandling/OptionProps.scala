@@ -4,10 +4,11 @@ import fpinscala.answers.testing.exhaustive.*
 import fpinscala.answers.testing.exhaustive.Prop.*
 import fpinscala.exercises.errorhandling.*
 import fpinscala.exercises.errorhandling.Option.*
+import fpinscala.tests.munit.PropSuite
 
 import scala.{Either as SEither, Left as SLeft, None as SNone, Option as SOption, Right as SRight, Some as SSome}
 
-object OptionProps:
+class OptionProps extends PropSuite:
   private val genIntOption: Gen[Option[Int]] =
     Gen.union(Gen.unit(None), Gen.int.map(Some(_)))
 
@@ -53,74 +54,62 @@ object OptionProps:
 
   private val otherOpt: Option[Int] = Some(1)
 
-  private val mapProp: Prop = forAll(genIntOption) {
-    case None    => None.map(intToString) == None
-    case Some(n) => Some(n).map(intToString) == Some(n.toString)
-  }.tag("Option.map")
+  test("Option.map")(genIntOption) {
+    case None    => assertEquals(None.map(intToString), None)
+    case Some(n) => assertEquals(Some(n).map(intToString), Some(n.toString))
+  }
 
-  private val getOrElseProp: Prop = forAll(genIntOption) {
-    case None    => None.getOrElse(1) == 1
-    case Some(n) => Some(n).getOrElse(1) == n
-  }.tag("Option.getOrElse")
+  test("Option.getOrElse")(genIntOption) {
+    case None    => assertEquals(None.getOrElse(1), 1)
+    case Some(n) => assertEquals(Some(n).getOrElse(1), n)
+  }
 
-  private val flatMapProp: Prop = forAll(genIntOption) {
-    case None    => None.flatMap(intToOptString) == None
-    case Some(n) => Some(n).flatMap(intToOptString) == Some(n.toString)
-  }.tag("Option.flatMap")
+  test("Option.flatMap")(genIntOption) {
+    case None    => assertEquals(None.flatMap(intToOptString), None)
+    case Some(n) => assertEquals(Some(n).flatMap(intToOptString), Some(n.toString))
+  }
 
-  private val orElseProp: Prop = forAll(genIntOption) {
-    case None => None.orElse(otherOpt) == otherOpt
-    case opt  => opt.orElse(otherOpt) == opt
-  }.tag("Option.orElse")
+  test("Option.orElse")(genIntOption) {
+    case None => assertEquals(None.orElse(otherOpt), otherOpt)
+    case opt  => assertEquals(opt.orElse(otherOpt), opt)
+  }
 
-  private val filterProp: Prop = forAll(genIntOption) {
-    case None => None.filter(a => a == 42) == None
+  test("Option.filter")(genIntOption) {
+    case None => assertEquals(None.filter(a => a == 42), None)
     case Some(n) =>
-      Some(n).filter(a => a == n) == Some(n) && Some(n).filter(a => a == n + 1) == None
-  }.tag("Option.filter")
+      assertEquals(Some(n).filter(a => a == n), Some(n))
+      assertEquals(Some(n).filter(a => a == n + 1), None)
+  }
 
-  private val meanProp: Prop = forAll(genDoubleList) { list =>
-    Option.mean(list) == (if list.isEmpty then None else Some(list.sum / list.length))
-  }.tag("Option.mean")
+  test("Option.mean")(genDoubleList) { list =>
+    assertEquals(Option.mean(list), if list.isEmpty then None else Some(list.sum / list.length))
+  }
 
-  private val varianceProp: Prop = forAll(genDoubleList) { list =>
+  test("Option.variance")(genDoubleList) { list =>
     val expected =
       if list.isEmpty then None
       else
         val m = list.sum / list.length
         val newList = list.map(x => math.pow(x - m, 2))
         Some(newList.sum / newList.length)
-    Option.variance(list) == expected
-  }.tag("Option.variance")
+    assertEquals(Option.variance(list), expected)
+  }
 
-  private val map2Prop: Prop = forAll(genIntOption ** genIntOption) { (opt1, opt2) =>
-    (opt1, opt2) match
-      case (Some(a), Some(b)) => Option.map2(opt1, opt2)(_ + _) == Some(a + b)
-      case _                  => Option.map2(opt1, opt2)(_ + _) == None
-  }.tag("Option.map2")
+  test("Option.map2")(genIntOption ** genIntOption) {
+    case (Some(a), Some(b)) => assertEquals(Option.map2(Some(a), Some(b))(_ + _), Some(a + b))
+    case (opt1, opt2)       => assertEquals(Option.map2(opt1, opt2)(_ + _), None)
+  }
 
-  private val sequenceProp: Prop = forAll(genOptionSeq) { optionList =>
+  test("Option.sequence")(genOptionSeq) { optionList =>
     val expected: Option[List[Int]] =
       if optionList.contains(None) then None
       else Some(optionList.flatMap(_.map(List(_)).getOrElse(List.empty[Int])))
-    Option.sequence(optionList) == expected
-  }.tag("Option.sequence")
+    assertEquals(Option.sequence(optionList), expected)
+  }
 
-  private val traverseProp: Prop = forAll(genStringList) { list =>
+  test("Option.traverse")(genStringList) { list =>
     val expected: Option[List[Int]] =
       if list.contains("one") then None
       else Some(list.flatMap(_.toIntOption))
-    Option.traverse(list)(strToOptInt) == expected
-  }.tag("Option.traverse")
-
-  @main def checkOption(): Unit =
-    mapProp.run()
-    getOrElseProp.run()
-    flatMapProp.run()
-    orElseProp.run()
-    filterProp.run()
-    meanProp.run()
-    varianceProp.run()
-    map2Prop.run()
-    sequenceProp.run()
-    traverseProp.run()
+    assertEquals(Option.traverse(list)(strToOptInt), expected)
+  }
