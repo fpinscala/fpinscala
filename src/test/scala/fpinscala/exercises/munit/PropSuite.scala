@@ -1,4 +1,4 @@
-package fpinscala.tests.munit
+package fpinscala.exercises.munit
 
 import fpinscala.answers.state.RNG
 import fpinscala.answers.testing.exhaustive.*

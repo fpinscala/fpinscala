@@ -1,10 +1,10 @@
-package fpinscala.tests.gettingstarted
+package fpinscala.exercises.gettingstarted
 
 import fpinscala.answers.testing.exhaustive.*
 import fpinscala.answers.testing.exhaustive.Prop.*
 import fpinscala.exercises.gettingstarted.MyProgram.fib
 import fpinscala.exercises.gettingstarted.PolymorphicFunctions.{compose, curry, isSorted, uncurry}
-import fpinscala.tests.munit.PropSuite
+import fpinscala.exercises.munit.PropSuite
 
 class GettingStartedSuite extends PropSuite:
   private val theFirst21FibonacciNumbers =

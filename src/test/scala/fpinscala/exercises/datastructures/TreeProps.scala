@@ -1,10 +1,10 @@
-package fpinscala.tests.datastructures
+package fpinscala.exercises.datastructures
 
 import fpinscala.answers.testing.exhaustive.*
 import fpinscala.answers.testing.exhaustive.Prop.*
 import fpinscala.exercises.datastructures.Tree
 import fpinscala.exercises.datastructures.Tree.*
-import fpinscala.tests.munit.PropSuite
+import fpinscala.exercises.munit.PropSuite
 
 import scala.List as SList
 

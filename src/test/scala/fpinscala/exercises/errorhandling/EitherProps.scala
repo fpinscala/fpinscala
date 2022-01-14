@@ -1,10 +1,10 @@
-package fpinscala.tests.errorhandling
+package fpinscala.exercises.errorhandling
 
 import fpinscala.answers.testing.exhaustive.*
 import fpinscala.answers.testing.exhaustive.Prop.*
 import fpinscala.exercises.errorhandling.*
 import fpinscala.exercises.errorhandling.Either.*
-import fpinscala.tests.munit.PropSuite
+import fpinscala.exercises.munit.PropSuite
 
 class EitherProps extends PropSuite:
   private val genChar: Gen[Char] =
