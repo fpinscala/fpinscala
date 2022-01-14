@@ -52,7 +52,7 @@ jobs:
         run: sbt --client '++${{ matrix.scala }}; githubWorkflowCheck'
 
       - name: Build project
-        run: sbt --client '++${{ matrix.scala }}; test'
+        run: sbt --client '++${{ matrix.scala }}; test:compile'
 
       - name: Compress target directories
         run: tar cf targets.tar target project/target
