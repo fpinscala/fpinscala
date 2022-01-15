@@ -46,7 +46,7 @@ object Prop:
     case Passed(status: Status, testCases: TestCases)
 
   extension (self: Prop)
-    def &&(that: Prop): Prop = 
+    def &&(that: Prop): Prop =
       (max, n, rng) => self.tag("and-left")(max, n, rng) match
         case Passed(a, n) => that.tag("and-right")(max, n, rng) match
           case Passed(s, m) => Passed(s, TestCases.fromInt(n.toInt + m.toInt))
@@ -58,7 +58,7 @@ object Prop:
         case Falsified(msg) => that.tag("or-right").tag(msg.string)(max, n, rng)
         case x => x
 
-    def tag(msg: String): Prop = 
+    def tag(msg: String): Prop =
       (max, n, rng) => self(max, n, rng) match
         case Falsified(e) => Falsified(FailedCase.fromString(s"$msg($e)"))
         case x => x
@@ -76,12 +76,19 @@ object Prop:
         // case Passed(Exhausted, n) =>
         //   println(s"+ OK, property unfalsified up to max size, ran $n tests.")
 
+    def check(
+              maxSize: MaxSize = 100,
+              testCases: TestCases = 100,
+              rng: RNG = RNG.Simple(System.currentTimeMillis)
+            ): Result =
+      self(maxSize, testCases, rng)
+
   def forAll[A](a: Gen[A])(f: A => Boolean): Prop =
     (max, n, rng) => {
       def go(i: Int, j: Int, l: LazyList[Option[A]], onEnd: Int => Result): Result =
         if i == j then Passed(Unfalsified, i)
         else l match
-          case Some(h) #:: t => 
+          case Some(h) #:: t =>
             try
               if f(h) then go(i+1, j, t, onEnd)
               else Falsified(h.toString)
@@ -396,7 +403,7 @@ object Gen:
     val sample = State[RNG, String => A] { rng =>
       val (seed, rng2) = rng.nextInt // we still use `rng` to produce a seed, so we get a new function each time
       val f = (s: String) => g.sample.run(RNG.Simple(seed.toLong ^ s.hashCode.toLong))._1
-      (f, rng2) 
+      (f, rng2)
     }
     Gen(sample, unbounded)
 

@@ -92,11 +92,11 @@ To get a menu of possible main methods to execute.
 
 To run unit-tests for a file you can do:
 
-    > runMain fpinscala.tests.gettingstarted.checkGettingStarted
+    > testOnly fpinscala.exercises.gettingstarted.GettingStartedSuite
 
 To run all unit-tests:
 
-    > runMain fpinscala.tests.checkAll
+    > test
 
 All code in this repository is
 [MIT-licensed](http://opensource.org/licenses/mit-license.php). See the
