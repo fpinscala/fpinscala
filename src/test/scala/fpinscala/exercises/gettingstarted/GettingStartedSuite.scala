@@ -2,25 +2,18 @@ package fpinscala.exercises.gettingstarted
 
 import fpinscala.answers.testing.exhaustive.*
 import fpinscala.answers.testing.exhaustive.Prop.*
+import fpinscala.exercises.common.Common.*
+import fpinscala.exercises.common.PropSuite
 import fpinscala.exercises.gettingstarted.MyProgram.fib
 import fpinscala.exercises.gettingstarted.PolymorphicFunctions.{compose, curry, isSorted, uncurry}
-import fpinscala.exercises.munit.PropSuite
 
 class GettingStartedSuite extends PropSuite:
-  private val theFirst21FibonacciNumbers =
-    IndexedSeq(0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584, 4181, 6765)
-
   private lazy val mulCurry: Int => Int => Int = curry[Int, Int, Int]((a: Int, b: Int) => a * b)
 
   private lazy val mulUncurry: (Int, Int) => Int = uncurry[Int, Int, Int]((a: Int) => (b: Int) => a * b)
 
-  private val genShortNumber = Gen.choose(0, 20)
-
   private val genSortedArray: Gen[Array[Int]] =
-    for {
-      n <- genShortNumber
-      list <- Gen.listOfN(n, genShortNumber)
-    } yield list.sorted.toArray
+    genList(genShortNumber).map(_.sorted.toArray)
 
   private val genUnsortedArray: Gen[Array[Int]] =
     for {
@@ -31,7 +24,7 @@ class GettingStartedSuite extends PropSuite:
       else num - 100
     }.toArray
 
-  test("MyProgram.fib")(genShortNumber) { i =>
+  test("MyProgram.fib")(genLengthOfFibonacciSeq) { i =>
     assertEquals(fib(i), theFirst21FibonacciNumbers(i))
   }
 

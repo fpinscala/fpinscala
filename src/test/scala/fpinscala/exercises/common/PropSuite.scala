@@ -1,4 +1,4 @@
-package fpinscala.exercises.munit
+package fpinscala.exercises.common
 
 import fpinscala.answers.state.RNG
 import fpinscala.answers.testing.exhaustive.*
@@ -19,7 +19,7 @@ trait PropSuite extends FunSuite:
         true
     val prop = forAll[A](a)(g)
     test(new TestOptions(name, Set.empty, loc))(prop.check())
-  
+
   override def munitTestTransforms: List[TestTransform] =
     super.munitTestTransforms :+ scalaCheckPropTransform
 
@@ -41,4 +41,4 @@ trait PropSuite extends FunSuite:
         println(s"${test.name}: + OK, property ${status.toString.toLowerCase}, ran $n tests.")
         Success(())
       case Falsified(msg) =>
-        Try(fail(msg.toString)(test.location))
+        Try(fail(msg.string)(test.location))

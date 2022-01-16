@@ -2,29 +2,20 @@ package fpinscala.exercises.datastructures
 
 import fpinscala.answers.testing.exhaustive.*
 import fpinscala.answers.testing.exhaustive.Prop.*
+import fpinscala.exercises.common.Common.{genShortNumber, genDoubleList as genDoubleSList, genIntList as genIntSList}
+import fpinscala.exercises.common.PropSuite
 import fpinscala.exercises.datastructures.*
 import fpinscala.exercises.datastructures.List.*
-import fpinscala.exercises.munit.PropSuite
 
 import scala.util.Try
 import scala.{List as SList, Nil as SNil}
 
-class ListProps extends PropSuite:
-  private val genIntList: Gen[List[Int]] =
-    for {
-      length <- Gen.choose(0, 10)
-      slist <- Gen.listOfN(length, Gen.int)
-    } yield scalaListToList(slist)
-
-  private val genDoubleList: Gen[List[Double]] =
-    for {
-      length <- Gen.choose(0, 10)
-      slist <- Gen.listOfN(length, Gen.double)
-    } yield scalaListToList(slist)
-
+class ListSuite extends PropSuite:
+  private val genIntList: Gen[List[Int]] = genIntSList.map(scalaListToList)
+  private val genDoubleList: Gen[List[Double]] = genDoubleSList.map(scalaListToList)
   private val genListOfLists: Gen[List[List[Int]]] =
     for {
-      length <- Gen.choose(0, 10)
+      length <- genShortNumber
       slist <- Gen.listOfN(length, genIntList)
     } yield scalaListToList(slist)
 

@@ -2,13 +2,14 @@ package fpinscala.exercises.datastructures
 
 import fpinscala.answers.testing.exhaustive.*
 import fpinscala.answers.testing.exhaustive.Prop.*
+import fpinscala.exercises.common.Common.*
+import fpinscala.exercises.common.PropSuite
 import fpinscala.exercises.datastructures.Tree
 import fpinscala.exercises.datastructures.Tree.*
-import fpinscala.exercises.munit.PropSuite
 
 import scala.List as SList
 
-class TreeProps extends PropSuite:
+class TreeSuite extends PropSuite:
   private val genIntTree: Gen[Tree[Int]] =
     def loop(): Gen[Tree[Int]] =
       Gen.boolean.flatMap {
