@@ -2,20 +2,12 @@ package fpinscala.exercises.errorhandling
 
 import fpinscala.answers.testing.exhaustive.*
 import fpinscala.answers.testing.exhaustive.Prop.*
+import fpinscala.exercises.common.Common.*
+import fpinscala.exercises.common.PropSuite
 import fpinscala.exercises.errorhandling.*
 import fpinscala.exercises.errorhandling.Either.*
-import fpinscala.exercises.munit.PropSuite
 
-class EitherProps extends PropSuite:
-  private val genChar: Gen[Char] =
-    Gen.choose(97, 123).map(_.toChar)
-
-  private val genString: Gen[String] =
-    for {
-      n <- Gen.choose(0, 20)
-      list <- Gen.listOfN(n, genChar)
-    } yield list.mkString
-
+class EitherSuite extends PropSuite:
   private val genEither: Gen[Either[String, Int]] =
     Gen.union(genString.map(Left(_)), Gen.int.map(Right(_)))
 

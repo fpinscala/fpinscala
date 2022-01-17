@@ -2,55 +2,44 @@ package fpinscala.exercises.errorhandling
 
 import fpinscala.answers.testing.exhaustive.*
 import fpinscala.answers.testing.exhaustive.Prop.*
+import fpinscala.exercises.common.Common.*
+import fpinscala.exercises.common.PropSuite
 import fpinscala.exercises.errorhandling.*
 import fpinscala.exercises.errorhandling.Option.*
-import fpinscala.exercises.munit.PropSuite
 
 import scala.{Either as SEither, Left as SLeft, None as SNone, Option as SOption, Right as SRight, Some as SSome}
 
-class OptionProps extends PropSuite:
+class OptionSuite extends PropSuite:
   private val genIntOption: Gen[Option[Int]] =
     Gen.union(Gen.unit(None), Gen.int.map(Some(_)))
 
-  private val genDoubleList: Gen[List[Double]] =
-    Gen.choose(0, 10).flatMap(n => Gen.listOfN(n, Gen.double))
-
-  private val genNoneSeq: Gen[List[Option[Int]]] = Gen.unit(List(None))
+  private val genNoneSeq: Gen[List[Option[Int]]] =
+    Gen.unit(List(None))
 
   private val genListWithNone: Gen[List[Option[Int]]] =
-    for {
-      length <- Gen.choose(0, 10)
-      genListWithNone <- Gen.listOfN[Option[Int]](length, genIntOption)
-    } yield genListWithNone
+    genList(genIntOption)
 
   private val genListWithoutNone: Gen[List[Option[Int]]] =
-    for {
-      length <- Gen.choose(0, 10)
-      genList <- Gen.listOfN[Option[Int]](length, Gen.int.map(Some(_)))
-    } yield genList
+    genList(Gen.int.map(Some(_)))
 
   private val genOptionSeq: Gen[List[Option[Int]]] =
     Gen.union(genNoneSeq, Gen.union(genListWithNone, genListWithoutNone))
 
   private val genListWithRandomString: Gen[List[String]] =
-    Gen.choose(0, 10).flatMap { n =>
-      Gen.listOfN(n, Gen.union(Gen.unit("one"), Gen.int.map(_.toString)))
-    }
+    genList(Gen.union(Gen.unit("one"), Gen.int.map(_.toString)))
 
   private val genListWithValidNumbers: Gen[List[String]] =
-    Gen.choose(0, 10).flatMap(n => Gen.listOfN(n, Gen.int.map(_.toString)))
+    genList(Gen.int.map(_.toString))
 
   private val genStringList: Gen[List[String]] =
-    Gen.union(
-      genListWithRandomString,
-      genListWithValidNumbers
-    )
+    Gen.union(genListWithRandomString, genListWithValidNumbers)
 
   private val intToString: Int => String = a => a.toString
   private val intToOptString: Int => Option[String] = a => Some(a.toString)
-  private val strToOptInt: String => Option[Int] = _.toIntOption match
-    case SNone        => None
-    case SSome(value) => Some(value)
+  private val strToOptInt: String => Option[Int] =
+    _.toIntOption match
+      case SNone        => None
+      case SSome(value) => Some(value)
 
   private val otherOpt: Option[Int] = Some(1)
 
