@@ -1,37 +1,33 @@
-package fpinscala.answers
+package fpinscala.answers.iomonad
 
-import language.higherKinds
+import fpinscala.answers.parallelism.Nonblocking.*
+import IO3.given
 
-package object iomonad {
-  import fpinscala.answers.parallelism.Nonblocking.*
+type IO[A] = IO3.IO[A]
+def IO[A](a: => A): IO[A] = IO3.IO[A](a)
 
-  type IO[A] = IO3.IO[A]
-  def IO[A](a: => A): IO[A] = IO3.IO[A](a)
+def now[A](a: A): IO[A] = IO3.Free.Return(a)
 
-  implicit val ioMonad: Monad[Free[Par, *]] = IO3.freeMonad[Par]
+def fork[A](a: => IO[A]): IO[A] = par(Par.lazyUnit(())).flatMap(_ => a)
 
-  def now[A](a: A): IO[A] = IO3.Return(a)
+def forkUnit[A](a: => A): IO[A] = fork(now(a))
 
-  def fork[A](a: => IO[A]): IO[A] = par(Par.lazyUnit(())).flatMap(_ => a)
+def delay[A](a: => A): IO[A] = now(()).flatMap(_ => now(a))
 
-  def forkUnit[A](a: => A): IO[A] = fork(now(a))
+def par[A](a: Par[A]): IO[A] = IO3.Free.Suspend(a)
 
-  def delay[A](a: => A): IO[A] = now(()).flatMap(_ => now(a))
+def async[A](cb: ((A => Unit) => Unit)): IO[A] =
+  fork(par(Par.async(cb)))
 
-  def par[A](a: Par[A]): IO[A] = IO3.Suspend(a)
+type Free[F[_], A] = IO3.Free[F, A]
 
-  def async[A](cb: ((A => Unit) => Unit)): IO[A] =
-    fork(par(Par.async(cb)))
+def Return[A](a: A): IO[A] = IO3.Free.Return[Par,A](a)
 
-  type Free[F[_], A] = IO3.Free[F, A]
-
-  def Return[A](a: A): IO[A] = IO3.Return[Par,A](a)
-
-  // To run an `IO`, we need an executor service.
-  // The name we have chosen for this method, `unsafePerformIO`,
-  // reflects that is is unsafe, i.e. that it has side effects,
-  // and that it _performs_ the actual I/O.
-  import java.util.concurrent.ExecutorService
-  def unsafePerformIO[A](io: IO[A])(implicit E: ExecutorService): A =
-    IO3.run(io)(IO3.parMonad).run(E)
-}
+// To run an `IO`, we need an executor service.
+// The name we have chosen for this method, `unsafeRunSync`,
+// reflects that is is unsafe, i.e. that it has side effects,
+// and that it _performs_ the actual I/O.
+import java.util.concurrent.ExecutorService
+extension [A](ioa: IO[A])
+  def unsafeRunSync(using e: ExecutorService): A =
+    ioa.run.run(e)

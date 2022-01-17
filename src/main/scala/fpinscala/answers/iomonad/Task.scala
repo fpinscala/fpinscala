@@ -36,20 +36,16 @@ case class Task[A](get: IO[Either[Throwable, A]]) {
       case a => IO(a)
     })
 
-  def run(implicit E: ExecutorService): A = unsafePerformIO(get) match {
+  def run(using ExecutorService): A = get.unsafeRunSync match
     case Left(e) => throw e
     case Right(a) => a
-  }
 
-  def attemptRun(implicit E: ExecutorService): Either[Throwable,A] =
-    try unsafePerformIO(get) catch { case t: Throwable => Left(t) }
+  def attemptRun(using ExecutorService): Either[Throwable,A] =
+    try get.unsafeRunSync catch { case t: Throwable => Left(t) }
 }
 
-object Task extends Monad[Task] {
+object Task:
   def unit[A](a: => A) = Task(IO(Try(a)))
-
-  def flatMap[A,B](a: Task[A])(f: A => Task[B]): Task[B] =
-    a.flatMap(f)
 
   def fail[A](e: Throwable): Task[A] = Task(IO(Left(e)))
   def now[A](a: A): Task[A] = Task(Return(Right(a)))
@@ -63,5 +59,9 @@ object Task extends Monad[Task] {
 
   def Try[A](a: => A): Either[Throwable,A] =
     try Right(a) catch { case e: Throwable => Left(e) }
-}
 
+  given monad: Monad[Task] with
+    def unit[A](a: => A) = Task(IO(Try(a)))
+    extension [A](fa: Task[A])
+      def flatMap[B](f: A => Task[B]): Task[B] =
+        fa.flatMap(f)

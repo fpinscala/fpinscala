@@ -25,7 +25,7 @@ trait Monad[F[_]] extends Applicative[F]:
 object Monad:
 
   // Monad composition
-  def composeM[G[_], H[_]](using G: Monad[G], H: Monad[H], T: Traverse[H]): Monad[[X] =>> G[H[X]]] = new:
+  def composeM[G[_], H[_]](using G: Monad[G], H: Monad[H], T: Traverse[H]): Monad[[x] =>> G[H[x]]] = new:
     def unit[A](a: => A): G[H[A]] = G.unit(H.unit(a))
     extension [A](gha: G[H[A]])
       override def flatMap[B](f: A => G[H[B]]): G[H[B]] =

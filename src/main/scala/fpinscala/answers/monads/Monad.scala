@@ -129,7 +129,7 @@ object Monad:
   // Using a type lambda, we can define a single given that provides a monad
   // instance for any state type `S`:
   object StateMonadViaTypeLambda: // Wrapping in an object so this instance doesn't conflict with one below
-    given stateMonadViaTypeLambda[S]: Monad[[X] =>> State[S, X]] with
+    given stateMonadViaTypeLambda[S]: Monad[[x] =>> State[S, x]] with
       def unit[A](a: => A): State[S, A] = State(s => (a, s))
       extension [A](fa: State[S, A])
         override def flatMap[B](f: A => State[S, B]) =

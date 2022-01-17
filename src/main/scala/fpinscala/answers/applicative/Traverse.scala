@@ -86,9 +86,9 @@ trait Traverse[F[_]] extends Functor[F], Foldable[F]:
       }(0)
 
     def fuse[M[_], N[_], B](f: A => M[B], g: A => N[B])(using m: Applicative[M], n: Applicative[N]): (M[F[B]], N[F[B]]) =
-      fa.traverse[[X] =>> (M[X], N[X]), B](a => (f(a), g(a)))(using m.product(n))
+      fa.traverse[[x] =>> (M[x], N[x]), B](a => (f(a), g(a)))(using m.product(n))
 
-  def compose[G[_]: Traverse]: Traverse[[X] =>> F[G[X]]] = new:
+  def compose[G[_]: Traverse]: Traverse[[x] =>> F[G[x]]] = new:
     extension [A](fa: F[G[A]])
       override def traverse[H[_]: Applicative, B](f: A => H[B]): H[F[G[B]]] =
         self.traverse(fa)(ga => ga.traverse(f))

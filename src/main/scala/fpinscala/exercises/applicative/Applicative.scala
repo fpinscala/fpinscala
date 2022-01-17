@@ -45,10 +45,10 @@ trait Applicative[F[_]] extends Functor[F]:
     )(f: (A, B, C, D) => E): F[E] =
       ???
 
-  def product[G[_]](G: Applicative[G]): Applicative[[X] =>> (F[X], G[X])] =
+  def product[G[_]](G: Applicative[G]): Applicative[[x] =>> (F[x], G[x])] =
     ???
 
-  def compose[G[_]](G: Applicative[G]): Applicative[[X] =>> F[G[X]]] =
+  def compose[G[_]](G: Applicative[G]): Applicative[[x] =>> F[G[x]]] =
     ???
 
   def sequenceMap[K,V](ofa: Map[K, F[V]]): F[Map[K, V]] =

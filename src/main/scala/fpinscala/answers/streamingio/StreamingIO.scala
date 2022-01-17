@@ -1,6 +1,6 @@
 package fpinscala.answers.streamingio
 
-import fpinscala.answers.iomonad.{IO,Monad,Free,unsafePerformIO}
+import fpinscala.answers.iomonad.{IO, Monad, Free, unsafeRunSync}
 import language.implicitConversions
 import language.higherKinds
 import language.postfixOps
@@ -247,17 +247,13 @@ object SimpleLazyListTransducers {
 
     // Process forms a monad, and we provide monad syntax for it
 
-    import fpinscala.answers.iomonad.{Monad, Monadic}
+    import fpinscala.answers.iomonad.Monad
 
-    def monad[I]: Monad[({ type f[x] = Process[I,x]})#f] =
-      new Monad[({ type f[x] = Process[I,x]})#f] {
-        def unit[O](o: => O): Process[I,O] = emit(o)
-        def flatMap[O,O2](p: Process[I,O])(f: O => Process[I,O2]): Process[I,O2] =
-          p.flatMap(f)
-      }
-
-    // enable monadic syntax for `Process` type
-    implicit def toMonadic[I,O](a: Process[I,O]): Monadic[Process[I, *], O] = monad[I].toMonadic(a)
+    given monad[I]: Monad[Process[I, _]] with
+      def unit[O](o: => O): Process[I,O] = emit(o)
+      extension [A](fa: Process[I, A])
+        def flatMap[B](f: A => Process[I, B]): Process[I, B] =
+          fa.flatMap(f)
 
     /**
      * A helper function to await an element or fall back to another process
@@ -777,7 +773,7 @@ object GeneralizedLazyListTransducers {
           case Halt(err) => throw err
           case Await(req,recv) =>
             val next =
-              try recv(Right(fpinscala.answers.iomonad.unsafePerformIO(req)(E)))
+              try recv(Right(req.unsafeRunSync(using E)))
               catch { case err: Throwable => recv(Left(err)) }
             go(next, acc)
         }

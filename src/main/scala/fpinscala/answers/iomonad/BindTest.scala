@@ -1,8 +1,5 @@
 package fpinscala.answers.iomonad
 
-import language.higherKinds
-import language.postfixOps
-
 object BindTest extends App {
 
   def timeit(n: Int)(task: => Unit): Unit = {
@@ -13,9 +10,8 @@ object BindTest extends App {
   }
 
   val N = 100000
-  def go[F[_]](F: Monad[F])(unit: F[Unit])(f: F[Int] => Int): Unit = {
-    import F.toMonadic
-    f { (0 to N).map(i => F.map(unit)(_ => i)).foldLeft(F.unit(0)) {
+  def go[F[_]](unit: F[Unit])(f: F[Int] => Int)(using F: Monad[F]): Unit = {
+    f { (0 to N).map(i => unit.map(_ => i)).foldLeft(F.unit(0)) {
       (f1,f2) => for {
         acc <- f1
         i <- f2
@@ -27,21 +23,21 @@ object BindTest extends App {
 
   import fpinscala.answers.parallelism.Nonblocking.*
 
-  object ParMonad extends Monad[Par] {
+  given parMonad: Monad[Par] with
     def unit[A](a: => A) = Par.unit(a)
-    def flatMap[A,B](pa: Par[A])(f: A => Par[B]) = Par.fork { pa.flatMap(f) }
-  }
+    extension [A](fa: Par[A])
+      def flatMap[B](f: A => Par[B]) = Par.fork(fa.flatMap(f))
 
   val pool = java.util.concurrent.Executors.newFixedThreadPool(4)
 
-  timeit(10) { go(Throw)(Throw.unit(())) ( _ run ) }
-  timeit(10) { go(IO2b.TailRec)(IO2b.TailRec.unit(())) ( IO2b.run ) }
-  timeit(10) { go(IO2c.Async)(IO2c.Async.unit(()))(r => IO2c.run(r).run(pool)) }
-  timeit(10) { go[IO](ioMonad)(ioMonad.unit(()))(r => unsafePerformIO(r)(pool)) }
-  timeit(10) { go(Task)(Task.now(()))(r => r.run(pool)) }
-  timeit(10) { go(Task)(Task.forkUnit(()))(r => r.run(pool)) }
-  timeit(10) { go(ParMonad)(ParMonad.unit(())) { p => p.run(pool) }}
+  timeit(10) { go(Throw(()))(_.run) }
+  timeit(10) { go(IO2b.TailRec(()))(_.run) }
+  timeit(10) { go(IO2c.Async(()))(_.run.run(pool)) }
+  timeit(10) { go(summon[Monad[IO3.IO]].unit(()))(_.unsafeRunSync(using pool)) }
+  timeit(10) { go(Task.now(()))(_.run(using pool)) }
+  timeit(10) { go(Task.forkUnit(()))(_.run(using pool)) }
+  timeit(10) { go(parMonad.unit(()))(_.run(pool))}
 
-  // Par.run(pool)(ParMonad.forever { ParMonad.unit { println("woot") }})
+  // parMonad.unit(println("woot")).forever.run(pool)
   pool.shutdown()
 }

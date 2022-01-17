@@ -1,72 +1,80 @@
 package fpinscala.answers.iomonad
 
-import language.higherKinds // Disable warnings for type constructor polymorphism
-import language.implicitConversions
+trait Functor[F[_]]:
+  extension [A](fa: F[A])
+    def map[B](f: A => B): F[B]
 
-trait Functor[F[_]] {
-  def map[A,B](a: F[A])(f: A => B): F[B]
-}
-
-trait Monad[F[_]] extends Functor[F] {
+trait Monad[F[_]] extends Functor[F]:
   def unit[A](a: => A): F[A]
-  def flatMap[A,B](a: F[A])(f: A => F[B]): F[B]
 
-  def map[A,B](a: F[A])(f: A => B): F[B] = flatMap(a)(a => unit(f(a)))
-  def map2[A,B,C](a: F[A], b: F[B])(f: (A,B) => C): F[C] =
-    flatMap(a)(a => map(b)(b => f(a,b)))
-  def sequence_[A](fs: LazyList[F[A]]): F[Unit] = foreachM(fs)(skip)
+  extension [A](fa: F[A])
+    def flatMap[B](f: A => F[B]): F[B]
+
+    def map[B](f: A => B): F[B] = flatMap(a => unit(f(a)))
+
+    def map2[B,C](fb: F[B])(f: (A, B) => C): F[C] =
+      fa.flatMap(a => fb.map(b => f(a, b)))
+
+    def **[B](fb: F[B]): F[(A, B)] = map2(fb)((_, _))
+    def *>[B](fb: F[B]): F[B] = map2(fb)((_, b) => b)
+
+    def as[B](b: B): F[B] = map(_ => b)
+
+    def void: F[Unit] = as(())
+
+    def forever[B]: F[B] =
+      lazy val t: F[B] = flatMap(_ => t)
+      t
+
+    def doWhile(cond: A => F[Boolean]): F[Unit] = for
+      a <- fa
+      ok <- cond(a)
+      _ <- if ok then doWhile(cond) else unit(())
+    yield ()
+
+    def replicateM(n: Int): F[List[A]] =
+      LazyList.fill(n)(fa).foldRight(unit(List[A]()))(_.map2(_)(_ :: _))
+
+    def replicateM_(n: Int): F[Unit] =
+      foreachM(LazyList.fill(n)(fa))(_.void)
+
+  def sequence_[A](fs: LazyList[F[A]]): F[Unit] = foreachM(fs)(_.void)
+
   def sequence_[A](fs: F[A]*): F[Unit] = sequence_(fs.to(LazyList))
-  def replicateM[A](n: Int)(f: F[A]): F[List[A]] =
-    LazyList.fill(n)(f).foldRight(unit(List[A]()))(map2(_,_)(_ :: _))
-  def replicateM_[A](n: Int)(f: F[A]): F[Unit] =
-    foreachM(LazyList.fill(n)(f))(skip)
-  def as[A,B](a: F[A])(b: B): F[B] = map(a)(_ => b)
-  def skip[A](a: F[A]): F[Unit] = as(a)(())
+
   def when[A](b: Boolean)(fa: => F[A]): F[Boolean] =
-    if (b) as(fa)(true) else unit(false)
-  def forever[A,B](a: F[A]): F[B] = {
-    lazy val t: F[B] = a.flatMap(_ => t)
-    t
-  }
-  def while_(a: F[Boolean])(b: F[Unit]): F[Unit] = {
-    lazy val t: F[Unit] = while_(a)(b)
-    a.flatMap(c => skip(when(c)(t)))
-  }
-  def doWhile[A](a: F[A])(cond: A => F[Boolean]): F[Unit] = for {
-    a1 <- a
-    ok <- cond(a1)
-    _ <- if (ok) doWhile(a)(cond) else unit(())
-  } yield ()
+    if b then fa.as(true) else unit(false)
 
-  def foldM[A,B](l: LazyList[A])(z: B)(f: (B,A) => F[B]): F[B] =
-    l match {
-      case h #:: t => f(z,h).flatMap(z2 => foldM(t)(z2)(f))
+  def while_(fa: F[Boolean])(fb: F[Unit]): F[Unit] =
+    lazy val t: F[Unit] = while_(fa)(fb)
+    fa.flatMap(c => when(c)(t).void)
+
+  def foldM[A, B](l: LazyList[A])(z: B)(f: (B, A) => F[B]): F[B] =
+    l match
+      case h #:: t => f(z, h).flatMap(z2 => foldM(t)(z2)(f))
       case _ => unit(z)
-    }
+
   def foldM_[A,B](l: LazyList[A])(z: B)(f: (B,A) => F[B]): F[Unit] =
-    skip { foldM(l)(z)(f) }
+    foldM(l)(z)(f).void
+
   def foreachM[A](l: LazyList[A])(f: A => F[Unit]): F[Unit] =
-    foldM_(l)(())((u,a) => skip(f(a)))
+    foldM_(l)(())((u,a) => f(a).void)
+
   def seq[A,B,C](f: A => F[B])(g: B => F[C]): A => F[C] =
-    f andThen (fb => flatMap(fb)(g))
+    a => f(a).flatMap(g)
 
-  // syntax
-  implicit def toMonadic[A](a: F[A]): Monadic[F,A] =
-    new Monadic[F,A] { val F = Monad.this; def get = a }
-}
 
-trait Monadic[F[_],A] {
-  val F: Monad[F]
-  import F.*
-  def get: F[A]
-  private val a = get
-  def map[B](f: A => B): F[B] = F.map(a)(f)
-  def flatMap[B](f: A => F[B]): F[B] = F.flatMap(a)(f)
-  def **[B](b: F[B]) = F.map2(a,b)((_,_))
-  def *>[B](b: F[B]) = F.map2(a,b)((_,b) => b)
-  def map2[B,C](b: F[B])(f: (A,B) => C): F[C] = F.map2(a,b)(f)
-  def as[B](b: B): F[B] = F.as(a)(b)
-  def skip: F[Unit] = F.skip(a)
-  def replicateM(n: Int) = F.replicateM(n)(a)
-  def replicateM_(n: Int) = F.replicateM_(n)(a)
-}
+object Monad:
+
+  given function0Monad: Monad[Function0] with
+    def unit[A](a: => A) = () => a
+    extension [A](fa: Function0[A])
+      def flatMap[B](f: A => Function0[B]) =
+        () => f(fa())()
+
+  import fpinscala.answers.parallelism.Nonblocking.Par
+  given parMonad: Monad[Par] with
+    def unit[A](a: => A) = Par.unit(a)
+    extension [A](fa: Par[A])
+      def flatMap[B](f: A => Par[B]) =
+        Par.fork(fa.flatMap(f)) 

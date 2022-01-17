@@ -61,7 +61,7 @@ trait Applicative[F[_]] extends Functor[F]:
     )(f: (A, B, C, D) => E): F[E] =
       apply(apply(apply(apply(unit(f.curried))(fa))(fb))(fc))(fd)
 
-  def product[G[_]](G: Applicative[G]): Applicative[[X] =>> (F[X], G[X])] = new:
+  def product[G[_]](G: Applicative[G]): Applicative[[x] =>> (F[x], G[x])] = new:
     def unit[A](a: => A) = (self.unit(a), G.unit(a))
     override def apply[A, B](fs: (F[A => B], G[A => B]))(p: (F[A], G[A])) =
       (self.apply(fs(0))(p(0)), G.apply(fs(1))(p(1)))
@@ -71,7 +71,7 @@ trait Applicative[F[_]] extends Functor[F]:
   // If `self` and `G` both satisfy the laws, then so does the composite.
   // The full proof can be found at
   // https://github.com/runarorama/sannanir/blob/master/Applicative.v
-  def compose[G[_]](G: Applicative[G]): Applicative[[X] =>> F[G[X]]] = new:
+  def compose[G[_]](G: Applicative[G]): Applicative[[x] =>> F[G[x]]] = new:
     def unit[A](a: => A) = self.unit(G.unit(a))
     extension [A](fga: F[G[A]])
       override def map2[B, C](fgb: F[G[B]])(f: (A, B) => C) =
