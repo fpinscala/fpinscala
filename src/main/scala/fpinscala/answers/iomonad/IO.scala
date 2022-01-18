@@ -382,40 +382,48 @@ object IO3:
     def map[B](f: A => B): Free[F,B] =
       flatMap(a => Return(f(a)))
 
-  import Free.*
+    // Exercise 3: Implement a `Free` interpreter which works for any `Monad`
+    def run(using F: Monad[F]): F[A] = step match
+      case Return(a) => F.unit(a)
+      case Suspend(fa) => fa
+      case FlatMap(Suspend(fa), f) => fa.flatMap(a => f(a).run)
+      case FlatMap(_, _) => sys.error("Impossible, since `step` eliminates these cases")
 
-  // Exercise 1: Implement the free monad
+    // return either a `Suspend`, a `Return`, or a right-associated `FlatMap`
+    @annotation.tailrec
+    final def step: Free[F, A] = this match
+      case FlatMap(FlatMap(fx, f), g) => fx.flatMap(x => f(x).flatMap(y => g(y))).step
+      case FlatMap(Return(x), f) => f(x).step
+      case _ => this
+
+    def runFree[G[_]](t: [x] => F[x] => G[x])(using G: Monad[G]): G[A] =
+      step match
+        case Return(a) => G.unit(a)
+        case Suspend(r) => t(r)
+        case FlatMap(Suspend(r), f) => t(r).flatMap(a => f(a).runFree(t))
+        case FlatMap(_, _) => sys.error("Impossible, since `step` eliminates these cases")
+
+    def translate[G[_]](fToG: [x] => F[x] => G[x]): Free[G, A] =
+      runFree([x] => (fx: F[x]) => Suspend(fToG(fx)))
+
+  import Free.{Return, Suspend, FlatMap}
+
   object Free:
+
     given freeMonad[F[_]]: Monad[[x] =>> Free[F, x]] with
       def unit[A](a: => A) = Return(a)
       extension [A](fa: Free[F, A])
         def flatMap[B](f: A => Free[F, B]) = fa.flatMap(f)
 
-  // Exercise 2: Implement a specialized `Function0` interpreter.
-  extension [A](fa: Free[Function0, A])
-    @annotation.tailrec
-    def runTrampoline: A = fa match
-      case Return(a) => a
-      case Suspend(ta) => ta()
-      case FlatMap(fx, f) => fx match
-        case Return(x) => f(x).runTrampoline
-        case Suspend(tx) => f(tx()).runTrampoline
-        case FlatMap(fy, g) => fy.flatMap(y => g(y).flatMap(f)).runTrampoline
-
-  // Exercise 3: Implement a `Free` interpreter which works for any `Monad`
-  extension [F[_], A](fa: Free[F, A])
-    def run(using F: Monad[F]): F[A] = fa.step match
-      case Return(a) => F.unit(a)
-      case Suspend(fa) => fa
-      case FlatMap(Suspend(fa), f) => fa.flatMap(a => f(a).run)
-      case _ => sys.error("Impossible, since `step` eliminates these cases")
-
-    // return either a `Suspend`, a `Return`, or a right-associated `FlatMap`
-    @annotation.tailrec
-    def step: Free[F, A] = fa match
-      case FlatMap(FlatMap(fx, f), g) => fx.flatMap(x => f(x).flatMap(y => g(y))).step
-      case FlatMap(Return(x), f) => f(x).step
-      case _ => fa
+    extension [A](fa: Free[Function0, A])
+      @annotation.tailrec
+      def runTrampoline: A = fa match
+        case Return(a) => a
+        case Suspend(ta) => ta()
+        case FlatMap(fx, f) => fx match
+          case Return(x) => f(x).runTrampoline
+          case Suspend(tx) => f(tx()).runTrampoline
+          case FlatMap(fy, g) => fy.flatMap(y => g(y).flatMap(f)).runTrampoline
 
   /*
   The type constructor `F` lets us control the set of external requests our
@@ -469,13 +477,6 @@ object IO3:
   not `Function0`. We need a way to translate from `Console` to `Function0`
   (if we want to evaluate it sequentially) or a `Par`.
   */
-  extension [F[_], A](fa: Free[F, A])
-    def runFree[G[_]](t: [x] => F[x] => G[x])(using G: Monad[G]): G[A] =
-      fa.step match
-        case Return(a) => G.unit(a)
-        case Suspend(r) => t(r)
-        case FlatMap(Suspend(r), f) => t(r).flatMap(a => f(a).runFree(t))
-        case _ => sys.error("Impossible, since `step` eliminates these cases")
 
   extension [A](fa: Free[Console, A])
     def toThunk: () => A =
@@ -491,13 +492,6 @@ object IO3:
   running: `freeMonad.forever(Console.printLn("Hello"))`.
   */
 
-  // Exercise 4 (optional, hard): Implement `unsafeRunConsole` using `runFree`,
-  // without going through `Par`. Hint: define `translate` using `runFree`.
-
-  extension [F[_], A](fa: Free[F, A])
-    def translate[G[_]](fToG: [x] => F[x] => G[x]): Free[G, A] =
-      fa.runFree([x] => (fx: F[x]) => Suspend(fToG(fx)))
-
   extension [A](fa: Free[Console, A])
     def unsafeRunConsole: A =
       fa.translate([x] => (c: Console[x]) => c.toThunk).runTrampoline
@@ -507,7 +501,7 @@ object IO3:
   `Console` using side effects. Here are two pure ways of interpreting
   a `Free[Console, A]`.
   */
-  import Console.*
+  import Console.ConsoleIO
 
   // A specialized reader monad
   case class ConsoleReader[A](run: String => A):
