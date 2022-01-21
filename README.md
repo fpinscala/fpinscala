@@ -74,29 +74,35 @@ location).
 
     $ sbt
 
-Once it is finished launching, you'll get a prompt from
+Once it is finished launching, you'll get a prompt `sbt:fpinscala>` from
 which you can issue commands to build and interact with your code. Try
 the following:
 
-    > compile
+    sbt:fpinscala> compile
 
 This compiles all exercises and answers. You can also do:
 
-    > console
+    sbt:fpinscala> console
 
-to get a Scala REPL with access to exercises and answers, and
+to get a Scala REPL (prompt `scala>`) with access to exercises and answers, and then for example:
 
-    > run
+    scala> import fpinscala.exercises.datastructures.List.*
 
-To get a menu of possible main methods to execute.
+to import the List package.
+
+Running (outside the console):
+
+    sbt:fpinscala> run
+
+gives a menu of possible main methods to execute.
 
 To run unit-tests for a file you can do:
 
-    > testOnly fpinscala.exercises.gettingstarted.GettingStartedSuite
+    sbt:fpinscala> testOnly fpinscala.exercises.gettingstarted.GettingStartedSuite
 
 To run all unit-tests:
 
-    > test
+    sbt:fpinscala> test
 
 All code in this repository is
 [MIT-licensed](http://opensource.org/licenses/mit-license.php). See the
