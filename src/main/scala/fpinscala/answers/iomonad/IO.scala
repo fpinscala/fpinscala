@@ -379,6 +379,14 @@ object IO3:
     def flatMap[B](f: A => Free[F,B]): Free[F,B] =
       FlatMap(this, f)
 
+    def flatMapU[G[_], B](f: A => Free[G, B]): Free[[x] =>> F[x] | G[x], B] =
+      FlatMap(union, a => f(a).union)
+
+    def union[G[_]]: Free[[x] =>> F[x] | G[x], A] = this match
+      case Return(a) => Return(a)
+      case Suspend(s) => Suspend(s: F[A] | G[A])
+      case FlatMap(s, f) => FlatMap(s.union, a => f(a).union)
+
     def map[B](f: A => B): Free[F,B] =
       flatMap(a => Return(f(a)))
 
@@ -463,16 +471,14 @@ object IO3:
         ConsoleReader(s => ())
 
   object Console:
-    type ConsoleIO[A] = Free[Console, A]
-
-    def readLn: ConsoleIO[Option[String]] =
+    def readLn: Free[Console, Option[String]] =
       Suspend(ReadLine)
 
-    def printLn(line: String): ConsoleIO[Unit] =
+    def printLn(line: String): Free[Console, Unit] =
       Suspend(PrintLine(line))
 
   /*
-  How do we actually _run_ a `ConsoleIO` program? We don't have a `Monad[Console]`
+  How do we actually _run_ a `Free[Console, A]` program? We don't have a `Monad[Console]`
   for calling `run`, and we can't use `runTrampoline` either since we have `Console`,
   not `Function0`. We need a way to translate from `Console` to `Function0`
   (if we want to evaluate it sequentially) or a `Par`.
@@ -501,7 +507,6 @@ object IO3:
   `Console` using side effects. Here are two pure ways of interpreting
   a `Free[Console, A]`.
   */
-  import Console.ConsoleIO
 
   // A specialized reader monad
   case class ConsoleReader[A](run: String => A):
@@ -538,8 +543,8 @@ object IO3:
       extension [A](fa: ConsoleState[A])
         def flatMap[B](f: A => ConsoleState[B]) = fa.flatMap(f)
 
-  /* Can interpet these as before to convert our `ConsoleIO` to a pure value that does no I/O! */
-  extension [A](fa: ConsoleIO[A])
+  /* Can interpet these as before to convert our `Free[Console, A]` to a pure value that does no I/O! */
+  extension [A](fa: Free[Console, A])
     def toReader: ConsoleReader[A] =
       fa.runFree([x] => (c: Console[x]) => c.toReader)
 
@@ -607,7 +612,7 @@ end IO3
 object IO4:
 
   enum Free[+F[_], A]:
-    case Return(a: A)
+    case Return(a: A) extends Free[Nothing, A]
     case Suspend(s: F[A])
     case FlatMap[F[_], A, B](
       s: Free[F, A],
@@ -619,6 +624,9 @@ object IO4:
     def map[B](f: A => B): Free[F,B] =
       flatMap(a => Return(f(a)))
 
+    def union[G[_]]: Free[[x] =>> F[x] | G[x], A] = this
+    def covary[F2[x] >: F[x]]: Free[F2, A] = this
+
     def run[F2[x] >: F[x]](using F: Monad[F2]): F2[A] = step match
       case Return(a) => F.unit(a)
       case Suspend(fa) => fa
@@ -627,7 +635,7 @@ object IO4:
 
     @annotation.tailrec
     final def step: Free[F, A] = this match
-      case FlatMap(FlatMap(fx, f), g) => fx.flatMap[F, A](x => f(x).flatMap[F, A](y => g(y))).step
+      case FlatMap(FlatMap(fx, f), g) => fx.flatMap(x => f(x).flatMap(y => g(y).covary[F])).step
       case FlatMap(Return(x), f) => f(x).step
       case _ => this
 
@@ -635,7 +643,7 @@ object IO4:
       step match
         case Return(a) => G.unit(a)
         case Suspend(r) => t(r)
-        case FlatMap(Suspend(r), f) => t(r).flatMap[A](a => (f(a): Free[F, A]).runFree[G](t))
+        case FlatMap(Suspend(r), f) => t(r).flatMap[A](a => f(a).covary[F].runFree[G](t))
         case FlatMap(_, _) => sys.error("Impossible, since `step` eliminates these cases")
 
     def translate[G[_]](fToG: [x] => F[x] => G[x]): Free[G, A] =
@@ -667,12 +675,10 @@ object IO4:
       case PrintLine(line) => () => println(line)
 
   object Console:
-    type ConsoleIO[A] = Free[Console, A]
-
-    def readLn: ConsoleIO[Option[String]] =
+    def readLn: Free[Console, Option[String]] =
       Free.Suspend(ReadLine)
 
-    def printLn(line: String): ConsoleIO[Unit] =
+    def printLn(line: String): Free[Console, Unit] =
       Free.Suspend(PrintLine(line))
 
   enum Files[A]:
@@ -684,9 +690,7 @@ object IO4:
       case WriteLines(file, lines) => () => ()
 
   object Files:
-    type FilesIO[A] = Free[Files, A]
-
-    def readLines(file: String): FilesIO[List[String]] =
+    def readLines(file: String): Free[Files, List[String]] =
       Free.Suspend(Files.ReadLines(file))
 
   def cat(file: String): Free[[x] =>> Files[x] | Console[x], Unit] =
