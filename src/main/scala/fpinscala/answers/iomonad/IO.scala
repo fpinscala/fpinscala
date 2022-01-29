@@ -706,3 +706,50 @@ object IO4:
       )
 
 end IO4
+
+object IO5:
+  import fpinscala.answers.parallelism.Nonblocking.Par
+  trait Console[F[_]]:
+    def readLn: F[Option[String]]
+    def printLn(line: String): F[Unit]
+
+  object Console:
+    given parConsole: Console[Par] with
+      def readLn =
+        Par.lazyUnit(Try(readLine()).toOption)
+      def printLn(line: String) =
+        Par.lazyUnit(println(line))
+    given thunkConsole: Console[Function0] with
+      def readLn =
+        () => Try(readLine()).toOption
+      def printLn(line: String) =
+        () => println(line)
+
+  def greet[F[_]](using c: Console[F], m: Monad[F]): F[Unit] =
+    for
+      _ <- c.printLn("What's your name?")
+      n <- c.readLn
+      _ <- n match
+        case Some(n) => c.printLn(s"Hello, $n!")
+         case None => c.printLn(s"Fine, be that way.")
+    yield ()
+
+  def runGreetThunk() = greet[Function0]()
+
+  trait Files[F[_]]:
+    def readLines(file: String): F[List[String]]
+    def writeLines(file: String, lines: List[String]): F[Unit]
+
+  object Files:
+    given thunkFiles: Files[Function0] with
+      def readLines(file: String) = () => List("line 1", "line 2")
+      def writeLines(file: String, lines: List[String]) = () => ()
+
+  def cat[F[_]](file: String)(using c: Console[F], f: Files[F], m: Monad[F]): F[Unit] =
+    f.readLines(file).flatMap { lines => 
+      c.printLn(lines.mkString("\n"))
+    }
+
+  def runCatThunk(): Unit = cat[Function0]("file")()
+
+end IO5
