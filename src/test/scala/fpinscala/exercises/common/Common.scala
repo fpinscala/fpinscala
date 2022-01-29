@@ -18,3 +18,9 @@ object Common:
       n <- genShortNumber
       list <- Gen.listOfN(n, g)
     yield list
+
+  def genNonEmptyList[A](g: Gen[A]): Gen[List[A]] =
+    for
+      n <- Gen.choose(1, 20)
+      list <- Gen.listOfN(n, g)
+    yield list
