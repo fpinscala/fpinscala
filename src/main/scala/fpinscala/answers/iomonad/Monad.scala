@@ -77,4 +77,4 @@ object Monad:
     def unit[A](a: => A) = Par.unit(a)
     extension [A](fa: Par[A])
       def flatMap[B](f: A => Par[B]) =
-        Par.fork(Par.flatMap(fa)(f)) 
+        Par.flatMap(fa)(f)

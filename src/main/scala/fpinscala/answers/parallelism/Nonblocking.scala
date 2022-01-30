@@ -62,10 +62,12 @@ object Nonblocking:
       }
 
     extension [A](p: Par[A]) def map[B](f: A => B): Par[B] =
-        es => cb => p(es)(a => eval(es)(cb(f(a))))
+      es => cb => p(es)(a => eval(es)(cb(f(a))))
 
     extension [A](p: Par[A]) def flatMap[B](f: A => Par[B]): Par[B] =
-        es => cb => p(es)(a => f(a)(es)(cb))
+      // Note: fork isn't strictly necessary but lets us avoid stack overflows
+      // when chaining lots of flatMap calls - we use this stack safety in part 4
+      fork(es => cb => p(es)(a => f(a)(es)(cb)))
 
     extension [A](p: Par[A]) def zip[B](b: Par[B]): Par[(A,B)] = p.map2(b)((_,_))
 
