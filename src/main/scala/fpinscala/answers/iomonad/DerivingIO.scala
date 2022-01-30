@@ -742,10 +742,3 @@ object IO5:
   def runCatThunk(): Unit = cat[Function0]("file")()
 
 end IO5
-
-// import IO3.{IO, IOApp}
-// import IO5.greet
-
-// object GreetingApp extends IOApp:
-//   def pureMain(args: List[String]) =
-//     greet[IO]
