@@ -26,7 +26,7 @@ object BindTest extends App {
   given parMonad: Monad[Par] with
     def unit[A](a: => A) = Par.unit(a)
     extension [A](fa: Par[A])
-      def flatMap[B](f: A => Par[B]) = Par.fork(fa.flatMap(f))
+      def flatMap[B](f: A => Par[B]) = Par.fork(Par.flatMap(fa)(f))
 
   val pool = java.util.concurrent.Executors.newFixedThreadPool(4)
 
