@@ -350,9 +350,9 @@ object IO2c:
 
   object Async:
     def apply[A](a: => A): Async[A] =
-      suspend(Return(a))
+      Return(a)
 
-    def suspend[A](aa: Async[A]): Async[A] =
+    def suspend[A](aa: => Async[A]): Async[A] =
       Suspend(Par.delay(aa)).flatMap(identity)
 
     given monad: Monad[Async] with
@@ -708,7 +708,10 @@ object IO4:
 end IO4
 
 object IO5:
+
+  import IO3.{Free, IO, IOApp}
   import fpinscala.answers.parallelism.Nonblocking.Par
+
   trait Console[F[_]]:
     def readLn: F[Option[String]]
     def printLn(line: String): F[Unit]
@@ -719,11 +722,18 @@ object IO5:
         Par.lazyUnit(Try(readLine()).toOption)
       def printLn(line: String) =
         Par.lazyUnit(println(line))
+
     given thunkConsole: Console[Function0] with
       def readLn =
         () => Try(readLine()).toOption
       def printLn(line: String) =
         () => println(line)
+
+    given ioConsole: Console[IO] with
+      def readLn =
+        Free.Suspend(Par.lazyUnit(Try(readLine()).toOption))
+      def printLn(line: String) =
+        Free.Suspend(Par.lazyUnit(println(line)))
 
   def greet[F[_]](using c: Console[F], m: Monad[F]): F[Unit] =
     for
@@ -753,3 +763,10 @@ object IO5:
   def runCatThunk(): Unit = cat[Function0]("file")()
 
 end IO5
+
+import IO3.{IO, IOApp}
+import IO5.greet
+
+object GreetingApp extends IOApp:
+  def pureMain(args: List[String]) =
+    greet[IO]

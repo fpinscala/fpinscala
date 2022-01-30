@@ -35,8 +35,8 @@ object BindTest extends App {
   timeit(10) { go(IO2c.Async(()))(_.run.run(pool)) }
   timeit(10) { go(summon[Monad[IO3.IO]].unit(()))(_.unsafeRunSync(using pool)) }
   timeit(10) { go(Task.now(()))(_.run(using pool)) }
-  timeit(10) { go(Task.forkUnit(()))(_.run(using pool)) }
-  timeit(10) { go(parMonad.unit(()))(_.run(pool))}
+  // timeit(10) { go(Task.forkUnit(()))(_.run(using pool)) }
+  // timeit(10) { go(parMonad.unit(()))(_.run(pool))}
 
   // parMonad.unit(println("woot")).forever.run(pool)
   pool.shutdown()
