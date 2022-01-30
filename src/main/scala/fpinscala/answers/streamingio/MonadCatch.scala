@@ -15,8 +15,8 @@ trait MonadCatch[F[_]] extends Monad[F]:
 
 object MonadCatch:
   given taskInstance: MonadCatch[Task] with
-    def unit[A](a: => A): Task[A] = Task.unit(a)
+    def unit[A](a: => A): Task[A] = Task(a)
     extension [A](fa: Task[A])
-      def flatMap[B](f: A => Task[B]): Task[B] = fa.flatMap(f)
-      def attempt: Task[Either[Throwable,A]] = fa.attempt
+      def flatMap[B](f: A => Task[B]): Task[B] = Task.flatMap(fa)(f)
+      def attempt: Task[Either[Throwable,A]] = Task.attempt(fa)
     def fail[A](err: Throwable): Task[A] = Task.fail(err)

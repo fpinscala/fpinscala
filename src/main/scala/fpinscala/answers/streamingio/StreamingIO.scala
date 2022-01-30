@@ -1,6 +1,6 @@
 package fpinscala.answers.streamingio
 
-import fpinscala.answers.iomonad.{IO, Monad, Free, unsafeRunSync}
+import fpinscala.answers.iomonad.{IO, Monad, Free}
 import language.implicitConversions
 import language.higherKinds
 import language.postfixOps
@@ -773,7 +773,7 @@ object GeneralizedLazyListTransducers {
           case Halt(err) => throw err
           case Await(req,recv) =>
             val next =
-              try recv(Right(req.unsafeRunSync(using E)))
+              try recv(Right(req.unsafeRunSync(E)))
               catch { case err: Throwable => recv(Left(err)) }
             go(next, acc)
         }

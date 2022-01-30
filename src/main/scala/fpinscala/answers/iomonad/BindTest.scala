@@ -34,9 +34,9 @@ object BindTest extends App {
   timeit(10) { go(Throw(()))(_.run) }
   timeit(10) { go(IO2b.TailRec(()))(_.run) }
   timeit(10) { go(IO2c.Async(()))(_.run.run(pool)) }
-  timeit(10) { go(summon[Monad[IO3.IO]].unit(()))(_.unsafeRunSync(using pool)) }
-  timeit(10) { go(Task.now(()))(_.run(using pool)) }
-  timeit(10) { go(Task.forkUnit(()))(_.run(using pool)) }
+  timeit(10) { go(summon[Monad[[x] =>> IO3.Free[Par, x]]].unit(()))(_.run.run(pool)) }
+  timeit(10) { go(Task.now(()))(_.unsafeRunSync(pool)) }
+  timeit(10) { go(Task.forkUnit(()))(_.unsafeRunSync(pool)) }
   timeit(10) { go(parMonad.unit(()))(_.run(pool))}
 
   // parMonad.unit(println("woot")).forever.run(pool)
