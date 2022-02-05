@@ -228,9 +228,9 @@ class Examples[Parser[+_]](P: Parsers[Parser]):
         case None => fail("expected an integer")
     yield n
 
-  val nConsecutiveAs: Parser[Int] = 
+  val nConsecutiveAs: Parser[String] =
     for
       n <- nonNegativeInt
-      _ <- char('a').listOfN(n)
-    yield n
+      s <- char('a').listOfN(n).map(list => s"$n${list.mkString}")
+    yield s
 
