@@ -8,7 +8,7 @@ import fpinscala.answers.testing.exhaustive.Prop.Status.*
 import munit.*
 import munit.internal.FutureCompat.*
 
-import scala.language.implicitConversions
+import scala.annotation.nowarn
 import scala.util.{Failure, Success, Try}
 
 trait PropSuite extends FunSuite:
@@ -29,8 +29,8 @@ trait PropSuite extends FunSuite:
       t =>
         t.withBodyMap(
           _.transformCompat {
-            case Success(result: Result) => resultToTry(result, t)
-            case r                       => r
+            case Success(result: Result @nowarn) => resultToTry(result, t)
+            case r => r
           }(munitExecutionContext)
         )
     )

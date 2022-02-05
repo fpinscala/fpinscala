@@ -25,13 +25,12 @@ encounter exercises, implement them in the exercises file and make sure
 they work.
 
 If you get stuck on an exercise, let's say exercise 4 in the chapter,
-you can find hints in `answerkey/<chapter-description>/04.hint.txt` (if
+you can find hints in `answerkey/<chapter-description>/04.hint.md` (if
 no hints are available for a problem, the file will just have a single
 '-' as its contents) and the answer along with an explanation of the
 answer and any variations in
-`answerkey/<chapter-description>/04.answer.scala` or
-`04.answer.markdown`. The finished Scala modules, with all answers for
-each chapter live in
+`answerkey/<chapter-description>/04.answer.md`. The finished Scala
+modules, with all answers for each chapter live in
 `src/main/scala/fpinscala/answers/<chapter-description>`. Please feel
 free to submit pull requests for alternate answers, improved hints, and
 so on, so we can make this repo the very best resource for people
@@ -56,33 +55,19 @@ Chapter descriptions:
 
 ### Setup build environment
 
-You'll need a Java development kit installed as well as the [SBT](http://scala-sbt.org) build tool. If you don't have these tools, we can get them via Couriser. First, install Coursier by choosing an installation method for your operating system on this page: https://get-coursier.io/docs/cli-installation. Then run `cs setup`. This will install Java, Scala, and the SBT build tool.
+The project is setup to use [Scala CLI](https://scala-cli.virtuslab.org). First install Scala CLI by following the [installation instructions](https://scala-cli.virtuslab.org/install).
 
 You'll also likely want an editor that's aware of Scala syntax. [VSCode](https://code.visualstudio.com) with the [Metals](https://scalameta.org/metals/docs/editors/vscode.html) extension works great.
 
 ### Building
 
-To build the code for the first time, if on windows:
+To build the code for the first time, from the root directory of the project (i.e., the directory where this README.md is located):
 
-    $ sbt.cmd
-
-If on mac/linux, first make sure you have not checked out the code onto
-an encrypted file system, otherwise you will get compile errors
-regarding too long file names (one solution is to put the fpinscala repo
-on a unencrypted usb key, and symlink it into your preferred code
-location).
-
-    $ sbt
-
-Once it is finished launching, you'll get a prompt `sbt:fpinscala>` from
-which you can issue commands to build and interact with your code. Try
-the following:
-
-    sbt:fpinscala> compile
+    $ scala-cli compile .
 
 This compiles all exercises and answers. You can also do:
 
-    sbt:fpinscala> console
+    $ scala-cli console .
 
 to get a Scala REPL (prompt `scala>`) with access to exercises and answers, and then for example:
 
@@ -90,19 +75,30 @@ to get a Scala REPL (prompt `scala>`) with access to exercises and answers, and 
 
 to import the List package.
 
-Running (outside the console):
+To run the sample programs:
 
-    sbt:fpinscala> run
+    $ scala-cli run .
 
-gives a menu of possible main methods to execute.
+gives a list of possible main methods to execute. To run one of them:
+
+    $ scala-cli run . --main-class fpinscala.answers.gettingstarted.printAbs
 
 To run unit-tests for a file you can do:
 
-    sbt:fpinscala> testOnly fpinscala.exercises.gettingstarted.GettingStartedSuite
+    $ scala-cli test . -- fpinscala.exercises.gettingstarted.GettingStartedSuite
 
 To run all unit-tests:
 
-    sbt:fpinscala> test
+    $ scala-cli test .
+
+Note, running all tests will result in failures. As you solve exercises, the tests
+will start to pass.
+
+### SBT
+
+Note: an [SBT](https://www.scala-sbt.org) build is also provided.
+
+### License
 
 All code in this repository is
 [MIT-licensed](http://opensource.org/licenses/mit-license.php). See the
