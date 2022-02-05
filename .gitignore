@@ -16,3 +16,5 @@ project.vim
 .bloop
 project/metals.sbt
 project/project
+.scala
+.scala-build
