@@ -84,7 +84,7 @@ to get a Scala REPL with access to your exercises, and
 
     > run
 
-To get a menu of possible main methods to execute.
+to get a menu of possible main methods to execute.
 
 To create project files for the eclipse IDE you can install the
 [sbteclipse](https://github.com/typesafehub/sbteclipse)
