@@ -1,6 +1,7 @@
 package fpinscala.exercises.parsing
 
 import fpinscala.answers.testing.exhaustive.*
+import fpinscala.answers.testing.exhaustive.Gen.`**`
 import fpinscala.answers.testing.exhaustive.Prop.*
 import fpinscala.exercises.common.Common.*
 import fpinscala.exercises.common.PropSuite
@@ -20,7 +21,7 @@ class JSONSuite extends PropSuite:
     )
   }
 
-  test("JSON.JNumber")(Gen.double ** Gen.double ** Gen.double) { case ((d1, d2), d3) =>
+  test("JSON.JNumber")(Gen.double ** Gen.double ** Gen.double) { case d1 ** d2 ** d3 =>
     assertEquals(parser.run(s"""{ "key": $d1 }"""), Right(JObject(Map("key" -> JNumber(d1)))))
     assertEquals(parser.run(s"""[ $d1 ]"""), Right(JArray(IndexedSeq(JNumber(d1)))))
     assertEquals(
@@ -29,7 +30,7 @@ class JSONSuite extends PropSuite:
     )
   }
 
-  test("JSON.JString")(genString ** genString ** genString) { case ((s1, s2), s3) =>
+  test("JSON.JString")(genString ** genString ** genString) { case s1 ** s2 ** s3 =>
     assertEquals(parser.run(s"""{ "key": "$s1" }"""), Right(JObject(Map("key" -> JString(s1)))))
     assertEquals(parser.run(s"""[ "$s1" ]"""), Right(JArray(IndexedSeq(JString(s1)))))
     assertEquals(
@@ -38,7 +39,7 @@ class JSONSuite extends PropSuite:
     )
   }
 
-  test("JSON.JBool")(Gen.boolean ** Gen.boolean ** Gen.boolean) { case ((b1, b2), b3) =>
+  test("JSON.JBool")(Gen.boolean ** Gen.boolean ** Gen.boolean) { case b1 ** b2 ** b3 =>
     assertEquals(parser.run(s"""{ "key": $b1 }"""), Right(JObject(Map("key" -> JBool(b1)))))
     assertEquals(parser.run(s"""[ $b1 ]"""), Right(JArray(IndexedSeq(JBool(b1)))))
     assertEquals(
@@ -47,7 +48,7 @@ class JSONSuite extends PropSuite:
     )
   }
 
-  test("JSON.JArray")(Gen.double ** genString ** Gen.boolean) { case ((d, s), b) =>
+  test("JSON.JArray")(Gen.double ** genString ** Gen.boolean) { case d ** s ** b =>
     assertEquals(parser.run("[ ]"), Right(JArray(IndexedSeq.empty[JSON])))
     assertEquals(
       parser.run(s"""[ null, $d, "$s", $b ]"""),
