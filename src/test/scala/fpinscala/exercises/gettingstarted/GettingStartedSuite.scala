@@ -1,6 +1,7 @@
 package fpinscala.exercises.gettingstarted
 
 import fpinscala.answers.testing.exhaustive.*
+import fpinscala.answers.testing.exhaustive.Gen.`**`
 import fpinscala.answers.testing.exhaustive.Prop.*
 import fpinscala.exercises.common.Common.*
 import fpinscala.exercises.common.PropSuite
@@ -36,15 +37,15 @@ class GettingStartedSuite extends PropSuite:
     assert(!isSorted[Int](array, _ > _))
   }
 
-  test("PolymorphicFunctions.curry")(Gen.int ** Gen.int) { case (n, m) =>
+  test("PolymorphicFunctions.curry")(Gen.int ** Gen.int) { case n ** m =>
     assertEquals(mulCurry(n)(m), n * m)
   }
 
-  test("PolymorphicFunctions.uncurry")(Gen.int ** Gen.int) { case (n, m) =>
+  test("PolymorphicFunctions.uncurry")(Gen.int ** Gen.int) { case n ** m =>
     assertEquals(mulUncurry(n, m), n * m)
   }
 
-  test("PolymorphicFunctions.compose")(Gen.int ** Gen.int) { case (n, m) =>
+  test("PolymorphicFunctions.compose")(Gen.int ** Gen.int) { case n ** m =>
     def aToC = compose[Int, Int, Int]((b: Int) => n * b, (a: Int) => m * a)
     assertEquals(aToC(1), n * m)
   }

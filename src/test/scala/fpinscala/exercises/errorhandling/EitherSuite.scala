@@ -1,6 +1,7 @@
 package fpinscala.exercises.errorhandling
 
 import fpinscala.answers.testing.exhaustive.*
+import fpinscala.answers.testing.exhaustive.Gen.`**`
 import fpinscala.answers.testing.exhaustive.Prop.*
 import fpinscala.exercises.common.Common.*
 import fpinscala.exercises.common.PropSuite
@@ -69,7 +70,7 @@ class EitherSuite extends PropSuite:
   private val genAge: Gen[Int] =
     Gen.choose(-50, 50)
 
-  test("Either.map2")(genName ** genAge) { case (name, age) =>
+  test("Either.map2")(genName ** genAge) { case name ** age =>
     val expected = (name, age) match
       case ("", _)         => Left("Name is empty.")
       case (_, n) if n < 0 => Left("Age is out of range.")
@@ -100,7 +101,7 @@ class EitherSuite extends PropSuite:
     assertEquals(Either.sequence(ageList.map(Age.make)), expected)
   }
 
-  test("Either.map2All")(genName ** genAge) { case (name, age) =>
+  test("Either.map2All")(genName ** genAge) { case name ** age =>
     val expected = (name, age) match
       case ("", n) if n < 0 => Left(List("Name is empty.", "Age is out of range."))
       case ("", _)          => Left(List("Name is empty."))

@@ -1,6 +1,7 @@
 package fpinscala.exercises.testing
 
 import fpinscala.answers.testing.exhaustive.Gen as ExhGen
+import fpinscala.answers.testing.exhaustive.Gen.`**`
 import fpinscala.exercises.common.Common.*
 import fpinscala.exercises.common.PropSuite
 import fpinscala.exercises.state.RNG
@@ -26,13 +27,13 @@ object Gen:
 
 // Gen tests:
 /*
-  test("Exercise 8.4")(ExhGen.int ** ExhGen.int ** genRNG) { case ((n, m), rng) =>
+  test("Exercise 8.4")(ExhGen.int ** ExhGen.int ** genRNG) { case n ** m ** rng =>
     val (start, stopExclusive) = if n < m then (n, m) else (m, n)
     val (k, _) = Gen.choose(start, stopExclusive).next(rng)
     assert(start <= k && k <= stopExclusive)
   }
 
-  test("Exercise 8.5, unit")(ExhGen.int ** genRNG) { case (n, rng0) =>
+  test("Exercise 8.5, unit")(ExhGen.int ** genRNG) { case n ** rng0 =>
     val genUnit = Gen.unit(n)
     val (n1, rng1) = genUnit.next(rng0)
     assertEquals(n1, n)
@@ -40,7 +41,7 @@ object Gen:
     assertEquals(n2, n)
   }
 
-  test("Exercise 8.5, boolean + listOfN")(genShortNumber ** genRNG) { case (n, rng0) =>
+  test("Exercise 8.5, boolean + listOfN")(genShortNumber ** genRNG) { case n ** rng0 =>
     val (randomBooleanList, rng1) = Gen.boolean.listOfN(shortSample).next(rng0)
     assert(randomBooleanList.contains(true), "'Gen.boolean' should not generate only 'false' values")
     assert(randomBooleanList.contains(false), "'Gen.boolean' should not generate only 'true' values")
@@ -49,19 +50,19 @@ object Gen:
     assertEquals(randomBooleanList1.length, n)
   }
 
-  test("Exercise 8.6, flatMap")(ExhGen.int ** genRNG) { case (n, rng) =>
+  test("Exercise 8.6, flatMap")(ExhGen.int ** genRNG) { case n ** rng =>
     val genA = Gen.unit(n)
     def aToGenB(a: Int) = Gen.unit(a % 2 == 0)
     val (isEven, _) = genA.flatMap(aToGenB).next(rng)
     assertEquals(n % 2 == 0, isEven)
   }
 
-  test("Exercise 8.6, listOfN")(genShortNumber ** genRNG) { case (n, rng) =>
+  test("Exercise 8.6, listOfN")(genShortNumber ** genRNG) { case n ** rng =>
     val (randomBooleanList, _) = Gen.boolean.listOfN(Gen.unit(n)).next(rng)
     assertEquals(randomBooleanList.length, n)
   }
 
-  test("Exercise 8.7")(ExhGen.int ** ExhGen.int ** genRNG) { case ((n, m), rng) =>
+  test("Exercise 8.7")(ExhGen.int ** ExhGen.int ** genRNG) { case n ** m ** rng =>
     val genUnion = Gen.union(Gen.unit(n), Gen.unit(m))
     val genUnionList = genUnion.listOfN(shortSample)
     val (unionList, _) = genUnionList.next(rng)
@@ -69,7 +70,7 @@ object Gen:
     assert(unionList.count(_ == m) >= shortSample / 3, "Values should be extracted with approximately equal likelihood")
   }
 
-  test("Exercise 8.8")(ExhGen.int ** ExhGen.int ** genRNG) { case ((n, m), rng) =>
+  test("Exercise 8.8")(ExhGen.int ** ExhGen.int ** genRNG) { case n ** m ** rng =>
     val genUnion0 = Gen.weighted((Gen.unit(n), 0.0), (Gen.unit(m), 1.0))
     val (unionList0, _) = genUnion0.listOfN(shortSample).next(rng)
     assertEquals(unionList0.count(_ == n), 0, "g1 weights 0")
@@ -140,7 +141,7 @@ object SGen:
 
 // SGen tests
 /*
-  test("Exercises 8.10 + 8.11")(ExhGen.int ** genRNG) { case (n, rng0) =>
+  test("Exercises 8.10 + 8.11")(ExhGen.int ** genRNG) { case n ** rng0 =>
     val sGenA = SGen(Gen.unit(_))
     def aToB(a: Int) = a % 2 == 0
     val (isEven0, rng1) = sGenA.map(aToB).apply(n).next(rng0)
@@ -151,12 +152,12 @@ object SGen:
     assertEquals(n % 2 == 0, isEven1)
   }
 
-  test("Exercise 8.12")(genShortNumber ** genRNG) { case (n, rng) =>
+  test("Exercise 8.12")(genShortNumber ** genRNG) { case n ** rng =>
     val (randomBooleanList, _) = Gen.boolean.list(n).next(rng)
     assertEquals(randomBooleanList.length, n)
   }
 
-  test("Exercise 8.13")(genShortNumber ** genRNG) { case (n, rng) =>
+  test("Exercise 8.13")(genShortNumber ** genRNG) { case n ** rng =>
     val (randomNonEmptyList, _) = Gen.boolean.nonEmptyList(n).next(rng)
     assert(randomNonEmptyList.nonEmpty)
   }
