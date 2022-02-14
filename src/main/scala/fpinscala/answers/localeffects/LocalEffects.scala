@@ -84,8 +84,8 @@ final class STArray[S, A] private (private var value: Array[A]):
   // Turn the array into an immutable list
   def freeze: ST[S, List[A]] = ST(value.toList)
 
-  def fill(xs: Map[Int,A]): ST[S, Unit] =
-    xs.foldRight(ST[S,Unit](())) {
+  def fill(xs: Map[Int, A]): ST[S, Unit] =
+    xs.foldRight(ST[S, Unit](())) {
       case ((k, v), st) => st.flatMap(_ => write(k, v))
     }
 
@@ -106,14 +106,12 @@ object STArray:
     ST(new STArray[S, A](xs.toArray))
 
 object Immutable:
-  def noop[S]: ST[S, Unit] = ST[S, Unit](())
-
   def partition[S](a: STArray[S, Int], l: Int, r: Int, pivot: Int): ST[S, Int] =
     for
       vp <- a.read(pivot)
       _ <- a.swap(pivot, r)
       j <- STRef(l)
-      _ <- (l until r).foldLeft(noop[S])((s, i) =>
+      _ <- (l until r).foldLeft(ST[S, Unit](()))((s, i) =>
         for
           _ <- s
           vi <- a.read(i)
@@ -123,7 +121,7 @@ object Immutable:
               _  <- a.swap(i, vj)
               _  <- j.write(vj + 1)
             yield ()
-          else noop[S]
+          else ST[S, Unit](())
         yield ())
       x <- j.read
       _ <- a.swap(x, r)
@@ -134,7 +132,7 @@ object Immutable:
       pi <- partition(a, l, r, l + (r - l) / 2)
       _ <- qs(a, l, pi - 1)
       _ <- qs(a, pi + 1, r)
-    yield () else noop[S]
+    yield () else ST[S, Unit](())
 
   def quicksort(xs: List[Int]): List[Int] =
     if xs.isEmpty then xs else ST.run([s] => () =>
