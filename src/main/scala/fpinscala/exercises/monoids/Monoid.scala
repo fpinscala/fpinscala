@@ -17,13 +17,13 @@ object Monoid:
     def combine(a1: List[A], a2: List[A]) = a1 ++ a2
     val empty = Nil
 
-  val intAddition: Monoid[Int] = ???
+  lazy val intAddition: Monoid[Int] = ???
 
-  val intMultiplication: Monoid[Int] = ???
+  lazy val intMultiplication: Monoid[Int] = ???
 
-  val booleanOr: Monoid[Boolean] = ???
+  lazy val booleanOr: Monoid[Boolean] = ???
 
-  val booleanAnd: Monoid[Boolean] = ???
+  lazy val booleanAnd: Monoid[Boolean] = ???
 
   def optionMonoid[A]: Monoid[Option[A]] = ???
 
@@ -66,7 +66,7 @@ object Monoid:
     case Stub(chars: String)
     case Part(lStub: String, words: Int, rStub: String)
 
-  val wcMonoid: Monoid[WC] = ???
+  lazy val wcMonoid: Monoid[WC] = ???
 
   def count(s: String): Int = ???
 
