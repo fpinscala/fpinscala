@@ -1,6 +1,7 @@
 package fpinscala.exercises.state
 
 import fpinscala.answers.testing.exhaustive.*
+import fpinscala.answers.testing.exhaustive.Gen.`**`
 import fpinscala.answers.testing.exhaustive.Prop.*
 import fpinscala.exercises.common.Common.*
 import fpinscala.exercises.common.PropSuite
@@ -42,7 +43,7 @@ class CandySuite extends PropSuite:
       coins   <- genNonNegInt
     yield Machine(locked, candies, coins)
 
-  test("Candy: a machine that’s out of candy")(genInputList ** genNoCandiesMachine) { (inputs, machine) =>
+  test("Candy: a machine that’s out of candy")(genInputList ** genNoCandiesMachine) { case inputs ** machine =>
     val ((coins, candies), machine1): ((Int, Int), Machine) = simulateMachine(inputs).run(machine)
     assertEquals(candies, 0)
     assertEquals(coins, machine.coins)
@@ -77,7 +78,7 @@ class CandySuite extends PropSuite:
     assertEquals(machine1, Machine(true, candies, coins)) // Lock a machine
   }
 
-  test("Candy: spend some coins")(genLockedMachine ** genPosInt) { (machine, myCoins) =>
+  test("Candy: spend some coins")(genLockedMachine ** genPosInt) { case machine ** myCoins =>
     val wantToSpendAllMyCoins = (0 until myCoins).flatMap(_ => List(Coin, Turn)).toList
     val ((coins, candies), machine1): ((Int, Int), Machine) =
       simulateMachine(wantToSpendAllMyCoins).run(machine)

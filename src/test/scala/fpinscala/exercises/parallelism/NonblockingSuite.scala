@@ -1,6 +1,7 @@
 package fpinscala.exercises.parallelism
 
 import fpinscala.answers.testing.exhaustive.*
+import fpinscala.answers.testing.exhaustive.Gen.`**`
 import fpinscala.answers.testing.exhaustive.Prop.*
 import fpinscala.exercises.common.Common.*
 import fpinscala.exercises.common.PropSuite
@@ -19,19 +20,19 @@ class NonblockingSuite extends PropSuite:
   private val genMap: Gen[Map[Int, Par[String]]] =
     Gen.listOfN(20, genParString).map(list => list.toIndexedSeq.indices.map(i => i -> list(i)).toMap)
 
-  test("Nonblocking.choice")(genParInt ** genParInt ** genParBoolean) { case ((t, f), p) =>
+  test("Nonblocking.choice")(genParInt ** genParInt ** genParBoolean) { case t ** f ** p =>
     checkChoice(t, f, p)(Par.choice[Int](p)(t, f))
   }
 
-  test("Nonblocking.choiceN")(genParInt ** genListOfParString) { case (p, ps) =>
+  test("Nonblocking.choiceN")(genParInt ** genListOfParString) { case p ** ps =>
     checkChoiceN(p, ps)(Par.choiceN[String](p)(ps))
   }
 
-  test("Nonblocking.choiceViaChoiceN")(genParInt ** genParInt ** genParBoolean) { case ((t, f), p) =>
+  test("Nonblocking.choiceViaChoiceN")(genParInt ** genParInt ** genParBoolean) { case t ** f ** p =>
     checkChoice(t, f, p)(Par.choiceViaChoiceN[Int](p)(t, f))
   }
 
-  test("Nonblocking.choiceMap")(genParInt ** genMap) { case (p, ps) =>
+  test("Nonblocking.choiceMap")(genParInt ** genMap) { case p ** ps =>
     val pc = Par.choiceMap[Int, String](p)(ps)
     val actual: String = pc.run(es)
     val key = p.run(es)
@@ -39,15 +40,15 @@ class NonblockingSuite extends PropSuite:
     assertEquals(actual, expected)
   }
 
-  test("Nonblocking.chooser")(genParInt ** genMap) { case (p, ps) =>
+  test("Nonblocking.chooser")(genParInt ** genMap) { case p ** ps =>
     checkFlatMap(p, ps)(Par.chooser[Int, String](p)(ps))
   }
 
-  test("Nonblocking.choiceViaFlatMap")(genParInt ** genParInt ** genParBoolean) { case ((t, f), p) =>
+  test("Nonblocking.choiceViaFlatMap")(genParInt ** genParInt ** genParBoolean) { case t ** f ** p =>
     checkChoice(t, f, p)(Par.choiceViaFlatMap[Int](p)(t, f))
   }
 
-  test("Nonblocking.choiceNViaFlatMap")(genParInt ** genListOfParString) { case (p, ps) =>
+  test("Nonblocking.choiceNViaFlatMap")(genParInt ** genListOfParString) { case p ** ps =>
     checkChoiceN(p, ps)(Par.choiceNViaFlatMap[String](p)(ps))
   }
 
@@ -61,7 +62,7 @@ class NonblockingSuite extends PropSuite:
     assertEquals(pc.run(es), p.run(es).run(es))
   }
 
-  test("Nonblocking.flatMapViaJoin")(genParInt ** genMap) { case (p, ps) =>
+  test("Nonblocking.flatMapViaJoin")(genParInt ** genMap) { case p ** ps =>
     checkFlatMap(p, ps)(Par.flatMapViaJoin[Int, String](p)(ps))
   }
 

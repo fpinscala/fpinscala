@@ -1,6 +1,7 @@
 package fpinscala.exercises.datastructures
 
 import fpinscala.answers.testing.exhaustive.*
+import fpinscala.answers.testing.exhaustive.Gen.`**`
 import fpinscala.answers.testing.exhaustive.Prop.*
 import fpinscala.exercises.common.Common.{genShortNumber, genDoubleList as genDoubleSList, genIntList as genIntSList}
 import fpinscala.exercises.common.PropSuite
@@ -31,11 +32,11 @@ class ListSuite extends PropSuite:
     case Cons(x, xs) => assertEquals(List.setHead(Cons(x, xs), 0), Cons(0, xs))
   }
 
-  test("List.drop")(genIntList ** genSmallNum) { (list, n) =>
+  test("List.drop")(genIntList ** genSmallNum) { case list ** n =>
     assertEquals(List.drop(list, n), scalaListToList(listToScalaList(list).drop(n)))
   }
 
-  test("List.dropWhile")(genIntList ** genSmallNum) { (list, n) =>
+  test("List.dropWhile")(genIntList ** genSmallNum) { case list ** n =>
     val f: Int => Boolean = _ <= n
     assertEquals(List.dropWhile(list, f), scalaListToList(listToScalaList(list).dropWhile(f)))
   }
@@ -69,7 +70,7 @@ class ListSuite extends PropSuite:
     assertEquals(List.reverse(list), scalaListToList(listToScalaList(list).reverse))
   }
 
-  test("List.appendViaFoldRight")(genIntList ** genIntList) { (list1, list2) =>
+  test("List.appendViaFoldRight")(genIntList ** genIntList) { case list1 ** list2 =>
     assertEquals(
       List.appendViaFoldRight(list1, list2),
       scalaListToList(listToScalaList(list1) ++ listToScalaList(list2))
@@ -118,19 +119,19 @@ class ListSuite extends PropSuite:
     )
   }
 
-  test("List.addPairwise")(genIntList ** genIntList) { (list1, list2) =>
+  test("List.addPairwise")(genIntList ** genIntList) { case list1 ** list2 =>
     val expectedSList = listToScalaList(list1).zip(listToScalaList(list2)).map { case (a, b) => a + b }
     assertEquals(List.addPairwise(list1, list2), scalaListToList(expectedSList))
   }
 
   /*
-  test("List.zipWith")(genIntList ** genIntList) { (list1, list2) =>
+  test("List.zipWith")(genIntList ** genIntList) { case list1 ** list2 =>
     val expectedSList = listToScalaList(list1).zip(listToScalaList(list2)).map(_ * _)
     assertEquals(List.zipWith(list1, list2, _ * _), scalaListToList(expectedSList))
   }
    */
 
-  test("List.hasSubsequence")(genIntList ** genSmallNum) { case (list, n) =>
+  test("List.hasSubsequence")(genIntList ** genSmallNum) { case list ** n =>
     assert(List.hasSubsequence(list, Nil))
     assert(List.hasSubsequence(list, list))
     assert(List.hasSubsequence(list, Try(List.init(list)).getOrElse(Nil)))
@@ -138,7 +139,7 @@ class ListSuite extends PropSuite:
     assert(List.hasSubsequence(list, List.drop(list, n)))
   }
 
-  test("random lists - List.hasSubsequence")(genIntList ** genIntList) { (list1, list2) =>
+  test("random lists - List.hasSubsequence")(genIntList ** genIntList) { case list1 ** list2 =>
     assertEquals(
       List.hasSubsequence(list1, list2),
       listToScalaList(list1).containsSlice(listToScalaList(list2))
