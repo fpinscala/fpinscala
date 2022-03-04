@@ -121,19 +121,20 @@ object Monoid:
       foldMapV(bs, par(m))(b => Par.lazyUnit(b))
     }
 
-  opaque type Interval = (Int, Int)
-  
-  val orderedMonoid: Monoid[(Boolean, Option[Interval])] = new:
-    def combine(a1: (Boolean, Option[Interval]), a2: (Boolean, Option[Interval])) =
-      (a1(1), a2(1)) match
-        case (Some((leftMin, leftMax)), Some((rightMin, rightMax))) =>
-          (a1(0) && a2(0) && leftMax <= rightMin, Some((leftMin, rightMax)))
-        case _ =>
-          (a1(0) && a2(0), a1(1).orElse(a2(1)))
-    val empty = (true, None)
+  case class Interval(ordered: Boolean, min: Int, max: Int)
+  val orderedMonoid: Monoid[Option[Interval]] = new:
+    def combine(oa1: Option[Interval], oa2: Option[Interval]) =
+      (oa1, oa2) match
+        case (Some(a1), Some(a2)) =>
+          Some(Interval(a1.ordered && a2.ordered && a1.max <= a2.min,
+            a1.min, a2.max))
+        case (x, None) => x
+        case (None, x) => x
+    val empty = None
 
   def ordered(ints: IndexedSeq[Int]): Boolean =
-    foldMapV(ints, orderedMonoid)(i => (true, Some((i, i))))(0)
+    foldMapV(ints, orderedMonoid)(i => Some(Interval(true, i, i)))
+      .map(_.ordered).getOrElse(true)
 
   enum WC:
     case Stub(chars: String)
