@@ -85,7 +85,7 @@ gives a list of possible main methods to execute. To run one of them:
 
 To run unit-tests for a file you can do:
 
-    $ scala-cli test . -- fpinscala.exercises.gettingstarted.GettingStartedSuite
+    $ scala-cli test . -- fpinscala.exercises.gettingstarted.GettingStartedSuite.*
 
 To run all unit-tests:
 
