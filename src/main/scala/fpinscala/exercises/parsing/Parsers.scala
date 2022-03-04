@@ -23,6 +23,10 @@ case class Location(input: String, offset: Int = 0) {
 
   def advanceBy(n: Int) = copy(offset = offset+n)
 
+  def remaining: String = ???
+
+  def slice(n: Int) = ???
+
   /* Returns the line corresponding to this location */
   def currentLine: String = 
     if (input.length > 1) input.linesIterator.drop(line-1).next()
@@ -30,5 +34,14 @@ case class Location(input: String, offset: Int = 0) {
 }
 
 case class ParseError(stack: List[(Location,String)] = List(),
-                      otherFailures: List[ParseError] = List()) {
-}
+                      otherFailures: List[ParseError] = List()):
+  def push(loc: Location, msg: String): ParseError = ???
+
+  def label(s: String): ParseError = ???
+
+class Examples[Parser[+_]](P: Parsers[Parser]):
+  import P.*
+
+  val nonNegativeInt: Parser[Int] = ???
+
+  val nConsecutiveAs: Parser[Int] = ???
