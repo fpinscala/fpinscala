@@ -6,22 +6,11 @@ import fpinscala.exercises.common.Common.*
 import fpinscala.exercises.common.PropSuite
 import fpinscala.exercises.datastructures.Tree
 import fpinscala.exercises.datastructures.Tree.*
+import fpinscala.exercises.datastructures.TreeSuite.genIntTree
 
 import scala.List as SList
 
 class TreeSuite extends PropSuite:
-  private val genIntTree: Gen[Tree[Int]] =
-    def loop(): Gen[Tree[Int]] =
-      Gen.boolean.flatMap {
-        if _ then Gen.int.map(n => Leaf(n))
-        else
-          for {
-            left <- loop()
-            right <- loop()
-          } yield Branch(left, right)
-      }
-    loop()
-
   test("Tree.size")(genIntTree) { tree =>
     assertEquals(tree.size, toScalaList(tree).length)
   }
@@ -74,3 +63,18 @@ class TreeSuite extends PropSuite:
   private def toScalaList[A](t: Tree[A]): SList[Option[A]] = t match
     case Leaf(v)      => SList(Some(v))
     case Branch(l, r) => (Option.empty[A] +: toScalaList(l)) ++ toScalaList(r)
+
+object TreeSuite:
+  val genIntTree: Gen[Tree[Int]] = genTree(Gen.int)
+
+  private def genTree[A](g: Gen[A]): Gen[Tree[A]] =
+    def loop(): Gen[Tree[A]] =
+      Gen.boolean.flatMap {
+        if _ then g.map(n => Leaf(n))
+        else
+          for
+            left <- loop()
+            right <- loop()
+          yield Branch(left, right)
+      }
+    loop()
