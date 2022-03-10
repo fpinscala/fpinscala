@@ -123,6 +123,8 @@ object Id:
 opaque type Reader[-R, +A] = R => A
 
 object Reader:
+  extension [R, A](ra: Reader[R, A])
+    def run(r: R): A = ra(r)
 
   given readerMonad[R]: Monad[Reader[R, _]] with
     def unit[A](a: => A): Reader[R, A] = ???
