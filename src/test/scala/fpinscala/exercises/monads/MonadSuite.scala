@@ -11,6 +11,7 @@ import fpinscala.exercises.parsing.UnitTestParser
 import fpinscala.exercises.parsing.UnitTestParser.{Parser, succeed}
 import fpinscala.exercises.state.RNG
 import fpinscala.exercises.testing.Gen
+import munit.Assertions
 
 import java.util.concurrent.*
 import scala.collection.immutable.Iterable
@@ -42,32 +43,36 @@ class MonadSuite extends PropSuite:
 
   test("Monad.sequence")(genIntList ** genRNG) { case intList ** rng =>
     val tm = genMonad(rng)
-    val listMonad = tm.monad.sequence(intList.map(Gen.unit))
-    assertEquals(tm.get(listMonad), intList)
+    import tm.*
+    val listMonad = monad.sequence(intList.map(Gen.unit))
+    assertFs(listMonad, pure(intList))
   }
 
   test("Monad.traverse")(genIntList ** genRNG) { case intList ** rng =>
     val tm = genMonad(rng)
-    val listMonad = tm.monad.traverse(intList)(Gen.unit)
-    assertEquals(tm.get(listMonad), intList)
+    import tm.*
+    val listMonad = monad.traverse(intList)(Gen.unit)
+    assertFs(listMonad, pure(intList))
   }
 
-  // Uncomment after fpinscala.exercises.testing.GenSuite passing
-  /*
+  // ToDo: Uncomment after fpinscala.exercises.testing.GenSuite passing
+/*
   test("Monad.replicateM")(genShortNumber ** genString ** genRNG) { case n ** s ** rng =>
     val tm = genMonad(rng)
-    val listMonad = tm.monad.replicateM(n, Gen.choose(0, 1000))
-    val intList: List[Int] = tm.get(listMonad)
+    import tm.monad
+    val fa = Gen.choose(0, 1000)
+    val listMonad = monad.replicateM(n, fa)
+    val intList: List[Int] = listMonad.next(rng)._1
     assertEquals(intList.length, n)
     assert(intList.forall(i => 0 <= i && i <= 1000))
   }
-  */
+*/
 
   test("Monad.filterM")(genIntList ** genRNG) { case intList ** rng =>
     val tm = genMonad(rng)
-    val filteredListM = tm.monad.filterM(intList)(i => Gen.unit(i % 2 == 0))
-    val filteredList = tm.get(filteredListM)
-    assertEquals(filteredList, intList.filter(_ % 2 == 0))
+    import tm.*
+    val filteredListM = monad.filterM(intList)(i => Gen.unit(i % 2 == 0))
+    assertFs(filteredListM, pure(intList.filter(_ % 2 == 0)))
   }
 
   test("The associative law")(genIntList ** genString ** genRNG) { case intList ** s ** rng =>
@@ -81,8 +86,9 @@ class MonadSuite extends PropSuite:
 
   test("Monad.compose")(genIntList ** genString ** genRNG) { case intList ** s ** rng =>
     val tm = genMonad(rng)
-    val fThenG = tm.monad.compose(tm.f, tm.g)
-    assertEquals(tm.get(fThenG(intList)), intList.sum.toString)
+    import tm.*
+    val fThenG = monad.compose(f, g)
+    assertFs(fThenG(intList), pure(intList.sum.toString))
   }
 
   test("Monad.compose should be associative")(genIntList ** genString ** genRNG) { case intList ** s ** rng =>
@@ -96,9 +102,9 @@ class MonadSuite extends PropSuite:
 
   test("Monad.flatMapViaCompose")(genInt ** genRNG) { case n ** rng =>
     val tm = genMonad(rng)
-    val mappedMonad = tm.monad.flatMapViaCompose(tm.pure(n))((i: Int) => tm.pure(i % 2 == 0))
-    val isNEven = tm.get(mappedMonad)
-    assertEquals(isNEven, n % 2 == 0)
+    import tm.*
+    val mappedMonad = monad.flatMapViaCompose(pure(n))((i: Int) => pure(i % 2 == 0))
+    assertFs(mappedMonad, pure(n % 2 == 0))
   }
 
   test("The identity law")(genIntList ** genString ** genRNG) { case intList ** s ** rng =>
@@ -119,22 +125,24 @@ class MonadSuite extends PropSuite:
 
   test("Monad.join")(genInt ** genRNG) { case n ** rng =>
     val tm = genMonad(rng)
-    val ffa = tm.monad.join(Gen.unit(Gen.unit(n)))
+    import tm.*
+    val ffa = monad.join(Gen.unit(Gen.unit(n)))
     val fa = Gen.unit(n)
-    assertEquals(tm.get(ffa), tm.get(fa))
+    assertFs(ffa, fa)
   }
 
   test("Monad.flatMapViaJoinAndMap")(genInt ** genRNG) { case n ** rng =>
     val tm = genMonad(rng)
-    val mappedMonad = tm.monad.flatMapViaJoinAndMap(tm.pure(n))((i: Int) => tm.pure(i % 2 == 0))
-    val isNEven = tm.get(mappedMonad)
-    assertEquals(isNEven, n % 2 == 0)
+    import tm.*
+    val mappedMonad = monad.flatMapViaJoinAndMap(pure(n))((i: Int) => pure(i % 2 == 0))
+    assertFs(mappedMonad, pure(n % 2 == 0))
   }
 
   test("Monad.composeViaJoinAndMap")(genIntList ** genString ** genRNG) { case intList ** s ** rng =>
     val tm = genMonad(rng)
-    val fThenG = tm.monad.composeViaJoinAndMap(tm.f, tm.g)
-    assertEquals(tm.get(fThenG(intList)), intList.sum.toString)
+    import tm.*
+    val fThenG = monad.composeViaJoinAndMap(f, g)
+    assertFs(fThenG(intList), pure(intList.sum.toString))
   }
 
   test("Id.map")(genIntList) { intList =>
@@ -160,138 +168,103 @@ class MonadSuite extends PropSuite:
     assertMap2(tm, n, s)
 
   private def assertUnit[F[_]](tm: TestedMonad[F[_]], n: Int): Unit =
-    assertEquals(tm.get[Int](tm.monad.unit(n)), n)
+    import tm.*
+    assertFs(monad.unit(n), pure(n))
 
   private def assertFlatMap[F[_]](tm: TestedMonad[F[_]], n: Int): Unit =
-    val m = tm.monad
-    val appliedFlatMap = m.flatMap(m.unit(n))(i => m.unit(i % 2 == 0))
-    val isNEven = tm.get[Boolean](appliedFlatMap)
-    assertEquals(isNEven, n % 2 == 0)
+    import tm.*
+    val appliedFlatMap = monad.flatMap(monad.unit(n))(i => monad.unit(i % 2 == 0))
+    assertFs(appliedFlatMap, pure(n % 2 == 0))
 
   private def assertMap[F[_]](tm: TestedMonad[F[_]], n: Int): Unit =
-    val m = tm.monad
-    val appliedMap = m.map(m.unit(n))(_ % 2 == 0)
-    val isNEven = tm.get[Boolean](appliedMap)
-    assertEquals(isNEven, n % 2 == 0)
+    import tm.*
+    val appliedMap = monad.map(monad.unit(n))(_ % 2 == 0)
+    assertFs(appliedMap, pure(n % 2 == 0))
 
   private def assertMap2[F[_]](tm: TestedMonad[F[_]], n: Int, s: String): Unit =
-    val m = tm.monad
-    val appliedMap2 = m.map2(m.unit(n))(m.unit(s))((_, _))
-    val tuple = tm.get[(Int, String)](appliedMap2)
-    assertEquals(tuple, (n, s))
+    import tm.*
+    val appliedMap2 = monad.map2(monad.unit(n))(monad.unit(s))((_, _))
+    assertFs(appliedMap2, pure((n, s)))
 
   private def assertAssociativeLaw[F[_]](tm: TestedMonad[F[_]], intList: List[Int]): Unit =
-    assertAssociativeLaw[List[Int], Int, String, F[_]](tm.monad, tm.pure(intList), tm.f, tm.g, tm.get)
-
-  private def assertAssociativeLaw[A, B, C, F[_]](
-      m: Monad[F[_]],
-      fa: F[A],
-      f: A => F[B],
-      g: B => F[C],
-      get: F[C] => C
-  ): Unit =
-    val fc1: F[C] = m.flatMap(m.flatMap(fa)(f))(g)
-    val fc2: F[C] = m.flatMap(fa)(a => m.flatMap(f(a))(g))
-    assertEquals(get(fc1), get(fc2))
+    import tm.*
+    val fa = pure(intList)
+    val fc1 = monad.flatMap(monad.flatMap(fa)(f))(g)
+    val fc2 = monad.flatMap(fa)(a => monad.flatMap(f(a))(g))
+    assertFs(fc1, fc2)
 
   private def assertAssociativeCompose[F[_]](tm: TestedMonad[F[_]], intList: List[Int]): Unit =
-    assertAssociativeCompose[List[Int], Int, String, Boolean, F[_]](
-      tm.monad,
-      intList,
-      tm.f,
-      tm.g,
-      tm.h,
-      tm.get
-    )
-
-  private def assertAssociativeCompose[A, B, C, D, F[_]](
-      m: Monad[F[_]],
-      a: A,
-      f: A => F[B],
-      g: B => F[C],
-      h: C => F[D],
-      get: F[D] => D
-  ): Unit =
-    val fc1: A => F[D] = m.compose(m.compose(f, g), h)
-    val fc2: A => F[D] = m.compose(f, m.compose(g, h))
-    assertEquals(get(fc1(a)), get(fc2(a)))
+    import tm.*
+    val fc1: List[Int] => F[Boolean] = monad.compose(monad.compose(f, g), h)
+    val fc2: List[Int] => F[Boolean] = monad.compose(f, monad.compose(g, h))
+    assertFs(fc1(intList), fc2(intList))
 
   private def assertIdentityLawForCompose[F[_]](tm: TestedMonad[F[_]], intList: List[Int]): Unit =
-    assertIdentityLawForCompose[List[Int], Int, F[_]](tm.monad, intList, tm.f, tm.get)
-
-  private def assertIdentityLawForCompose[A, B, F[_]](m: Monad[F[_]], a: A, f: A => F[B], get: F[B] => B): Unit =
-    assertEquals(get(m.compose[A, B, B](f, m.unit)(a)), get(f(a)))
-    assertEquals(get(m.compose[A, A, B](m.unit, f)(a)), get(f(a)))
+    import tm.*
+    assertFs(monad.compose[List[Int], Int, Int](f, monad.unit)(intList), f(intList))
+    assertFs(monad.compose[List[Int], List[Int], Int](monad.unit, f)(intList), f(intList))
 
   private def assertIdentityLawForFlatMap[F[_]](tm: TestedMonad[F[_]], intList: List[Int]): Unit =
-    assertIdentityLawForFlatMap[List[Int], Int, F[_]](tm.monad, intList, tm.f, tm.get)
+    import tm.*
+    assertFs(monad.flatMap(f(intList))(monad.unit), f(intList))
+    assertFs(monad.flatMap(monad.unit(intList))(f), f(intList))
 
-  private def assertIdentityLawForFlatMap[A, B, F[_]](m: Monad[F[_]], a: A, f: A => F[B], get: F[B] => B): Unit =
-    assertEquals(get(m.flatMap(f(a))(m.unit)), get(f(a)))
-    assertEquals(get(m.flatMap(m.unit(a))(f)), get(f(a)))
-
-object MonadSuite:
+object MonadSuite extends Assertions:
   private trait TestedMonad[F[_]]:
     val monad: Monad[F]
-    def get[A]: F[A] => A
     def pure[A]: A => F[A]
+    def assertFs[A](actual: F[A], expected: F[A]): Unit =
+      Assertions.assertEquals(actual, expected)
     def f: List[Int] => F[Int] = list => pure(list.sum)
     def g: Int => F[String] = i => pure(i.toString)
     def h: String => F[Boolean] = s => pure(s.startsWith("-"))
 
   private def genMonad(rng: RNG): TestedMonad[Gen[_]] =
-    new TestedMonad[Gen] {
+    new TestedMonad[Gen]:
       val monad: Monad[Gen] = Monad.genMonad
-      // Uncomment after fpinscala.exercises.testing.GenSuite passing
-      def get[A]: Gen[A] => A = ??? // _.next(rng)._1
       def pure[A]: A => Gen[A] = Gen.unit
-    }
+      override def assertFs[A](actual: Gen[A], expected: Gen[A]): Unit = ???
+        // ToDo: Uncomment after fpinscala.exercises.testing.GenSuite passing
+        // Assertions.assertEquals(actual.next(rng)._1, expected.next(rng)._1)
+
 
   private val parMonad: TestedMonad[Par[_]] =
-    new TestedMonad[Par] {
+    new TestedMonad[Par]:
       val monad: Monad[Par] = Monad.parMonad
-      def get[A]: Par[A] => A = _.run(service).get()
       def pure[A]: A => Par[A] = Par.unit
-    }
+      override def assertFs[A](actual: Par[A], expected: Par[A]): Unit =
+        Assertions.assertEquals(actual.run(service).get(), expected.run(service).get())
 
   private def parserMonad(s: String): TestedMonad[Parser[_]] =
-    new TestedMonad[Parser] {
+    new TestedMonad[Parser]:
       val monad: Monad[Parser] = Monad.parserMonad(UnitTestParser)
-      def get[A]: Parser[A] => A = _.run(s).toOption.get
       def pure[A]: A => Parser[A] = succeed
-    }
+      override def assertFs[A](actual: Parser[A], expected: Parser[A]): Unit =
+        Assertions.assertEquals(actual.run(s), expected.run(s))
 
   private val optionMonad: TestedMonad[Option[_]] =
-    new TestedMonad[Option] {
+    new TestedMonad[Option]:
       val monad: Monad[Option] = Monad.optionMonad
-      def get[A]: Option[A] => A = _.get
       def pure[A]: A => Option[A] = Some.apply
-    }
 
   private val lazyListMonad: TestedMonad[LazyList[_]] =
-    new TestedMonad[LazyList] {
+    new TestedMonad[LazyList]:
       val monad: Monad[LazyList] = Monad.lazyListMonad
-      def get[A]: LazyList[A] => A = _.head
       def pure[A]: A => LazyList[A] = a => LazyList(a)
-    }
 
   private val listMonad: TestedMonad[List[_]] =
-    new TestedMonad[List] {
+    new TestedMonad[List]:
       val monad: Monad[List] = Monad.listMonad
-      def get[A]: List[A] => A = _.head
       def pure[A]: A => List[A] = a => List(a)
-    }
 
   private val idMonad: TestedMonad[Id[_]] =
-    new TestedMonad[Id] {
+    new TestedMonad[Id]:
       val monad: Monad[Id] = Id.idMonad
-      def get[A]: Id[A] => A = _.value
       def pure[A]: A => Id[A] = a => Id(a)
-    }
 
   private val readerMonad: TestedMonad[Reader[Unit, _]] =
-    new TestedMonad[Reader[Unit, _]] {
+    new TestedMonad[Reader[Unit, _]]:
       val monad: Monad[Reader[Unit, _]] = Reader.readerMonad[Unit]
-      def get[A]: Reader[Unit, A] => A = _.run(())
       def pure[A]: A => Reader[Unit, A] = monad.unit
-    }
+      override def assertFs[A](actual: Reader[Unit, A], expected: Reader[Unit, A]): Unit =
+        Assertions.assertEquals(actual.run(()), expected.run(()))
