@@ -21,8 +21,11 @@ object Prop:
 object Gen:
   def unit[A](a: => A): Gen[A] = ???
 
+  extension [A](self: Gen[A])
+    def flatMap[B](f: A => Gen[B]): Gen[B] = ???
+
 trait Gen[A]:
-  def map[A,B](f: A => B): Gen[B] = ???
-  def flatMap[A,B](f: A => Gen[B]): Gen[B] = ???
+  def map[B](f: A => B): Gen[B] = ???
+  def flatMap[B](f: A => Gen[B]): Gen[B] = ???
 
 trait SGen[+A]

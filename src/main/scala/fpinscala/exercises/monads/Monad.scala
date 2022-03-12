@@ -73,7 +73,7 @@ object Monad:
     def unit[A](a: => A): Gen[A] = Gen.unit(a)
     extension [A](fa: Gen[A])
       override def flatMap[B](f: A => Gen[B]): Gen[B] =
-        fa.flatMap(f)
+        Gen.flatMap(fa)(f)
 
   given parMonad: Monad[Par] with
     def unit[A](a: => A) = ???
