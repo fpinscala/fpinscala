@@ -18,6 +18,7 @@ object Common:
   lazy val genDoubleList: Gen[List[Double]] = genList(Gen.double)
   lazy val genStringList: Gen[List[String]] = genList(genString)
   lazy val genBooleanList: Gen[List[Boolean]] = genList(Gen.boolean)
+  lazy val genMap: Gen[Map[String, Int]] = genList(genString ** Gen.int).map(_.toMap)
   lazy val genIntOption: Gen[Option[Int]] = Gen.int.map(i => if i % 2 == 0 then Some(i / 2) else None)
   lazy val genIntIndexedSeq: Gen[IndexedSeq[Int]] = genList(Gen.int).map(_.toIndexedSeq)
   lazy val genDoubleIndexedSeq: Gen[IndexedSeq[Double]] = genList(Gen.double).map(_.toIndexedSeq)
