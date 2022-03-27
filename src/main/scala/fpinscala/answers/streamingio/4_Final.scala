@@ -226,6 +226,9 @@ object Final:
       def toList(using MonadCatch[F]): F[List[O]] =
         self.toList
 
+      def compile(using MonadCatch[F]): F[Unit] =
+        fold(())((_, _) => ()).map(_(1))
+
       def ++(that: => Stream[F, O]): Stream[F, O] =
         self >> that
 
