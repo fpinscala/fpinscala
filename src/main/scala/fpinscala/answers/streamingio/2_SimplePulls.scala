@@ -216,6 +216,9 @@ object SimplePulls:
       def filter(p: O => Boolean): Stream[O] =
         self.filter(p).toStream
 
+      def ++(that: => Stream[O]): Stream[O] =
+        self >> that
+
     given Monad[Stream] with
       def unit[A](a: => A): Stream[A] = Pull.Output(a)
       extension [A](sa: Stream[A])

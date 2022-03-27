@@ -1,5 +1,8 @@
 package fpinscala.answers.iomonad
 
+import scala.util.control.TailCalls.TailRec
+import scala.util.control.TailCalls
+
 trait Functor[F[_]]:
   extension [A](fa: F[A])
     def map[B](f: A => B): F[B]
@@ -71,6 +74,13 @@ object Monad:
     extension [A](fa: Function0[A])
       def flatMap[B](f: A => Function0[B]) =
         () => f(fa())()
+
+  given tailrecMonad: Monad[TailRec] with
+    def unit[A](a: => A) = TailCalls.done(a)
+    extension [A](fa: TailRec[A])
+      def flatMap[B](f: A => TailRec[B]) =
+        fa.flatMap(f)
+
 
   import fpinscala.answers.parallelism.Nonblocking.Par
   given parMonad: Monad[Par] with
