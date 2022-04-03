@@ -33,22 +33,22 @@ object Resources:
   final class Scope[F[_]](parent: Option[Scope[F]], val id: Id, state: Ref[F, Scope.State[F]])(using F: MonadThrow[F]):
     import Scope.State
 
-    def open: F[Scope[F]] =
+    def open(finalizer: F[Unit]): F[Scope[F]] =
       state.modify {
-        case State.Open(resources, subscopes) =>
-          val sub = new Scope(Some(this), new Id, Ref(State.Open(Vector.empty, Vector.empty)))
-          State.Open(resources, subscopes :+ sub) -> F.unit(sub)
+        case State.Open(myFinalizer, subscopes) =>
+          val sub = new Scope(Some(this), new Id, Ref(State.Open(finalizer, Vector.empty)))
+          State.Open(myFinalizer, subscopes :+ sub) -> F.unit(sub)
         case State.Closed() =>
           val next = parent match
             case None => F.raiseError(new RuntimeException("root scope already closed"))
-            case Some(p) => p.open
+            case Some(p) => p.open(finalizer)
           State.Closed() -> next
       }.flatten
 
     def close: F[Unit] =
       state.modify {
-        case State.Open(resources, subscopes) =>
-          val finalizers = (subscopes.reverseIterator.map(_.close) ++ resources.reverseIterator).toList
+        case State.Open(finalizer, subscopes) =>
+          val finalizers = (subscopes.reverseIterator.map(_.close) ++ Iterator(finalizer)).toList
           def go(rem: List[F[Unit]], error: Option[Throwable]): F[Unit] =
             rem match
               case Nil => error match
@@ -58,17 +58,6 @@ object Resources:
           State.Closed() -> go(finalizers, None)
         case State.Closed() => State.Closed() -> F.unit(())
       }.flatten
-
-    def resource[R](acquire: F[R], release: R => F[Unit]): F[Option[R]] =
-      acquire.flatMap { resource =>
-        state.modify {
-          case State.Open(resources, subscopes) =>
-            val newFinalizer = release(resource)
-            State.Open(resources :+ newFinalizer, subscopes) -> F.unit(Some(resource))
-          case State.Closed() =>
-            State.Closed() -> release(resource).as(None)
-        }.flatten
-      }
 
     def findScope(target: Id): F[Option[Scope[F]]] =
       findThisOrSubScope(target).flatMap {
@@ -95,11 +84,11 @@ object Resources:
 
   object Scope:
     enum State[F[_]]:
-      case Open[F[_]](resources: Vector[F[Unit]], subscopes: Vector[Scope[F]]) extends State[F]
+      case Open[F[_]](finalizer: F[Unit], subscopes: Vector[Scope[F]]) extends State[F]
       case Closed[F[_]]() extends State[F]
 
     def root[F[_]](using F: MonadThrow[F]): Scope[F[_]] =
-      new Scope(None, new Id, Ref(State.Open(Vector.empty, Vector.empty)))
+      new Scope(None, new Id, Ref(State.Open(F.unit(()), Vector.empty)))
 
   enum StepResult[F[_], +O, +R]:
     case Done(scope: Scope[F], result: R)
@@ -114,17 +103,21 @@ object Resources:
     case Eval[+F[_], R](action: F[R]) extends Pull[F, Nothing, R]
     case FlatMap[+F[_], X, +O, +R](
       source: Pull[F, O, X], f: X => Pull[F, O, R]) extends Pull[F, O, R]
+    case FlatMapOutput[+F[_], O, +O2](
+      source: Pull[F, O, Unit], f: O => Pull[F, O2, Unit]
+    ) extends Pull[F, O2, Unit]
     case Uncons[+F[_], +O, +R](source: Pull[F, O, R])
       extends Pull[F, Nothing, Either[R, (O, Pull[F, O, R])]]
     case Handle[+F[_], +O, +R](
       source: Pull[F, O, R], handler: Throwable => Pull[F, O, R])
       extends Pull[F, O, R]
     case Error(t: Throwable) extends Pull[Nothing, Nothing, Nothing]
-    case Resource[+F[_], R](
-      acquire: F[R], release: R => F[Unit]) extends Pull[F, Nothing, R]
-    case OpenScope[+F[_], +O, +R](source: Pull[F, O, R]) extends Pull[F, O, R]
-    case WithScope[+F[_], +O, +R](source: Pull[F, O, R], scopeId: Id, returnScope: Id) extends Pull[F, O, R]
-    case FlatMapOutput[+F[_], O, +O2](source: Pull[F, O, Unit], f: O => Pull[F, O2, Unit]) extends Pull[F, O2, Unit]
+    case OpenScope[+F[_], +O, +R](
+      source: Pull[F, O, R], finalizer: Option[F[Unit]]
+    ) extends Pull[F, O, R]
+    case WithScope[+F[_], +O, +R](
+      source: Pull[F, O, R], scopeId: Id, returnScope: Id
+    ) extends Pull[F, O, R]
 
     def step[F2[x] >: F[x], O2 >: O, R2 >: R](scope: Scope[F2])(
       using F: MonadThrow[F2]
@@ -160,13 +153,8 @@ object Resources:
             case Out(scope, hd, tl) =>
               f(hd).flatMap(_ => tl.flatMapOutput(f)).step(scope)
           }
-        case Resource(acquire, release) =>
-          scope.resource(acquire, release).flatMap {
-            case Some(resource) => F.unit(Done(scope, resource))
-            case None => F.raiseError(new RuntimeException("cannot acquire resource in closed scope"))
-          }
-        case OpenScope(source) =>
-          scope.open.flatMap(subscope => 
+        case OpenScope(source, finalizer) =>
+          scope.open(finalizer.getOrElse(F.unit(()))).flatMap(subscope => 
             WithScope(source, subscope.id, scope.id).step(subscope))
         case WithScope(source, scopeId, returnScopeId) =>
           scope.findScope(scopeId).map(_.map(_ -> true).getOrElse(scope -> false)).flatMap { case (newScope, closeAfterUse) =>
@@ -365,7 +353,7 @@ object Resources:
     def raiseError[F[_], O](t: Throwable): Stream[F, O] = Pull.Error(t)
 
     def resource[F[_], R](acquire: F[R])(release: R => F[Unit]): Stream[F, R] =
-      Pull.OpenScope(Pull.Resource(acquire, release).flatMap(Pull.Output(_)))
+      Pull.Eval(acquire).flatMap(r => Pull.OpenScope(Pull.Output(r), Some(release(r))))
 
     extension [F[_], O](self: Stream[F, O])
       def toPull: Pull[F, O, Unit] = self
@@ -404,7 +392,7 @@ object Resources:
         self.flatMapOutput(o => Stream.empty)
 
       def scope: Stream[F, O] =
-        Pull.OpenScope(self)
+        Pull.OpenScope(self, None)
 
     extension [O](self: Stream[Nothing, O])
       def fold[A](init: A)(f: (A, O) => A): A = 
