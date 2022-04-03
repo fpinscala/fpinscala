@@ -101,6 +101,12 @@ object Resources:
     def root[F[_]](using F: MonadThrow[F]): Scope[F[_]] =
       new Scope(None, new Id, Ref(State.Open(Vector.empty, Vector.empty)))
 
+  enum StepResult[F[_], +O, +R]:
+    case Done(scope: Scope[F], result: R)
+    case Out(scope: Scope[F], head: O, tail: Pull[F, O, R])
+    def toUnconsResult: Either[R, (O, Pull[F, O, R])] = this match
+      case Done(_, result) => Left(result)
+      case Out(_, head, tail) => Right((head, tail))
 
   enum Pull[+F[_], +O, +R]:
     case Result[+R](result: R) extends Pull[Nothing, Nothing, R]
@@ -122,21 +128,22 @@ object Resources:
 
     def step[F2[x] >: F[x], O2 >: O, R2 >: R](scope: Scope[F2])(
       using F: MonadThrow[F2]
-    ): F2[Either[(Scope[F2], R2), (Scope[F2], O2, Pull[F2, O2, R2])]] =
+    ): F2[StepResult[F2, O2, R2]] =
+      import StepResult.{Done, Out}
       this match
-        case Result(r) => F.unit(Left((scope, r)))
-        case Output(o) => F.unit(Right(scope, o, Pull.done))
-        case Eval(action) => action.map(r => Left((scope, r)))
+        case Result(r) => F.unit(Done(scope, r))
+        case Output(o) => F.unit(Out(scope, o, Pull.done))
+        case Eval(action) => action.map(r => Done(scope, r))
         case Uncons(source) =>
-          source.step(scope).map(s => Left((scope, s.map(_.tail).asInstanceOf[R2])))
+          source.step(scope).map(s => Done(scope, s.toUnconsResult.asInstanceOf[R2]))
         case Handle(source, f) =>
           source match
             case Handle(s2, g) =>
               s2.handleErrorWith(x => g(x).handleErrorWith(y => f(y))).step(scope)
             case other =>
               other.step(scope).map {
-                case Right((scope, hd, tl)) => Right((scope, hd, Handle(tl, f)))
-                case Left((scope, r)) => Left((scope, r))
+                case Out(scope, hd, tl) => Out(scope, hd, Handle(tl, f))
+                case Done(scope, r) => Done(scope, r)
               }.handleErrorWith(t => f(t).step(scope))
         case Error(t) => F.raiseError(t)
         case FlatMap(source, f) => 
@@ -144,18 +151,18 @@ object Resources:
             case FlatMap(s2, g) =>
               s2.flatMap(x => g(x).flatMap(y => f(y))).step(scope)
             case other => other.step(scope).flatMap {
-              case Left((scope, r)) => f(r).step(scope)
-              case Right((scope, hd, tl)) => F.unit(Right((scope, hd, tl.flatMap(f))))
+              case Done(scope, r) => f(r).step(scope)
+              case Out(scope, hd, tl) => F.unit(Out(scope, hd, tl.flatMap(f)))
             }
         case FlatMapOutput(source, f) =>
           source.step(scope).flatMap {
-            case Left((scope, r)) => F.unit(Left((scope, r)))
-            case Right((scope, hd, tl)) =>
+            case Done(scope, r) => F.unit(Done(scope, r))
+            case Out(scope, hd, tl) =>
               f(hd).flatMap(_ => tl.flatMapOutput(f)).step(scope)
           }
         case Resource(acquire, release) =>
           scope.resource(acquire, release).flatMap {
-            case Some(resource) => F.unit(Left((scope, resource)))
+            case Some(resource) => F.unit(Done(scope, resource))
             case None => F.raiseError(new RuntimeException("cannot acquire resource in closed scope"))
           }
         case OpenScope(source) =>
@@ -164,11 +171,11 @@ object Resources:
         case WithScope(source, scopeId, returnScopeId) =>
           scope.findScope(scopeId).map(_.map(_ -> true).getOrElse(scope -> false)).flatMap { case (newScope, closeAfterUse) =>
             source.step(newScope).attempt.flatMap {
-              case Success(Right((scope, hd, tl))) =>
-                F.unit(Right((scope, hd, WithScope(tl, scopeId, returnScopeId))))
-              case Success(Left((outScope, r))) =>
+              case Success(Out(scope, hd, tl)) =>
+                F.unit(Out(scope, hd, WithScope(tl, scopeId, returnScopeId)))
+              case Success(Done(outScope, r)) =>
                 scope.findScope(returnScopeId).map(_.getOrElse(outScope)).flatMap { nextScope =>
-                  scope.close.as(Left((nextScope, r)))
+                  scope.close.as(Done(nextScope, r))
                 }
               case Failure(t) =>
                 scope.close.flatMap(_ => F.raiseError(t))
@@ -181,8 +188,8 @@ object Resources:
       val scope = Scope.root[F2]
       def go(scope: Scope[F2], p: Pull[F2, O, R2], acc: A): F2[(R2, A)] =
         p.step(scope).flatMap {
-          case Left((_, r)) => F.unit((r, init))
-          case Right((newScope, hd, tl)) => go(newScope, tl, f(init, hd))
+          case StepResult.Done(_, r) => F.unit((r, init))
+          case StepResult.Out(newScope, hd, tl) => go(newScope, tl, f(init, hd))
         }
       go(scope, this, init).attempt.flatMap(res =>
         scope.close.flatMap(_ =>
