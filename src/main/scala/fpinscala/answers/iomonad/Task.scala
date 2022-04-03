@@ -11,17 +11,8 @@ import scala.util.control.NonFatal
  * convenience functions for handling exceptions.
  */
 opaque type Task[A] = IO[Try[A]]
-
 object Task:
-
   extension [A](self: Task[A])
-    def flatMap[B](f: A => Task[B]): Task[B] =
-      IO.monad.flatMap(self) {
-        case Failure(e) => IO(Failure(e))
-        case Success(a) => f(a)
-      }
-
-    def map[B](f: A => B): Task[B] = flatMap(f andThen Task.now)
 
     /* 'Catches' exceptions in the given task and returns them as values. */
     def attempt: Task[Try[A]] =
@@ -30,9 +21,9 @@ object Task:
         case Success(a) => Success(Success(a))
       }
 
-    def handle[B >: A](f: PartialFunction[Throwable, B]): Task[B] =
+    def handleErrorWith(h: Throwable => Task[A]): Task[A] =
       attempt.flatMap {
-        case Failure(e) => f.lift(e).map(Task.now).getOrElse(Task.fail(e))
+        case Failure(t) => h(t)
         case Success(a) => Task.now(a)
       }
 
@@ -49,7 +40,7 @@ object Task:
 
   def apply[A](a: => A): Task[A] = IO(Try(a))
 
-  def fail[A](e: Throwable): Task[A] = IO(Failure(e))
+  def raiseError[A](e: Throwable): Task[A] = IO(Failure(e))
   def now[A](a: A): Task[A] = IO.now(Success(a))
 
   def more[A](a: => Task[A]): Task[A] = now(()).flatMap(_ => a)
@@ -65,4 +56,7 @@ object Task:
     def unit[A](a: => A) = Task(a)
     extension [A](fa: Task[A])
       def flatMap[B](f: A => Task[B]): Task[B] =
-        Task.flatMap(fa)(f)
+        IO.monad.flatMap(fa) {
+          case Failure(e) => IO(Failure(e))
+          case Success(a) => f(a)
+        }
