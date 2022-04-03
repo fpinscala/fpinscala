@@ -41,6 +41,9 @@ trait Monad[F[_]] extends Functor[F]:
     def replicateM_(n: Int): F[Unit] =
       foreachM(LazyList.fill(n)(fa))(_.void)
 
+  extension [A](ffa: F[F[A]])
+    def flatten: F[A] = ffa.flatMap(identity)
+
   def sequence_[A](fs: LazyList[F[A]]): F[Unit] = foreachM(fs)(_.void)
 
   def sequence_[A](fs: F[A]*): F[Unit] = sequence_(fs.to(LazyList))
