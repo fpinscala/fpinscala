@@ -4,7 +4,7 @@ import fpinscala.answers.iomonad.{IO, Monad}
 import fpinscala.answers.monoids.Monoid
 import scala.util.{Success, Failure}
 
-object Final:
+object ErrorHandling:
 
   type Nothing1[A] = Nothing
 
@@ -279,12 +279,12 @@ object Final:
 
   type Pipe[F[_], -I, +O] = Stream[F, I] => Stream[F, O]
 
-end Final
+end ErrorHandling
 
-object FinalExample:
+object ErrorHandlingExample:
   import fpinscala.answers.iomonad.Task
   import scala.io.Source
-  import Final.Stream
+  import ErrorHandling.Stream
 
   def acquire(path: String): Task[Source] =
     Task(Source.fromFile(path))
