@@ -9,7 +9,10 @@ object Resources:
 
   type Nothing1[A] = Nothing
 
-  final class Ref[F[_], A] private (_ref: AtomicReference[A], delay: [A] => (() => A) => F[A]):
+  final class Ref[F[_], A] private (
+    _ref: AtomicReference[A],
+    delay: [A] => (() => A) => F[A]
+  ):
     def get: F[A] = delay(() => _ref.get)
     def modify[B](f: A => (A, B)): F[B] = delay { () =>
       @annotation.tailrec
@@ -22,7 +25,8 @@ object Resources:
 
   object Ref:
     def apply[F[_], A](initial: A)(using F: Monad[F]): Ref[F, A] =
-      new Ref(new AtomicReference[A](initial), [A] => (th: () => A) => F.unit(()).map(_ => th()))
+      new Ref(new AtomicReference[A](initial),
+        [A] => (th: () => A) => F.unit(()).map(_ => th()))
 
   final class Id
 
@@ -36,7 +40,7 @@ object Resources:
           State.Open(resources, subscopes :+ sub) -> F.unit(sub)
         case State.Closed() =>
           val next = parent match
-            case None => F.raiseError(new RuntimeException("cannot open a scope on a closed scope"))
+            case None => F.raiseError(new RuntimeException("root scope already closed"))
             case Some(p) => p.open
           State.Closed() -> next
       }.flatten
@@ -178,7 +182,11 @@ object Resources:
           case Left(r) => F.unit((r, init))
           case Right((newScope, hd, tl)) => go(newScope, tl, f(init, hd))
         }
-      go(scope, this, init)
+      go(scope, this, init).attempt.flatMap(res =>
+        scope.close.flatMap(_ =>
+          res.fold(F.raiseError, F.unit)
+        )
+      )
 
     def toList[F2[x] >: F[x]: MonadThrow, O2 >: O]: F2[List[O2]] =
       fold(List.newBuilder[O])((bldr, o) => bldr += o).map(_(1).result)
