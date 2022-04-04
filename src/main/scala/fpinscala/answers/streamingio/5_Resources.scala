@@ -4,6 +4,7 @@ import fpinscala.answers.iomonad.{IO, Monad}
 import fpinscala.answers.monoids.Monoid
 import scala.util.{Success, Failure}
 import java.util.concurrent.atomic.AtomicReference
+import java.io.BufferedWriter
 
 object Resources:
 
@@ -414,12 +415,8 @@ end Resources
 object ResourcesExample:
   import fpinscala.answers.iomonad.Task
   import scala.io.Source
-  import Resources.Stream
-
-  def use(source: Source): Stream[Task, Unit] =
-    Stream.eval(Task(source.getLines))
-      .flatMap(itr => Stream.fromIterator(itr))
-      .mapEval(line => Task(println(line)))
+  import scala.util.chaining.scalaUtilChainingOps
+  import Resources.{Stream, Pipe}
 
   def file(path: String): Stream[Task, Source] =
     Stream.resource(Task(Source.fromFile(path)))(s => Task({println("CLOSING"); s.close()}))
@@ -429,5 +426,56 @@ object ResourcesExample:
       Stream.eval(Task(source.getLines)).flatMap(Stream.fromIterator)
     )
 
-  val prg: Stream[Task, Unit] = 
+  val printLines: Stream[Task, Unit] = 
     lines("build.sbt").mapEval(line => Task(println(line)))
+
+  import java.nio.file.{Files, Paths}
+
+  def fileWriter(path: String): Stream[Task, BufferedWriter] =
+    Stream.resource(Task(Files.newBufferedWriter(Paths.get(path))))(w => Task(w.close()))
+
+  def writeLines(path: String): Pipe[Task, String, Unit] =
+    lines => fileWriter(path).flatMap(writer =>
+      lines.mapEval(line => Task {
+        writer.write(line)
+        writer.newLine
+      }))
+
+  def toCelsius(fahrenheit: Double): Double =
+    (5.0 / 9.0) * (fahrenheit - 32.0)
+
+  def trimmed[F[_]]: Pipe[F, String, String] =
+    src => src.map(_.trim)
+
+  def nonEmpty[F[_]]: Pipe[F, String, String] =
+    _.filter(_.nonEmpty)
+
+  def nonComment[F[_]]: Pipe[F, String, String] =
+    src => src.filter(s => !(s.charAt(0) == '#'))
+
+  def asDouble[F[_]]: Pipe[F, String, Double] =
+    src => src.flatMap { s =>
+      s.toDoubleOption match
+        case Some(d) => Stream(d)
+        case None => Stream()
+    }
+
+  def convertToCelsius[F[_]]: Pipe[F, Double, Double] =
+    src => src.map(toCelsius)
+
+  def toString[F[_], A]: Pipe[F, A, String] =
+    _.map(_.toString)
+
+  def convert(inputFile: String, outputFile: String): Task[Unit] = 
+    val conversion: Pipe[Task, String, String] =
+      trimmed andThen 
+      nonEmpty andThen 
+      nonComment andThen 
+      asDouble andThen 
+      convertToCelsius andThen
+      toString
+
+    lines(inputFile).pipe(conversion).pipe(writeLines(outputFile)).compile
+
+
+    
