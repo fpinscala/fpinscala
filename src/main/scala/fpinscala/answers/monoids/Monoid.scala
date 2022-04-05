@@ -87,15 +87,16 @@ object Monoid:
     as.foldLeft(m.empty)((b, a) => m.combine(b, f(a)))
 
   // The function type `(A, B) => B`, when curried, is `A => (B => B)`.
-  // And of course, `B => B` is a monoid for any `B` (via function composition).
+  // And `B => B` is a monoid for any `B` (via function composition).
+  // We have to flip the order of params to the endo monoid since we
+  // chose to define it as `f andThen g` instead of `f compose g`.
   def foldRight[A, B](as: List[A])(acc: B)(f: (A, B) => B): B =
-    foldMap(as, endoMonoid)(f.curried)(acc)
+    foldMap(as, dual(endoMonoid))(f.curried)(acc)
 
   // Folding to the left is the same except we flip the arguments to
   // the function `f` to put the `B` on the correct side.
-  // Then we have to also "flip" the monoid so that it operates from left to right.
   def foldLeft[A, B](as: List[A])(acc: B)(f: (B, A) => B): B =
-    foldMap(as, dual(endoMonoid))(a => b => f(b, a))(acc)
+    foldMap(as, endoMonoid)(a => b => f(b, a))(acc)
 
   def foldMapV[A, B](as: IndexedSeq[A], m: Monoid[B])(f: A => B): B =
     if as.length == 0 then
