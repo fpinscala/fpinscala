@@ -231,7 +231,7 @@ object EffectfulPulls:
       def toList(using Monad[F]): F[List[O]] =
         self.toList
 
-      def compile(using Monad[F]): F[Unit] =
+      def run(using Monad[F]): F[Unit] =
         fold(())((_, _) => ()).map(_(1))
 
       def ++(that: => Stream[F, O]): Stream[F, O] =

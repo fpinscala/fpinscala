@@ -237,7 +237,7 @@ object ErrorHandling:
       def toList(using MonadThrow[F]): F[List[O]] =
         self.toList
 
-      def compile(using MonadThrow[F]): F[Unit] =
+      def run(using MonadThrow[F]): F[Unit] =
         fold(())((_, _) => ()).map(_(1))
 
       def ++(that: => Stream[F, O]): Stream[F, O] =

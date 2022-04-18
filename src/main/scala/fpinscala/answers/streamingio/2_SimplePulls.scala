@@ -51,6 +51,13 @@ object SimplePulls:
         case Right((hd, tl)) => Output(hd) >> tl.take(n - 1)
       }
 
+    def drop(n: Int): Pull[O, R] =
+      if n <= 0 then this
+      else uncons.flatMap {
+        case Left(r) => Result(r)
+        case Right((_, tl)) => tl.drop(n - 1)
+      }
+
     def takeWhile(f: O => Boolean): Pull[O, Pull[O, R]] =
       uncons.flatMap {
         case Left(r) => Result(Result(r))
@@ -58,7 +65,7 @@ object SimplePulls:
           if f(hd) then Output(hd) >> tl.takeWhile(f)
           else Result(Output(hd) >> tl)
       }
-
+    
     def dropWhile(f: O => Boolean): Pull[Nothing, Pull[O, R]] =
       uncons.flatMap {
         case Left(r) => Result(Result(r))
@@ -261,7 +268,7 @@ object SimplePullExamples:
   def existsHalting[I](f: I => Boolean): Pipe[I, Boolean] =
     exists(f) andThen takeThrough(!_) andThen dropWhile(!_)
 
-  def hold[I](init: I): Pipe[I, I] =
+  def last[I](init: I): Pipe[I, I] =
     def go(value: I, p: Pull[I, Unit]): Pull[I, Unit] =
       p.uncons.flatMap {
         case Left(_) => Pull.Output(value)
@@ -270,7 +277,7 @@ object SimplePullExamples:
     src => go(init, src.toPull).toStream
 
   def existsHalting2[I](f: I => Boolean): Pipe[I, Boolean] =
-    exists(f) andThen takeThrough(!_) andThen hold(false)
+    exists(f) andThen takeThrough(!_) andThen last(false)
 
   def countGt40K[I]: Pipe[I, Boolean] =
     count andThen existsHalting(_ > 40000)
@@ -300,7 +307,7 @@ object SimplePullExamples:
     src => src.map(_.trim)
 
   def nonComment: Pipe[String, String] =
-    src => src.filter(s => !(s.charAt(0) == '#'))
+    src => src.filter(_.charAt(0) != '#')
 
   def asDouble: Pipe[String, Double] =
     src => src.flatMap { s =>
@@ -312,14 +319,14 @@ object SimplePullExamples:
   def convertToCelsius: Pipe[Double, Double] =
     src => src.map(toCelsius)
 
-  def convert(inputFile: java.io.File, outputFile: java.io.File): IO[Unit] = IO {
-    val conversion: Pipe[String, Double] =
-      trimmed andThen 
-      nonEmpty andThen 
-      nonComment andThen 
-      asDouble andThen 
-      convertToCelsius
+  val conversion: Pipe[String, Double] =
+    trimmed andThen 
+    nonEmpty andThen 
+    nonComment andThen 
+    asDouble andThen 
+    convertToCelsius
 
+  def convert(inputFile: java.io.File, outputFile: java.io.File): IO[Unit] = IO {
     val source = scala.io.Source.fromFile(inputFile)
     try
       val writer = java.nio.file.Files.newBufferedWriter(outputFile.toPath)

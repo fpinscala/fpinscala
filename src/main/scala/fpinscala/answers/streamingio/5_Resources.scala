@@ -11,16 +11,17 @@ object Resources:
   type Nothing1[A] = Nothing
 
   final class Ref[F[_], A] private (
-    _ref: AtomicReference[A],
+    underlying: AtomicReference[A],
     delay: [A] => (() => A) => F[A]
   ):
-    def get: F[A] = delay(() => _ref.get)
+    def get: F[A] = delay(() => underlying.get)
+    def set(a: A): F[Unit] = delay(() => underlying.set(a))
     def modify[B](f: A => (A, B)): F[B] = delay { () =>
       @annotation.tailrec
       def loop(): B =
-        val oldA = _ref.get
+        val oldA = underlying.get
         val (newA, result) = f(oldA)
-        if _ref.compareAndSet(oldA, newA) then result else loop()
+        if underlying.compareAndSet(oldA, newA) then result else loop()
       loop()
     }
 
@@ -85,8 +86,8 @@ object Resources:
 
   object Scope:
     enum State[F[_]]:
-      case Open[F[_]](finalizer: F[Unit], subscopes: Vector[Scope[F]]) extends State[F]
-      case Closed[F[_]]() extends State[F]
+      case Open(finalizer: F[Unit], subscopes: Vector[Scope[F]]) extends State[F]
+      case Closed() extends State[F]
 
     def root[F[_]](using F: MonadThrow[F]): Scope[F[_]] =
       new Scope(None, new Id, Ref(State.Open(F.unit(()), Vector.empty)))
@@ -107,16 +108,16 @@ object Resources:
     case FlatMapOutput[+F[_], O, +O2](
       source: Pull[F, O, Unit], f: O => Pull[F, O2, Unit]
     ) extends Pull[F, O2, Unit]
-    case Uncons[+F[_], +O, +R](source: Pull[F, O, R])
+    case Uncons(source: Pull[F, O, R])
       extends Pull[F, Nothing, Either[R, (O, Pull[F, O, R])]]
-    case Handle[+F[_], +O, +R](
+    case Handle(
       source: Pull[F, O, R], handler: Throwable => Pull[F, O, R])
       extends Pull[F, O, R]
     case Error(t: Throwable) extends Pull[Nothing, Nothing, Nothing]
-    case OpenScope[+F[_], +O, +R](
+    case OpenScope(
       source: Pull[F, O, R], finalizer: Option[F[Unit]]
     ) extends Pull[F, O, R]
-    case WithScope[+F[_], +O, +R](
+    case WithScope(
       source: Pull[F, O, R], scopeId: Id, returnScope: Id
     ) extends Pull[F, O, R]
 
@@ -129,11 +130,13 @@ object Resources:
         case Output(o) => F.unit(Out(scope, o, Pull.done))
         case Eval(action) => action.map(r => Done(scope, r))
         case Uncons(source) =>
-          source.step(scope).map(s => Done(scope, s.toUnconsResult.asInstanceOf[R2]))
+          source.step(scope).map(s =>
+            Done(scope, s.toUnconsResult.asInstanceOf[R2]))
         case Handle(source, f) =>
           source match
             case Handle(s2, g) =>
-              s2.handleErrorWith(x => g(x).handleErrorWith(y => f(y))).step(scope)
+              s2.handleErrorWith(x =>
+                g(x).handleErrorWith(y => f(y))).step(scope)
             case other =>
               other.step(scope).map {
                 case Out(scope, hd, tl) => Out(scope, hd, Handle(tl, f))
@@ -146,7 +149,8 @@ object Resources:
               s2.flatMap(x => g(x).flatMap(y => f(y))).step(scope)
             case other => other.step(scope).flatMap {
               case Done(scope, r) => f(r).step(scope)
-              case Out(scope, hd, tl) => F.unit(Out(scope, hd, tl.flatMap(f)))
+              case Out(scope, hd, tl) =>
+                F.unit(Out(scope, hd, tl.flatMap(f)))
             }
         case FlatMapOutput(source, f) =>
           source.step(scope).flatMap {
@@ -158,18 +162,23 @@ object Resources:
           scope.open(finalizer.getOrElse(F.unit(()))).flatMap(subscope => 
             WithScope(source, subscope.id, scope.id).step(subscope))
         case WithScope(source, scopeId, returnScopeId) =>
-          scope.findScope(scopeId).map(_.map(_ -> true).getOrElse(scope -> false)).flatMap { case (newScope, closeAfterUse) =>
-            source.step(newScope).attempt.flatMap {
-              case Success(Out(scope, hd, tl)) =>
-                F.unit(Out(scope, hd, WithScope(tl, scopeId, returnScopeId)))
-              case Success(Done(outScope, r)) =>
-                scope.findScope(returnScopeId).map(_.getOrElse(outScope)).flatMap { nextScope =>
-                  scope.close.as(Done(nextScope, r))
-                }
-              case Failure(t) =>
-                scope.close.flatMap(_ => F.raiseError(t))
+          scope.findScope(scopeId)
+            .map(_.map(_ -> true).getOrElse(scope -> false))
+            .flatMap { case (newScope, closeAfterUse) =>
+              source.step(newScope).attempt.flatMap {
+                case Success(Out(scope, hd, tl)) =>
+                  F.unit(Out(scope, hd,
+                             WithScope(tl, scopeId, returnScopeId)))
+                case Success(Done(outScope, r)) =>
+                  scope.findScope(returnScopeId)
+                    .map(_.getOrElse(outScope))
+                    .flatMap { nextScope =>
+                      scope.close.as(Done(nextScope, r))
+                    }
+                case Failure(t) =>
+                  scope.close.flatMap(_ => F.raiseError(t))
+              }
             }
-          }
 
     def fold[F2[x] >: F[x], R2 >: R, A](init: A)(f: (A, O) => A)(
       using F: MonadThrow[F2]
@@ -178,7 +187,8 @@ object Resources:
       def go(scope: Scope[F2], p: Pull[F2, O, R2], acc: A): F2[(R2, A)] =
         p.step(scope).flatMap {
           case StepResult.Done(_, r) => F.unit((r, init))
-          case StepResult.Out(newScope, hd, tl) => go(newScope, tl, f(init, hd))
+          case StepResult.Out(newScope, hd, tl) =>
+            go(newScope, tl, f(init, hd))
         }
       go(scope, this, init).attempt.flatMap(res =>
         scope.close.flatMap(_ =>
@@ -268,7 +278,9 @@ object Resources:
           Output(out) >> tl.mapAccumulate(s)(f)
       }
 
-    def handleErrorWith[F2[x] >: F[x], O2 >: O, R2 >: R](handler: Throwable => Pull[F2, O2, R2]): Pull[F2, O2, R2] =
+    def handleErrorWith[F2[x] >: F[x], O2 >: O, R2 >: R](
+      handler: Throwable => Pull[F2, O2, R2]
+    ): Pull[F2, O2, R2] =
       Handle(this, handler)
 
   object Pull:
@@ -365,7 +377,7 @@ object Resources:
       def toList(using MonadThrow[F]): F[List[O]] =
         self.toList
 
-      def compile(using MonadThrow[F]): F[Unit] =
+      def run(using MonadThrow[F]): F[Unit] =
         fold(())((_, _) => ()).map(_(1))
 
       def ++(that: => Stream[F, O]): Stream[F, O] =
@@ -451,7 +463,7 @@ object ResourcesExample:
     _.filter(_.nonEmpty)
 
   def nonComment[F[_]]: Pipe[F, String, String] =
-    src => src.filter(s => !(s.charAt(0) == '#'))
+    src => src.filter(_.charAt(0) != '#')
 
   def asDouble[F[_]]: Pipe[F, String, Double] =
     src => src.flatMap { s =>
@@ -466,16 +478,23 @@ object ResourcesExample:
   def toString[F[_], A]: Pipe[F, A, String] =
     _.map(_.toString)
 
+  val conversion: Pipe[Task, String, String] =
+    trimmed andThen 
+    nonEmpty andThen 
+    nonComment andThen 
+    asDouble andThen 
+    convertToCelsius andThen
+    toString
+
   def convert(inputFile: String, outputFile: String): Task[Unit] = 
-    val conversion: Pipe[Task, String, String] =
-      trimmed andThen 
-      nonEmpty andThen 
-      nonComment andThen 
-      asDouble andThen 
-      convertToCelsius andThen
-      toString
+    lines(inputFile).pipe(conversion).pipe(writeLines(outputFile)).run
 
-    lines(inputFile).pipe(conversion).pipe(writeLines(outputFile)).compile
-
-
+  def convertAll(inputFile: String, outputFile: String): Task[Unit] =
+    lines(inputFile)
+      .flatMap(lines).pipe(conversion).pipe(writeLines(outputFile)).run
     
+  def convertMultisink(inputFile: String): Task[Unit] =
+    lines(inputFile).flatMap(file =>
+      lines(file).pipe(conversion).pipe(writeLines(file + ".celsius"))).run
+    
+
