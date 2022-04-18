@@ -1,4 +1,4 @@
-package fpinscala.answers.streamingio
+package fpinscala.exercises.streamingio
 
 import fpinscala.answers.iomonad.{IO, Monad}
 import fpinscala.answers.monoids.Monoid
@@ -51,28 +51,17 @@ object SimplePulls:
         case Right((hd, tl)) => Output(hd) >> tl.take(n - 1)
       }
 
+    // Exercise 15.3
     def drop(n: Int): Pull[O, R] =
-      if n <= 0 then this
-      else uncons.flatMap {
-        case Left(r) => Result(r)
-        case Right((_, tl)) => tl.drop(n - 1)
-      }
+      ???
 
+    // Exercise 15.3
     def takeWhile(f: O => Boolean): Pull[O, Pull[O, R]] =
-      uncons.flatMap {
-        case Left(r) => Result(Result(r))
-        case Right((hd, tl)) =>
-          if f(hd) then Output(hd) >> tl.takeWhile(f)
-          else Result(Output(hd) >> tl)
-      }
+      ???
     
+    // Exercise 15.3
     def dropWhile(f: O => Boolean): Pull[Nothing, Pull[O, R]] =
-      uncons.flatMap {
-        case Left(r) => Result(Result(r))
-        case Right((hd, tl)) =>
-          if f(hd) then tl.dropWhile(f)
-          else Result(Output(hd) >> tl)
-      }
+      ???
 
     def mapOutput[O2](f: O => O2): Pull[O2, R] =
       uncons.flatMap {
@@ -97,15 +86,9 @@ object SimplePulls:
         }
       Output(0) >> go(0, this)
 
+    // Exercise 15.4
     def tally[O2 >: O](using m: Monoid[O2]): Pull[O2, R] =
-      def go(total: O2, p: Pull[O, R]): Pull[O2, R] =
-        p.uncons.flatMap {
-          case Left(r) => Result(r)
-          case Right((hd, tl)) =>
-            val newTotal = m.combine(total, hd)
-            Output(newTotal) >> go(newTotal, tl)
-        }
-      Output(m.empty) >> go(m.empty, this)
+      ???
 
     def mapAccumulate[S, O2](init: S)(f: (S, O) => (S, O2)): Pull[O2, (S, R)] =
       uncons.flatMap {
@@ -115,14 +98,13 @@ object SimplePulls:
           Output(out) >> tl.mapAccumulate(s)(f)
       }
 
+    // Exercise 15.6
     def countViaMapAccumulate: Pull[Int, R] =
-      Output(0) >> mapAccumulate(0)((s, o) => (s + 1, s + 1)).map(_(1))
+      ???
 
+    // Exercise 15.6
     def tallyViaMapAccumulate[O2 >: O](using m: Monoid[O2]): Pull[O2, R] =
-      Output(m.empty) >> mapAccumulate(m.empty) { (s, o) =>
-        val s2 = m.combine(s, o)
-        (s2, s2)
-      }.map(_(1))
+      ???
 
   object Pull:
     val done: Pull[Nothing, Unit] = Result(())
@@ -142,17 +124,13 @@ object SimplePulls:
         case Left(r) => Result(r)
         case Right((o, r2)) => Output(o) >> unfold(r2)(f)
 
+    // Exercise 15.1
     def fromListViaUnfold[O](os: List[O]): Pull[O, Unit] =
-      unfold(os) {
-        case Nil => Left(Nil)
-        case hd :: tl => Right((hd, tl))
-      }.map(_ => ())
+      ???
 
+    // Exercise 15.1
     def fromLazyListViaUnfold[O](os: LazyList[O]): Pull[O, Unit] =
-      unfold(os) {
-        case LazyList() => Left(LazyList())
-        case hd #:: tl => Right((hd, tl))
-      }.map(_ => ())
+      ???
 
     def continually[O](o: O): Pull[O, Nothing] =
       Output(o) >> continually(o)
@@ -160,27 +138,18 @@ object SimplePulls:
     def continuallyViaRepeat[O](o: O): Pull[O, Nothing] =
       Output(o).repeat
 
+    // Exercise 15.2
     def iterate[O](initial: O)(f: O => O): Pull[O, Nothing] =
-      Output(initial) >> iterate(f(initial))(f)
+      ???
 
     extension [R](self: Pull[Int, R])
+      // Exercise 15.5
       def slidingMean(n: Int): Pull[Double, R] =
-        def go(window: collection.immutable.Queue[Int], p: Pull[Int, R]): Pull[Double, R] =
-          p.uncons.flatMap {
-            case Left(r) => Result(r)
-            case Right((hd, tl)) =>
-              val newWindow = if window.size < n then window :+ hd else window.tail :+ hd
-              val meanOfNewWindow = newWindow.sum / newWindow.size.toDouble
-              Output(meanOfNewWindow) >> go(newWindow, tl)
-          }
-        go(collection.immutable.Queue.empty, self)
+        ???
 
+      // Exercise 15.6
       def slidingMeanViaMapAccumulate(n: Int): Pull[Double, R] =
-        self.mapAccumulate(collection.immutable.Queue.empty[Int]) { (window, o) =>
-          val newWindow = if window.size < n then window :+ o else window.tail :+ o
-          val meanOfNewWindow = newWindow.sum / newWindow.size.toDouble
-          (newWindow, meanOfNewWindow)
-        }.map(_(1))
+        ???
 
     given [O]: Monad[[x] =>> Pull[O, x]] with
       def unit[A](a: => A): Pull[O, A] = Result(a)
@@ -256,28 +225,13 @@ object SimplePullExamples:
 
   def count[A]: Pipe[A, Int] = _.toPull.count.void.toStream
 
+  // Exercise 15.7
   def exists[I](f: I => Boolean): Pipe[I, Boolean] =
-    src => src.map(f).toPull.tally(using Monoid.booleanOr).toStream
+    ???
 
-  def takeThrough[I](f: I => Boolean): Pipe[I, I] =
-    src => src.toPull.takeWhile(f).flatMap(remainder => remainder.take(1)).void.toStream
-
-  def dropWhile[I](f: I => Boolean): Pipe[I, I] =
-    src => src.toPull.dropWhile(f).flatMap(remainder => remainder).void.toStream
-
+  // Exercise 15.7
   def existsHalting[I](f: I => Boolean): Pipe[I, Boolean] =
-    exists(f) andThen takeThrough(!_) andThen dropWhile(!_)
-
-  def last[I](init: I): Pipe[I, I] =
-    def go(value: I, p: Pull[I, Unit]): Pull[I, Unit] =
-      p.uncons.flatMap {
-        case Left(_) => Pull.Output(value)
-        case Right((hd, tl)) => go(hd, tl)
-      }
-    src => go(init, src.toPull).toStream
-
-  def existsHalting2[I](f: I => Boolean): Pipe[I, Boolean] =
-    exists(f) andThen takeThrough(!_) andThen last(false)
+    ???
 
   def countGt40K[I]: Pipe[I, Boolean] =
     count andThen existsHalting(_ > 40000)
@@ -303,43 +257,5 @@ object SimplePullExamples:
   def toCelsius(fahrenheit: Double): Double =
     (5.0 / 9.0) * (fahrenheit - 32.0)
 
-  def trimmed: Pipe[String, String] =
-    src => src.map(_.trim)
-
-  def nonComment: Pipe[String, String] =
-    src => src.filter(_.charAt(0) != '#')
-
-  def asDouble: Pipe[String, Double] =
-    src => src.flatMap { s =>
-      s.toDoubleOption match
-        case Some(d) => Stream(d)
-        case None => Stream()
-    }
-
-  def convertToCelsius: Pipe[Double, Double] =
-    src => src.map(toCelsius)
-
-  val conversion: Pipe[String, Double] =
-    trimmed andThen 
-    nonEmpty andThen 
-    nonComment andThen 
-    asDouble andThen 
-    convertToCelsius
-
-  import java.nio.file.{Files, Paths}
-
   def convert(inputFile: String, outputFile: String): IO[Unit] =
-    IO {
-      val source = scala.io.Source.fromFile(inputFile)
-      try
-        val writer = Files.newBufferedWriter(Paths.get(outputFile))
-        try
-          fromIterator(source.getLines)
-            .pipe(conversion)
-            .fold(()) { (_, a) =>
-              writer.write(a.toString)
-              writer.newLine()
-            }
-        finally writer.close()
-      finally source.close()
-    }
+    ???
