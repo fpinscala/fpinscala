@@ -119,6 +119,13 @@ class ListSuite extends PropSuite:
     )
   }
 
+  test("List.filterViaFlatMap")(genIntList) { list =>
+    assertEquals(
+      List.filterViaFlatMap(list)(_ % 2 == 0),
+      scalaListToList(listToScalaList(list).filter(_ % 2 == 0))
+    )
+  }
+
   test("List.addPairwise")(genIntList ** genIntList) { case list1 ** list2 =>
     val expectedSList = listToScalaList(list1).zip(listToScalaList(list2)).map { case (a, b) => a + b }
     assertEquals(List.addPairwise(list1, list2), scalaListToList(expectedSList))

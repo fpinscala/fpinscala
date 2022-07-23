@@ -41,10 +41,10 @@ object List: // `List` companion object. Contains functions for creating and wor
       case Nil => acc
       case Cons(x, xs) => f(x, foldRight(xs, acc, f))
 
-  def sumViaFoldRight(ns: List[Int]) =
+  def sumViaFoldRight(ns: List[Int]): Int =
     foldRight(ns, 0, (x,y) => x + y)
 
-  def productViaFoldRight(ns: List[Double]) =
+  def productViaFoldRight(ns: List[Double]): Double =
     foldRight(ns, 1.0, _ * _) // `_ * _` is more concise notation for `(x,y) => x * y`; see sidebar
 
   def tail[A](l: List[A]): List[A] = ???
@@ -61,9 +61,9 @@ object List: // `List` companion object. Contains functions for creating and wor
 
   def foldLeft[A,B](l: List[A], acc: B, f: (B, A) => B): B = ???
 
-  def sumViaFoldLeft(ns: List[Int]) = ???
+  def sumViaFoldLeft(ns: List[Int]): Int = ???
 
-  def productViaFoldLeft(ns: List[Double]) = ???
+  def productViaFoldLeft(ns: List[Double]): Double = ???
 
   def lengthViaFoldLeft[A](l: List[A]): Int = ???
 
@@ -82,6 +82,8 @@ object List: // `List` companion object. Contains functions for creating and wor
   def filter[A](as: List[A])(f: A => Boolean): List[A] = ???
 
   def flatMap[A,B](as: List[A])(f: A => List[B]): List[B] = ???
+
+  def filterViaFlatMap[A](as: List[A])(f: A => Boolean): List[A] = ???
 
   def addPairwise(a: List[Int], b: List[Int]): List[Int] = ???
 
