@@ -1,7 +1,6 @@
 package fpinscala.exercises.monoids
 
 import fpinscala.exercises.parallelism.Nonblocking.*
-import language.higherKinds
 
 trait Monoid[A]:
   def combine(a1: A, a2: A): A

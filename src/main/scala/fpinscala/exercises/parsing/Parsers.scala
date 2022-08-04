@@ -1,7 +1,5 @@
 package fpinscala.exercises.parsing
 
-import language.higherKinds
-
 trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trait
 
   case class ParserOps[A](p: Parser[A]) {
