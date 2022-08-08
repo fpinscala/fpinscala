@@ -129,13 +129,11 @@ object Monoid:
         case (Some(a1), Some(a2)) =>
           Some(Interval(a1.ordered && a2.ordered && a1.max <= a2.min,
             a1.min, a2.max))
-        case (x, None) => x
-        case (None, x) => x
+        case (x, y) => x.orElse(y)
     val empty = None
 
   def ordered(ints: IndexedSeq[Int]): Boolean =
-    foldMapV(ints, orderedMonoid)(i => Some(Interval(true, i, i)))
-      .map(_.ordered).getOrElse(true)
+    foldMapV(ints, orderedMonoid)(i => Some(Interval(true, i, i))).forall(_.ordered)
 
   enum WC:
     case Stub(chars: String)
