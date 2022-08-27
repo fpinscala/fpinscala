@@ -166,7 +166,7 @@ object List: // `List` companion object. Contains functions for creating and wor
 
   The other implementations build up a chain of functions which, when called, results in the operations being performed
   with the correct associativity. We are calling `foldRight` with the `B` type being instantiated to `B => B`, then
-  calling the built up function with the `z` argument. Try expanding the definitions by substituting equals for equals
+  calling the built up function with the `acc` argument. Try expanding the definitions by substituting equals for equals
   using a simple example, like `foldLeft(List(1,2,3), 0)(_ + _)` if this isn't clear. Note these implementations are
   more of theoretical interest - they aren't stack-safe and won't work for large lists.
   */

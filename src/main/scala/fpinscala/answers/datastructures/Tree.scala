@@ -40,10 +40,11 @@ object Tree:
     case Leaf(_) => 1
     case Branch(l,r) => 1 + size(l) + size(r)
 
-  extension (t: Tree[Int]) def firstPositive: Option[Int] = t match
-    case Leaf(i) => if i > 0 then Some(i) else None
-    case Branch(l, r) => l.firstPositive orElse r.firstPositive
-
+  extension (t: Tree[Int]) def firstPositive: Int = t match
+    case Leaf(i) => i
+    case Branch(l, r) =>
+      val lpos = l.firstPositive
+      if lpos > 0 then lpos else r.firstPositive
 
   /*
   We're using the method `max` that exists on all `Int` values rather than an explicit `if` expression.
