@@ -121,12 +121,12 @@ object PolymorphicFunctions:
 
   // Exercise 2: Implement a polymorphic function to check whether
   // an `Array[A]` is sorted
-  def isSorted[A](as: Array[A], gt: (A,A) => Boolean): Boolean = ???
+  def isSorted[A](as: Array[A], gt: (A, A) => Boolean): Boolean = ???
 
   // Polymorphic functions are often so constrained by their type
   // that they only have one implementation! Here's an example:
 
-  def partial1[A,B,C](a: A, f: (A,B) => C): B => C =
+  def partial1[A,B,C](a: A, f: (A, B) => C): B => C =
     (b: B) => f(a, b)
 
   // Exercise 3: Implement `curry`.
