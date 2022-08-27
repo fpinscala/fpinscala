@@ -14,7 +14,7 @@ object List: // `List` companion object. Contains functions for creating and wor
     case Nil => 0 // The sum of the empty list is 0.
     case Cons(x,xs) => x + sum(xs) // The sum of a list starting with `x` is `x` plus the sum of the rest of the list.
 
-  def product(ds: List[Double]): Double = ds match
+  def product(doubles: List[Double]): Double = doubles match
     case Nil => 1.0
     case Cons(0.0, _) => 0.0
     case Cons(x,xs) => x * product(xs)
@@ -24,7 +24,7 @@ object List: // `List` companion object. Contains functions for creating and wor
     else Cons(as.head, apply(as.tail*))
 
   @annotation.nowarn // Scala gives a hint here via a warning, so let's disable that
-  val x = List(1,2,3,4,5) match
+  val result = List(1,2,3,4,5) match
     case Cons(x, Cons(2, Cons(4, _))) => x
     case Nil => 42
     case Cons(x, Cons(y, Cons(3, Cons(4, _)))) => x + y
