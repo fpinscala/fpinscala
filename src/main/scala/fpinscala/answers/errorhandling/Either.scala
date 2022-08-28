@@ -4,7 +4,7 @@ package fpinscala.answers.errorhandling
 import scala.{Either as _, Left as _, Right as _}
 import scala.util.control.NonFatal
 
-enum Either[+E,+A]:
+enum Either[+E, +A]:
   case Left(get: E)
   case Right(get: A)
 
@@ -52,9 +52,43 @@ object Either:
   def sequence[E, A](es: List[Either[E, A]]): Either[E, List[A]] = 
     traverse(es)(x => x)
 
+object AccumulatingErrors:
+  import Either.{Left, Right}
+
+  case class Name private (value: String)
+  object Name:
+    def apply(name: String): Either[String, Name] =
+      if name == "" || name == null then Left("Name is empty.")
+      else Right(new Name(name))
+
+  case class Age private (value: Int)
+  object Age:
+    def apply(age: Int): Either[String, Age] =
+      if age < 0 then Left("Age is out of range.")
+      else Right(new Age(age))
+
+  case class Person(name: Name, age: Age)
+  object Person:
+    def make(name: String, age: Int): Either[String, Person] =
+      Name(name).map2(Age(age))(Person(_, _))
+
+  def map2Both[E, A, B, C](
+    a: Either[E, A],
+    b: Either[E, B],
+    f: (A, B) => C
+  ): Either[List[E], C] =
+    (a, b) match
+      case (Right(aa), Right(bb)) => Right(f(aa, bb))
+      case (Left(e), Right(_)) => Left(List(e))
+      case (Right(_), Left(e)) => Left(List(e))
+      case (Left(e1), Left(e2)) => Left(List(e1, e2))
+
+  def makeBoth(name: String, age: Int): Either[List[String], Person] =
+    map2Both(Name(name), Age(age), Person(_, _))
+
   def map2All[E, A, B, C](a: Either[List[E], A], b: Either[List[E], B], f: (A, B) => C): Either[List[E], C] = 
     (a, b) match
-      case (Right(a), Right(b)) => Right(f(a, b))
+      case (Right(aa), Right(bb)) => Right(f(aa, bb))
       case (Left(es), Right(_)) => Left(es)
       case (Right(_), Left(es)) => Left(es)
       case (Left(es1), Left(es2)) => Left(es1 ++ es2)
@@ -64,35 +98,3 @@ object Either:
 
   def sequenceAll[E, A](as: List[Either[List[E], A]]): Either[List[E], List[A]] = 
     traverseAll(as, identity)
-
-enum Validated[+E, +A]:
-  case Valid(get: A)
-  case Invalid(error: E)
-
-  def toEither: Either[E, A] =
-    this match
-      case Valid(a) => Either.Right(a)
-      case Invalid(e) => Either.Left(e)
-
-  def map2[EE >: E, B, C](
-    b: Validated[EE, B],
-    f: (A, B) => C,
-    combineErrors: (EE, EE) => EE
-  ): Validated[EE, C] =
-    (this, b) match
-      case (Valid(aa), Valid(bb)) => Valid(f(aa, bb))
-      case (Invalid(e), Valid(_)) => Invalid(e)
-      case (Valid(_), Invalid(e)) => Invalid(e)
-      case (Invalid(e1), Invalid(e2)) => Invalid(combineErrors(e1, e2))
-
-object Validated:
-  def fromEither[E, A](e: Either[E, A]): Validated[E, A] =
-    e match
-      case Either.Right(a) => Valid(a)
-      case Either.Left(e) => Invalid(e)      
-
-  def traverse[E, A, B](as: List[A], f: A => Validated[E, B], combineErrors: (E, E) => E): Validated[E, List[B]] =
-    as.foldRight(Valid(Nil): Validated[E, List[B]])((a, acc) => f(a).map2(acc, _ :: _, combineErrors))
-
-  def sequence[E, A](vs: List[Validated[E, A]], combineErrors: (E, E) => E): Validated[E, List[A]] =
-    traverse(vs, identity, combineErrors)
