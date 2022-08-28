@@ -173,9 +173,9 @@ enum LazyList[+A]:
     foldRight(init -> LazyList(init)) { (a, b0) =>
       // b0 is passed by-name and used in by-name args in f and cons. So use lazy val to ensure only one evaluation...
       lazy val b1 = b0
-      val b2 = f(a, b1._1)
-      (b2, cons(b2, b1._2))
-    }._2
+      val b2 = f(a, b1(0))
+      (b2, cons(b2, b1(1)))
+    }(1)
 
   @annotation.tailrec
   final def find(f: A => Boolean): Option[A] = this match
@@ -219,10 +219,10 @@ object LazyList:
   The below two implementations use `fold` and `map` functions in the Option class to implement unfold, thereby doing away with the need to manually pattern match as in the above solution.
    */
   def unfoldViaFold[A, S](z: S)(f: S => Option[(A, S)]): LazyList[A] =
-    f(z).fold(empty[A])((p: (A,S)) => cons(p._1,unfold(p._2)(f)))
+    f(z).fold(empty[A])((p: (A,S)) => cons(p(0),unfold(p(1))(f)))
 
   def unfoldViaMap[A, S](z: S)(f: S => Option[(A, S)]): LazyList[A] =
-    f(z).map((p: (A,S)) => cons(p._1,unfold(p._2)(f))).getOrElse(empty[A])
+    f(z).map((p: (A,S)) => cons(p(0),unfold(p(1))(f))).getOrElse(empty[A])
 
   /*
   Scala provides shorter syntax when the first action of a function literal is to match on an expression.  The function passed to `unfold` in `fibsViaUnfold` is equivalent to `p => p match { case (f0,f1) => ... }`, but we avoid having to choose a name for `p`, only to pattern match on it.
