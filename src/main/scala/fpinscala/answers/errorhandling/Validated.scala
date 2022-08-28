@@ -15,7 +15,7 @@ enum Validated[+E, +A]:
       case Invalid(es) => Invalid(es)
 
   def map2[EE >: E, B, C](
-    b: Validated[EE, B],
+    b: Validated[EE, B])(
     f: (A, B) => C
   ): Validated[EE, C] =
     (this, b) match
@@ -31,7 +31,7 @@ object Validated:
       case Either.Left(es) => Invalid(es)
 
   def traverse[E, A, B](as: List[A], f: A => Validated[E, B]): Validated[E, List[B]] =
-    as.foldRight(Valid(Nil): Validated[E, List[B]])((a, acc) => f(a).map2(acc, _ :: _))
+    as.foldRight(Valid(Nil): Validated[E, List[B]])((a, acc) => f(a).map2(acc)(_ :: _))
 
   def sequence[E, A](vs: List[Validated[E, A]]): Validated[E, List[A]] =
     traverse(vs, identity)
@@ -53,8 +53,8 @@ object MoreGeneralVersionOfValidated:
         case Invalid(e) => Invalid(e)
 
     def map2[EE >: E, B, C](
-        b: Validated[EE, B],
-        f: (A, B) => C,
+        b: Validated[EE, B])(
+        f: (A, B) => C)(
         combineErrors: (EE, EE) => EE
     ): Validated[EE, C] =
         (this, b) match
@@ -70,7 +70,7 @@ object MoreGeneralVersionOfValidated:
         case Either.Left(e) => Invalid(e)
 
     def traverse[E, A, B](as: List[A], f: A => Validated[E, B], combineErrors: (E, E) => E): Validated[E, List[B]] =
-      as.foldRight(Valid(Nil): Validated[E, List[B]])((a, acc) => f(a).map2(acc, _ :: _, combineErrors))
+      as.foldRight(Valid(Nil): Validated[E, List[B]])((a, acc) => f(a).map2(acc)(_ :: _)(combineErrors))
 
     def sequence[E, A](vs: List[Validated[E, A]], combineErrors: (E, E) => E): Validated[E, List[A]] =
       traverse(vs, identity, combineErrors)
