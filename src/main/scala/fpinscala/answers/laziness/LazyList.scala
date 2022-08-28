@@ -158,7 +158,7 @@ enum LazyList[+A]:
   def tails: LazyList[LazyList[A]] =
     unfold(this) {
       case Empty => None
-      case l @ Cons(_, t) => Some((l, t()))
+      case Cons(h, t) => Some((Cons(h, t), t()))
     }.append(LazyList(empty))
 
   def hasSubsequence[A](s: LazyList[A]): Boolean =
