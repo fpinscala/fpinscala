@@ -100,28 +100,28 @@ class ListSuite extends PropSuite:
 
   test("List.map")(genIntList) { list =>
     assertEquals(
-      List.map(list)(_ * 2),
+      List.map(list, _ * 2),
       scalaListToList(listToScalaList(list).map(_ * 2))
     )
   }
 
   test("List.filter")(genIntList) { list =>
     assertEquals(
-      List.filter(list)(_ % 2 == 0),
+      List.filter(list, _ % 2 == 0),
       scalaListToList(listToScalaList(list).filter(_ % 2 == 0))
     )
   }
 
   test("List.flatMap")(genIntList) { list =>
     assertEquals(
-      List.flatMap(list)(a => List(a, a)),
+      List.flatMap(list, a => List(a, a)),
       scalaListToList(listToScalaList(list).flatMap(a => SList(a, a)))
     )
   }
 
   test("List.filterViaFlatMap")(genIntList) { list =>
     assertEquals(
-      List.filterViaFlatMap(list)(_ % 2 == 0),
+      List.filterViaFlatMap(list, _ % 2 == 0),
       scalaListToList(listToScalaList(list).filter(_ % 2 == 0))
     )
   }

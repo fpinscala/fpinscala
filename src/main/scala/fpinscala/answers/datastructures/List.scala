@@ -213,30 +213,30 @@ object List: // `List` companion object. Contains functions for creating and wor
   implementation of `List`, `map` will just be implemented using local mutation (variation 2). Again, note that the
   mutation isn't observable outside the function, since we're only mutating a buffer that we've allocated.
   */
-  def map[A, B](l: List[A])(f: A => B): List[B] =
-    foldRight(l, Nil: List[B], (h,t) => Cons(f(h),t))
+  def map[A, B](l: List[A], f: A => B): List[B] =
+    foldRight(l, Nil: List[B], (h, t) => Cons(f(h), t))
 
-  def map_1[A, B](l: List[A])(f: A => B): List[B] =
-    foldRightViaFoldLeft(l, Nil: List[B], (h,t) => Cons(f(h),t))
+  def map_1[A, B](l: List[A], f: A => B): List[B] =
+    foldRightViaFoldLeft(l, Nil: List[B], (h,t) => Cons(f(h), t))
 
-  def map_2[A, B](l: List[A])(f: A => B): List[B] =
+  def map_2[A, B](l: List[A], f: A => B): List[B] =
     val buf = new collection.mutable.ListBuffer[B]
     def go(l: List[A]): Unit = l match
       case Nil => ()
-      case Cons(h,t) => buf += f(h); go(t)
+      case Cons(h, t) => buf += f(h); go(t)
     go(l)
     List(buf.toList*) // converting from the standard Scala list to the list we've defined here
 
   /*
   The discussion about `map` also applies here.
   */
-  def filter[A](l: List[A])(f: A => Boolean): List[A] =
+  def filter[A](l: List[A], f: A => Boolean): List[A] =
     foldRight(l, Nil: List[A], (h,t) => if f(h) then Cons(h,t) else t)
 
-  def filter_1[A](l: List[A])(f: A => Boolean): List[A] =
+  def filter_1[A](l: List[A], f: A => Boolean): List[A] =
     foldRightViaFoldLeft(l, Nil: List[A], (h,t) => if f(h) then Cons(h,t) else t)
 
-  def filter_2[A](l: List[A])(f: A => Boolean): List[A] =
+  def filter_2[A](l: List[A], f: A => Boolean): List[A] =
     val buf = new collection.mutable.ListBuffer[A]
     def go(l: List[A]): Unit = l match
       case Nil => ()
@@ -247,11 +247,11 @@ object List: // `List` companion object. Contains functions for creating and wor
   /*
   This could also be implemented directly using `foldRight`.
   */
-  def flatMap[A, B](l: List[A])(f: A => List[B]): List[B] =
-    concat(map(l)(f))
+  def flatMap[A, B](l: List[A], f: A => List[B]): List[B] =
+    concat(map(l, f))
 
-  def filterViaFlatMap[A](l: List[A])(f: A => Boolean): List[A] =
-    flatMap(l)(a => if f(a) then List(a) else Nil)
+  def filterViaFlatMap[A](l: List[A], f: A => Boolean): List[A] =
+    flatMap(l, a => if f(a) then List(a) else Nil)
 
   /*
   To match on multiple values, we can put the values into a pair and match on the pair, as shown next, and the same
