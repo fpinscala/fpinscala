@@ -148,8 +148,8 @@ object Monoid:
       case (WC.Stub(a), WC.Stub(b)) => WC.Stub(a + b)
       case (WC.Stub(a), WC.Part(l, w, r)) => WC.Part(a + l, w, r)
       case (WC.Part(l, w, r), WC.Stub(a)) => WC.Part(l, w, r + a)
-      case (WC.Part(l1, w1, r1), WC.Part(l2, w2, r2)) =>
-        WC.Part(l1, w1 + (if (r1 + l2).isEmpty then 0 else 1) + w2, r2)
+      case (WC.Part(l, w, r), WC.Part(l2, w2, r2)) =>
+        WC.Part(l, w + (if (r + l2).isEmpty then 0 else 1) + w2, r2)
 
   def wcGen: Gen[WC] = 
     val smallString = Gen.choose(0, 10).flatMap(Gen.stringN)
