@@ -98,6 +98,13 @@ object Prop:
         case Falsified(e, c) => Falsified(FailedCase.fromString(s"$msg($e)"), c)
         case x => x
 
+    def check(
+      maxSize: MaxSize = 100,
+      testCases: TestCases = 100,
+      rng: RNG = RNG.Simple(System.currentTimeMillis)
+    ): Result =
+      self(maxSize, testCases, rng)
+
     def run(maxSize: MaxSize = 100,
             testCases: TestCases = 100,
             rng: RNG = RNG.Simple(System.currentTimeMillis)): Unit =
@@ -114,10 +121,10 @@ object Prop:
   val p1 = Prop.forAll(Gen.unit(Par.unit(1)))(pi =>
     pi.map(_ + 1).run(executor).get == Par.unit(2).run(executor).get)
 
-  def check(p: => Boolean): Prop = 
+  def verify(p: => Boolean): Prop = 
     (_, _, _) => if p then Passed else Falsified("()", 0)
 
-  val p2 = check {
+  val p2 = verify {
     val p = Par.unit(1).map(_ + 1)
     val p2 = Par.unit(2)
     p.run(executor).get == p2.run(executor).get
@@ -126,10 +133,17 @@ object Prop:
   def equal[A](p: Par[A], p2: Par[A]): Par[Boolean] =
     p.map2(p2)(_ == _)
 
-  val p3 = check {
+  val p3 = verify {
     equal(
       Par.unit(1).map(_ + 1),
       Par.unit(2)
+    ).run(executor).get
+  }
+
+  val p4 = forAll(Gen.smallInt) { i =>
+    equal(
+      Par.unit(i).map(_ + 1),
+      Par.unit(i + 1)
     ).run(executor).get
   }
 
@@ -140,7 +154,7 @@ object Prop:
   def forAllPar[A](g: Gen[A])(f: A => Par[Boolean]): Prop =
     forAll(executors ** g)((s, a) => f(a).run(s).get)
 
-  def checkPar(p: Par[Boolean]): Prop =
+  def verifyPar(p: Par[Boolean]): Prop =
     forAllPar(Gen.unit(()))(_ => p)
 
   def forAllPar2[A](g: Gen[A])(f: A => Par[Boolean]): Prop =
@@ -150,7 +164,7 @@ object Prop:
     forAll(executors ** g) { case s ** a => f(a).run(s).get }
 
   val gpy: Gen[Par[Int]] = Gen.choose(0, 10).map(Par.unit(_))
-  val p4 = forAllPar(gpy)(py => equal(py.map(y => y), py))
+  val p5 = forAllPar(gpy)(py => equal(py.map(y => y), py))
 
   val gpy2: Gen[Par[Int]] = choose(-100, 100).listOfN(choose(0, 20)).map(ys =>
     ys.foldLeft(Par.unit(0))((p, y) =>

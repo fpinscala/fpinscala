@@ -77,10 +77,10 @@ object Prop:
         //   println(s"+ OK, property unfalsified up to max size, ran $n tests.")
 
     def check(
-              maxSize: MaxSize = 100,
-              testCases: TestCases = 100,
-              rng: RNG = RNG.Simple(System.currentTimeMillis)
-            ): Result =
+      maxSize: MaxSize = 100,
+      testCases: TestCases = 100,
+      rng: RNG = RNG.Simple(System.currentTimeMillis)
+    ): Result =
       self(maxSize, testCases, rng)
 
   def forAll[A](a: Gen[A])(f: A => Boolean): Prop =
@@ -140,10 +140,10 @@ object Prop:
   val p1 = Prop.forAll(Gen.unit(Par.unit(1)))(pi =>
     pi.map(_ + 1).run(executor).get == Par.unit(2).run(executor).get)
 
-  def check(p: => Boolean): Prop =
+  def verify(p: => Boolean): Prop =
     (_, _, _) => Passed(Proven, 1)
 
-  val p2 = check {
+  val p2 = verify {
     val p = Par.unit(1).map(_ + 1)
     val p2 = Par.unit(2)
     p.run(executor).get == p2.run(executor).get
@@ -152,7 +152,7 @@ object Prop:
   def equal[A](p: Par[A], p2: Par[A]): Par[Boolean] =
     p.map2(p2)(_ == _)
 
-  val p3 = check {
+  val p3 = verify {
     equal(
       Par.unit(1).map(_ + 1),
       Par.unit(2)
@@ -166,7 +166,7 @@ object Prop:
   def forAllPar[A](g: Gen[A])(f: A => Par[Boolean]): Prop =
     forAll(executors ** g)((s, a) => f(a).run(s).get)
 
-  def checkPar(p: Par[Boolean]): Prop =
+  def verifyPar(p: Par[Boolean]): Prop =
     forAllPar(Gen.unit(()))(_ => p)
 
   def forAllPar2[A](g: Gen[A])(f: A => Par[Boolean]): Prop =
