@@ -1,5 +1,5 @@
 [![Join the chat at https://gitter.im/fpinscala/fpinscala](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/fpinscala/fpinscala?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) 
-
+testing 12345678910
 This repository contains exercises, hints, and answers for the book
 [Functional Programming in Scala](http://manning.com/bjarnason/). Along
 with the book itself, it's the closest you'll get to having your own
@@ -23,7 +23,7 @@ chapter title (see below). When you begin working on a chapter, we
 recommend you open the exercise file(s) for that chapter, and when you
 encounter exercises, implement them in the exercises file and make sure
 they work.
-
+test
 If you get stuck on an exercise, let's say exercise 4 in the chapter,
 you can find hints in `answerkey/<chapter-description>/04.hint.md` (if
 no hints are available for a problem, the file will just have a single
