@@ -1,7 +1,5 @@
 package fpinscala.answers.parsing
 
-import language.higherKinds
-
 enum JSON:
   case JNull
   case JNumber(get: Double)
