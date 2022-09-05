@@ -83,6 +83,10 @@ This gives a list of possible main methods to execute. To run one of them:
 
     $ scala-cli run . --main-class fpinscala.answers.gettingstarted.printAbs
 
+To run a single unit-test, you can specify the fully qualified class name and test name:
+
+    $ scala-cli test . -- 'fpinscala.exercises.gettingstarted.GettingStartedSuite.MyProgram.factorial'
+
 To run unit-tests for a package you can do:
 
     $ scala-cli test . -- 'fpinscala.exercises.gettingstarted.*'

@@ -5,6 +5,7 @@ import fpinscala.answers.testing.exhaustive.Gen.`**`
 import fpinscala.answers.testing.exhaustive.Prop.*
 import fpinscala.exercises.common.Common.*
 import fpinscala.exercises.common.PropSuite
+import fpinscala.exercises.gettingstarted.MyProgram.factorial
 import fpinscala.exercises.gettingstarted.MyProgram.fib
 import fpinscala.exercises.gettingstarted.PolymorphicFunctions.{compose, curry, isSorted, uncurry}
 
@@ -24,6 +25,10 @@ class GettingStartedSuite extends PropSuite:
       if i % 2 == 0 then num + 100
       else num - 100
     }.toArray
+
+  test("MyProgram.factorial")(Gen.smallInt) { n =>
+    assertEquals(factorial(n), (1 to n).product)
+  }
 
   test("MyProgram.fib")(genLengthOfFibonacciSeq) { i =>
     assertEquals(fib(i), theFirst21FibonacciNumbers(i))
