@@ -10,7 +10,7 @@ import fpinscala.exercises.parsing.{JSON, Parsers}
 
 // Exercise 9.9
 class JSONSuite extends PropSuite:
-  private val parser = JSON.jsonParser(UnitTestParser)
+  private lazy val parser = JSON.jsonParser(UnitTestParser)
 
   test("JSON.JNull")(Gen.unit(())) { _ =>
     assertEquals(parser.run("""{ "key": null }"""), Right(JObject(Map("key" -> JNull))))

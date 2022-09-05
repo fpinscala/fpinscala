@@ -71,21 +71,21 @@ This compiles all exercises and answers. You can also do:
 
 to get a Scala REPL (prompt `scala>`) with access to exercises and answers, and then for example:
 
-    scala> import fpinscala.exercises.datastructures.List.*
+    scala> import fpinscala.exercises.datastructures.List
 
-to import the List package.
+to import the `List` data type.
 
 To run the sample programs:
 
     $ scala-cli run .
 
-gives a list of possible main methods to execute. To run one of them:
+This gives a list of possible main methods to execute. To run one of them:
 
     $ scala-cli run . --main-class fpinscala.answers.gettingstarted.printAbs
 
-To run unit-tests for a file you can do:
+To run unit-tests for a package you can do:
 
-    $ scala-cli test . -- 'fpinscala.exercises.gettingstarted.GettingStartedSuite.*'
+    $ scala-cli test . -- 'fpinscala.exercises.gettingstarted.*'
 
 To run all unit-tests:
 
