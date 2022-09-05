@@ -84,7 +84,7 @@ object Prop:
       self(maxSize, testCases, rng)
 
   def forAll[A](a: Gen[A])(f: A => Boolean): Prop =
-    (max, n, rng) => {
+    (max, n, rng) =>
       def go(i: Int, j: Int, l: LazyList[Option[A]], onEnd: Int => Result): Result =
         if i == j then Passed(Unfalsified, i)
         else l match
@@ -102,7 +102,6 @@ object Prop:
           val rands = randomLazyList(a)(rng).map(Some(_))
           go(numFromExhaustiveList, n, rands, i => Passed(Unfalsified, i))
         case s => s // If proven or failed, stop immediately
-    }
 
   def buildMsg[A](s: A, e: Throwable): String =
     s"test case: $s\n" +

@@ -43,7 +43,7 @@ object Nonblocking:
       es.submit(new Callable[Unit] { def call = r })
 
     extension [A](p: Par[A]) def map2[B, C](p2: Par[B])(f: (A, B) => C): Par[C] =
-      es => cb => {
+      es => cb =>
         var ar: Option[A] = None
         var br: Option[B] = None
         // this implementation is a little too liberal in forking of threads -
@@ -59,7 +59,6 @@ object Nonblocking:
         }
         p(es)(a => combiner ! Left(a))
         p2(es)(b => combiner ! Right(b))
-      }
 
     extension [A](p: Par[A]) def map[B](f: A => B): Par[B] =
       es => cb => p(es)(a => eval(es)(cb(f(a))))
