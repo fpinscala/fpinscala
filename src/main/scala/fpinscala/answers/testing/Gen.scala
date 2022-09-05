@@ -289,7 +289,7 @@ object Gen:
     ordered && l.forall(ls.contains) && ls.forall(l.contains)
   }
 
-  object ** :
+  object `**`:
     def unapply[A, B](p: (A, B)) = Some(p)
 
   def genStringIntFn(g: Gen[Int]): Gen[String => Int] =
