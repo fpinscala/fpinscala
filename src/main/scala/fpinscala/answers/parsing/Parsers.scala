@@ -3,7 +3,6 @@ package fpinscala.answers.parsing
 import java.util.regex.*
 import scala.util.matching.Regex
 import fpinscala.answers.testing.*
-import language.higherKinds
 
 trait Parsers[Parser[+_]]:
 
