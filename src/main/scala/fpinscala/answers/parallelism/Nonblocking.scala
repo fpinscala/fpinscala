@@ -122,7 +122,7 @@ object Nonblocking:
 
     /* The code here is very similar. */
     def choiceN[A](p: Par[Int])(ps: List[Par[A]]): Par[A] =
-      es => cb => p(es)(ind => eval(es)(ps(ind)(es)(cb)))
+      es => cb => p(es)(ind => eval(es)(ps(ind % ps.length)(es)(cb)))
 
     def choiceViaChoiceN[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
       choiceN(cond.map(b => if b then 0 else 1))(List(t, f))
