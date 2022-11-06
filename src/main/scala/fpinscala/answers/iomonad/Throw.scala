@@ -30,7 +30,7 @@ object Throw:
   def ap[A, B](a: A)(f: A => B): B =
     var ai: Any = a
     var fi: Any => Any = f.asInstanceOf[Any => Any]
-    while (true)
+    while true do
       try return fi(ai).asInstanceOf[B]
       catch
         case Call(a2, f2) =>

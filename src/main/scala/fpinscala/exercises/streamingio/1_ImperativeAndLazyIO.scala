@@ -23,7 +23,7 @@ object ImperativeAndLazyIO:
       var count = 0
       // Obtain a stateful iterator from the Source
       val lines: Iterator[String] = src.getLines()
-      while (count <= 40000 && lines.hasNext)
+      while count <= 40000 && lines.hasNext do
         lines.next() // has side effect of advancing to next element
         count += 1
       count > 40000

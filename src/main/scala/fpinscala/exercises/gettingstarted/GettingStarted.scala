@@ -28,7 +28,7 @@ object MyProgram:
   def factorial2(n: Int): Int =
     var acc = 1
     var i = n
-    while (i > 0) { acc *= i; i -= 1 }
+    while i > 0 do { acc *= i; i -= 1 }
     acc
 
   // Exercise 1: Write a function to compute the nth fibonacci number
