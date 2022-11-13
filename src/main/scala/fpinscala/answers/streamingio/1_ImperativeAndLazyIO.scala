@@ -15,7 +15,7 @@ object ImperativeAndLazyIO:
 
   import java.io.*
 
-  def linesGt40k(filename: String): IO[Boolean] = IO {
+  def linesGt40k(filename: String): IO[Boolean] = IO:
     // There are a number of convenience functions in scala.io.Source
     // for reading from external sources such as files.
     val src = io.Source.fromFile(filename)
@@ -28,7 +28,6 @@ object ImperativeAndLazyIO:
         count += 1
       count > 40000
     finally src.close
-  }
 
                             /*
 
@@ -63,10 +62,9 @@ object ImperativeAndLazyIO:
 
                              */
 
-  def lines(filename: String): IO[LazyList[String]] = IO {
+  def lines(filename: String): IO[LazyList[String]] = IO:
     val src = io.Source.fromFile(filename)
     src.getLines().to(LazyList) ++ { src.close; LazyList.empty }
-  }
                             /*
 
   This is called _lazy I/O_, and it's problematic for a number of

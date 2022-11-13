@@ -17,7 +17,7 @@ object IO:
   def apply[A](a: => A): IO[A] = 
     par(Par.delay(a))
 
-  // Provides the syntax `IO.async { cb => ... }` for creating asynchronous IO blocks.
+  // Provides the syntax `IO.async(cb => ...)` for creating asynchronous IO blocks.
   def async[A](cb: (A => Unit) => Unit): IO[A] =
     fork(par(Par.async(cb)))
 

@@ -43,55 +43,50 @@ class CandySuite extends PropSuite:
       coins   <- genNonNegInt
     yield Machine(locked, candies, coins)
 
-  test("Candy: a machine that’s out of candy")(genInputList ** genNoCandiesMachine) { case inputs ** machine =>
-    val ((coins, candies), machine1): ((Int, Int), Machine) = simulateMachine(inputs).run(machine)
-    assertEquals(candies, 0)
-    assertEquals(coins, machine.coins)
-    assertEquals(machine1, machine) // A machine that’s out of candy ignores all inputs.
-  }
+  test("Candy: a machine that’s out of candy")(genInputList ** genNoCandiesMachine):
+    case inputs ** machine =>
+      val ((coins, candies), machine1): ((Int, Int), Machine) = simulateMachine(inputs).run(machine)
+      assertEquals(candies, 0)
+      assertEquals(coins, machine.coins)
+      assertEquals(machine1, machine) // A machine that’s out of candy ignores all inputs.
 
-  test("Candy: inserting a coin into a locked machine")(genLockedMachine) { machine =>
+  test("Candy: inserting a coin into a locked machine")(genLockedMachine): machine =>
     val ((coins, candies), machine1): ((Int, Int), Machine) = simulateMachine(List(Coin)).run(machine)
     assertEquals(candies, machine.candies)
     assertEquals(coins, machine.coins + 1)                 // One more coin
     assertEquals(machine1, Machine(false, candies, coins)) // Unlock a machine
-  }
 
-  test("Candy: turning the knob on a locked machine")(genLockedMachine) { machine =>
+  test("Candy: turning the knob on a locked machine")(genLockedMachine): machine =>
     val ((coins, candies), machine1): ((Int, Int), Machine) = simulateMachine(List(Turn)).run(machine)
     assertEquals(candies, machine.candies)
     assertEquals(coins, machine.coins)
     assertEquals(machine1, machine) // Nothing changed
-  }
 
-  test("Candy: inserting a coin into an unlocked machine")(genUnlockedMachine) { machine =>
+  test("Candy: inserting a coin into an unlocked machine")(genUnlockedMachine): machine =>
     val ((coins, candies), machine1): ((Int, Int), Machine) = simulateMachine(List(Coin)).run(machine)
     assertEquals(candies, machine.candies)
     assertEquals(coins, machine.coins)
     assertEquals(machine1, machine) // Nothing changed
-  }
 
-  test("Candy: turning the knob on an unlocked machine")(genUnlockedMachine) { machine =>
+  test("Candy: turning the knob on an unlocked machine")(genUnlockedMachine): machine =>
     val ((coins, candies), machine1): ((Int, Int), Machine) = simulateMachine(List(Turn)).run(machine)
     assertEquals(candies, machine.candies - 1) // The buyer has taken the candy
     assertEquals(coins, machine.coins)
     assertEquals(machine1, Machine(true, candies, coins)) // Lock a machine
-  }
 
-  test("Candy: spend some coins")(genLockedMachine ** genPosInt) { case machine ** myCoins =>
-    val wantToSpendAllMyCoins = (0 until myCoins).flatMap(_ => List(Coin, Turn)).toList
-    val ((coins, candies), machine1): ((Int, Int), Machine) =
-      simulateMachine(wantToSpendAllMyCoins).run(machine)
-    val spentCoins = math.min(machine.candies, myCoins)
+  test("Candy: spend some coins")(genLockedMachine ** genPosInt):
+    case machine ** myCoins =>
+      val wantToSpendAllMyCoins = (0 until myCoins).flatMap(_ => List(Coin, Turn)).toList
+      val ((coins, candies), machine1): ((Int, Int), Machine) =
+        simulateMachine(wantToSpendAllMyCoins).run(machine)
+      val spentCoins = math.min(machine.candies, myCoins)
 
-    assertEquals(candies, machine.candies - spentCoins)
-    assertEquals(coins, machine.coins + spentCoins)
-    assertEquals(machine1, Machine(true, candies, coins))
-  }
+      assertEquals(candies, machine.candies - spentCoins)
+      assertEquals(coins, machine.coins + spentCoins)
+      assertEquals(machine1, Machine(true, candies, coins))
 
-  test("Candy: empty inputs")(genMachine) { machine =>
+  test("Candy: empty inputs")(genMachine): machine =>
     val ((coins, candies), machine1): ((Int, Int), Machine) = simulateMachine(List.empty[Input]).run(machine)
     assertEquals(candies, machine.candies)
     assertEquals(coins, machine.coins)
     assertEquals(machine1, machine) // Nothing changed
-  }

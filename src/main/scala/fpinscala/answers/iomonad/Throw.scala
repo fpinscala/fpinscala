@@ -58,7 +58,6 @@ object Throw:
           case More(thunk) =>
             try thunk().flatMap(f)
             catch
-              case Call(a0, g) => more {
+              case Call(a0, g) => more:
                 defer(a0)(g.asInstanceOf[Any => Throw[A]].
                           andThen(_.flatMap(f)))
-              }

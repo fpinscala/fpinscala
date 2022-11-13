@@ -43,38 +43,32 @@ class OptionSuite extends PropSuite:
 
   private val otherOpt: Option[Int] = Some(1)
 
-  test("Option.map")(genIntOption) {
+  test("Option.map")(genIntOption):
     case None    => assertEquals(None.map(intToString), None)
     case Some(n) => assertEquals(Some(n).map(intToString), Some(n.toString))
-  }
 
-  test("Option.getOrElse")(genIntOption) {
+  test("Option.getOrElse")(genIntOption):
     case None    => assertEquals(None.getOrElse(1), 1)
     case Some(n) => assertEquals(Some(n).getOrElse(1), n)
-  }
 
-  test("Option.flatMap")(genIntOption) {
+  test("Option.flatMap")(genIntOption):
     case None    => assertEquals(None.flatMap(intToOptString), None)
     case Some(n) => assertEquals(Some(n).flatMap(intToOptString), Some(n.toString))
-  }
 
-  test("Option.orElse")(genIntOption) {
+  test("Option.orElse")(genIntOption):
     case None => assertEquals(None.orElse(otherOpt), otherOpt)
     case opt  => assertEquals(opt.orElse(otherOpt), opt)
-  }
 
-  test("Option.filter")(genIntOption) {
+  test("Option.filter")(genIntOption):
     case None => assertEquals(None.filter(a => a == 42), None)
     case Some(n) =>
       assertEquals(Some(n).filter(a => a == n), Some(n))
       assertEquals(Some(n).filter(a => a == n + 1), None)
-  }
 
-  test("Option.mean")(genDoubleList) { list =>
+  test("Option.mean")(genDoubleList): list =>
     assertEquals(Option.mean(list), if list.isEmpty then None else Some(list.sum / list.length))
-  }
 
-  test("Option.variance")(genDoubleList) { list =>
+  test("Option.variance")(genDoubleList): list =>
     val expected =
       if list.isEmpty then None
       else
@@ -82,23 +76,19 @@ class OptionSuite extends PropSuite:
         val newList = list.map(x => math.pow(x - m, 2))
         Some(newList.sum / newList.length)
     assertEquals(Option.variance(list), expected)
-  }
 
-  test("Option.map2")(genIntOption ** genIntOption) {
+  test("Option.map2")(genIntOption ** genIntOption):
     case (Some(a), Some(b)) => assertEquals(Option.map2(Some(a), Some(b))(_ + _), Some(a + b))
     case (opt1, opt2)       => assertEquals(Option.map2(opt1, opt2)(_ + _), None)
-  }
 
-  test("Option.sequence")(genOptionSeq) { optionList =>
+  test("Option.sequence")(genOptionSeq): optionList =>
     val expected: Option[List[Int]] =
       if optionList.contains(None) then None
       else Some(optionList.flatMap(_.map(List(_)).getOrElse(List.empty[Int])))
     assertEquals(Option.sequence(optionList), expected)
-  }
 
-  test("Option.traverse")(genStringList) { list =>
+  test("Option.traverse")(genStringList): list =>
     val expected: Option[List[Int]] =
       if list.contains("one") then None
       else Some(list.flatMap(_.toIntOption))
     assertEquals(Option.traverse(list)(strToOptInt), expected)
-  }

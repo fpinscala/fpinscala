@@ -11,7 +11,6 @@ object OptionT:
     def unit[A](a: => A): OptionT[F, A] = F.unit(Some(a))
     extension [A](fa: OptionT[F, A])
       override def flatMap[B](f: A => OptionT[F, B]): OptionT[F, B] =
-        F.flatMap(fa) {
+        F.flatMap(fa):
           case None => F.unit(None)
           case Some(a) => f(a).value
-        }

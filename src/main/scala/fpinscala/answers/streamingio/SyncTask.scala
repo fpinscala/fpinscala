@@ -20,10 +20,9 @@ object SyncTask:
 
     extension [A](self: SyncTask[A])
       def flatMap[B](f: A => SyncTask[B]): SyncTask[B] =
-        self.flatMap {
+        self.flatMap:
           case Success(a) => f(a)
           case Failure(t) => TailCalls.done(Failure(t))
-        }
 
       def attempt: SyncTask[Try[A]] =
         self.map(t => Success(t))

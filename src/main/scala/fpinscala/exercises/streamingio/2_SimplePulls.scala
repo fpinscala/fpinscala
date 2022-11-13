@@ -46,10 +46,9 @@ object SimplePulls:
 
     def take(n: Int): Pull[O, Option[R]] =
       if n <= 0 then Result(None)
-      else uncons.flatMap {
+      else uncons.flatMap:
         case Left(r) => Result(Some(r))
         case Right((hd, tl)) => Output(hd) >> tl.take(n - 1)
-      }
 
     // Exercise 15.3
     def drop(n: Int): Pull[O, R] =
@@ -64,26 +63,23 @@ object SimplePulls:
       ???
 
     def mapOutput[O2](f: O => O2): Pull[O2, R] =
-      uncons.flatMap {
+      uncons.flatMap:
         case Left(r) => Result(r)
         case Right((hd, tl)) => Output(f(hd)) >> tl.mapOutput(f)
-      }
 
     def filter(p: O => Boolean): Pull[O, R] =
-      uncons.flatMap {
+      uncons.flatMap:
         case Left(r) => Result(r)
         case Right((hd, tl)) =>
           (if p(hd) then Output(hd) else Pull.done) >> tl.filter(p)
-      }
 
     def count: Pull[Int, R] =
       def go(total: Int, p: Pull[O, R]): Pull[Int, R] =
-        p.uncons.flatMap {
+        p.uncons.flatMap:
           case Left(r) => Result(r)
           case Right((_, tl)) =>
             val newTotal = total + 1
             Output(newTotal) >> go(newTotal, tl)
-        }
       Output(0) >> go(0, this)
 
     // Exercise 15.4
@@ -91,12 +87,11 @@ object SimplePulls:
       ???
 
     def mapAccumulate[S, O2](init: S)(f: (S, O) => (S, O2)): Pull[O2, (S, R)] =
-      uncons.flatMap {
+      uncons.flatMap:
         case Left(r) => Result((init, r))
         case Right((hd, tl)) =>
           val (s, out) = f(init, hd)
           Output(out) >> tl.mapAccumulate(s)(f)
-      }
 
     // Exercise 15.6
     def countViaMapAccumulate: Pull[Int, R] =
@@ -159,11 +154,10 @@ object SimplePulls:
 
     extension [O](self: Pull[O, Unit])
       def flatMapOutput[O2](f: O => Pull[O2, Unit]): Pull[O2, Unit] =
-        self.uncons.flatMap {
+        self.uncons.flatMap:
           case Left(()) => Result(())
           case Right((hd, tl)) =>
             f(hd) >> tl.flatMapOutput(f)
-        }
     val outputMonad: Monad[[x] =>> Pull[x, Unit]] = new:
       def unit[A](a: => A): Pull[A, Unit] = Output(a)
       extension [A](pa: Pull[A, Unit])
@@ -245,11 +239,10 @@ object SimplePullExamples:
   def processFile[A](
     file: java.io.File,
     p: Pipe[String, A],
-  )(using m: Monoid[A]): IO[A] = IO {
+  )(using m: Monoid[A]): IO[A] = IO:
     val source = scala.io.Source.fromFile(file)
     try fromIterator(source.getLines).pipe(p).fold(m.empty)(m.combine)
     finally source.close()
-  }
 
   def checkFileForGt40K(file: java.io.File): IO[Boolean] =
     processFile(file, count andThen exists(_ > 40000))(using Monoid.booleanOr)

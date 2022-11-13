@@ -68,22 +68,22 @@ trait Traverse[F[_]] extends Functor[F], Foldable[F]:
       fa.mapAccum(fa.toList.reverse)((_, as) => (as.head, as.tail))(0)
 
     def zip[B](fb: F[B]): F[(A, B)] =
-      fa.mapAccum(fb.toList) {
+      fa.mapAccum(fb.toList):
         case (a, Nil) => sys.error("zip: Incompatible shapes.")
         case (a, b :: bs) => ((a, b), bs)
-      }(0)
+      ._1
 
     def zipL[B](fb: F[B]): F[(A, Option[B])] =
-      fa.mapAccum(fb.toList) {
+      fa.mapAccum(fb.toList):
         case (a, Nil) => ((a, None), Nil)
         case (a, b :: bs) => ((a, Some(b): Option[B]), bs)
-      }(0)
+      ._1
 
     def zipR[B](fb: F[B]): F[(Option[A], B)] =
-      fb.mapAccum(fa.toList) {
+      fb.mapAccum(fa.toList):
         case (b, Nil) => ((None, b), Nil)
         case (b, a :: as) => ((Some(a): Option[A], b), as)
-      }(0)
+      ._1
 
     def fuse[M[_], N[_], B](f: A => M[B], g: A => N[B])(using m: Applicative[M], n: Applicative[N]): (M[F[B]], N[F[B]]) =
       fa.traverse[[x] =>> (M[x], N[x]), B](a => (f(a), g(a)))(using m.product(n))
@@ -117,9 +117,9 @@ object Traverse:
   given mapTraverse[K]: Traverse[Map[K, _]] with
     extension [A](m: Map[K, A])
       override def traverse[G[_]: Applicative, B](f: A => G[B]): G[Map[K, B]] =
-        m.foldLeft(summon[Applicative[G]].unit(Map.empty[K, B])) { case (acc, (k, a)) =>
-          acc.map2(f(a))((m, b) => m + (k -> b))
-        }
+        m.foldLeft(summon[Applicative[G]].unit(Map.empty[K, B])):
+          case (acc, (k, a)) =>
+            acc.map2(f(a))((m, b) => m + (k -> b))
 
   // An example of a Foldable that is not a functor
   case class Iteration[A](a: A, f: A => A, n: Int)
