@@ -54,23 +54,20 @@ Chapter descriptions:
 * Chapter 14: localeffects
 * Chapter 15: streamingio
 
-To build the code for the first time, if on windows:
+### Setup build environment
 
-    $ .\sbt.cmd
+First install SBT, a build tool for Scala. By going to its
+[website](https://www.scala-sbt.org/) and following the installation instructions.
 
-If on mac/linux, first make sure you have not checked out the code onto
-an encrypted file system, otherwise you will get compile errors
-regarding too long file names (one solution is to put the fpinscala repo
-on a unencrypted usb key, and symlink it into your preferred code
-location).
+### Interacting with SBT
 
-    $ chmod a+x ./sbt
-    $ ./sbt
+From the root directory of the project (i.e., the directory where this README.md is located).
+Launch SBT
 
-This will download and launch [sbt](http://scala-sbt.org), a build tool
-for Scala. Once it is finished downloading, you'll get a prompt from
-which you can issue commands to build and interact with your code. Try
-the following:
+    $ sbt
+
+You'll get a prompt from which you can issue commands to build and interact with your code.
+Try the following:
 
     > project exercises
     > compile
