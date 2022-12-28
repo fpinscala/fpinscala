@@ -37,6 +37,6 @@ object Either:
 
   def map2All[E, A, B, C](a: Either[List[E], A], b: Either[List[E], B], f: (A, B) => C): Either[List[E], C] = ???
 
-  def traverseAll[E, A, B](es: List[A], f: A => Either[List[E], B]): Either[List[E], List[B]] = ???
+  def traverseAll[E, A, B](as: List[A], f: A => Either[List[E], B]): Either[List[E], List[B]] = ???
 
-  def sequenceAll[E, A](es: List[Either[List[E], A]]): Either[List[E], List[A]] = ???
+  def sequenceAll[E, A](as: List[Either[List[E], A]]): Either[List[E], List[A]] = ???

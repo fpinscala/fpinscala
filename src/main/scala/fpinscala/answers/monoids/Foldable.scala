@@ -5,10 +5,10 @@ trait Foldable[F[_]]:
 
   extension [A](as: F[A])
     def foldRight[B](acc: B)(f: (A, B) => B): B =
-      as.foldMap(f.curried)(using endoMonoid[B])(acc)
+      as.foldMap(f.curried)(using dual(endoMonoid[B]))(acc)
 
     def foldLeft[B](acc: B)(f: (B, A) => B): B =
-      as.foldMap(a => b => f(b, a))(using dual(endoMonoid[B]))(acc)
+      as.foldMap(a => b => f(b, a))(using endoMonoid[B])(acc)
 
     def foldMap[B](f: A => B)(using mb: Monoid[B]): B =
       as.foldRight(mb.empty)((a, b) => mb.combine(f(a), b))
