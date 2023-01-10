@@ -14,10 +14,11 @@ object JSON {
   case class JObject(get: Map[String, JSON]) extends JSON
 
   def jsonParser[Parser[+_]](P: Parsers[Parser]): Parser[JSON] = {
-    // we'll hide the string implicit conversion and promote strings to tokens instead
+    import P._
+
+    // we'll shadow the string implicit conversion from the Parsers trait and promote strings to tokens instead
     // this is a bit nicer than having to write token everywhere
-    import P.{string => _, _}
-    implicit def tok(s: String) = token(P.string(s))
+    implicit def string(s: String): Parser[String] = token(P.string(s))
 
     def array = surround("[","]")(
       value sep "," map (vs => JArray(vs.toIndexedSeq))) scope "array"
