@@ -22,7 +22,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        scala: [3.3.0-RC2]
+        scala: [3.3.0-RC3]
         java: [temurin@11]
     runs-on: ${{ matrix.os }}
     steps:
@@ -72,7 +72,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        scala: [3.3.0-RC2]
+        scala: [3.3.0-RC3]
         java: [temurin@11]
     runs-on: ${{ matrix.os }}
     steps:
@@ -100,12 +100,12 @@ jobs:
             ~/Library/Caches/Coursier/v1
           key: ${{ runner.os }}-sbt-cache-v2-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
 
-      - name: Download target directories (3.3.0-RC2)
+      - name: Download target directories (3.3.0-RC3)
         uses: actions/download-artifact@v2
         with:
-          name: target-${{ matrix.os }}-3.3.0-RC2-${{ matrix.java }}
+          name: target-${{ matrix.os }}-3.3.0-RC3-${{ matrix.java }}
 
-      - name: Inflate target directories (3.3.0-RC2)
+      - name: Inflate target directories (3.3.0-RC3)
         run: |
           tar xf targets.tar
           rm targets.tar

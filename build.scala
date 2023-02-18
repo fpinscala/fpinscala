@@ -1,4 +1,4 @@
-//> using scala "3.3.0-RC2"
+//> using scala "3.3.0-RC3"
 
 //> using options "-feature"
 //> using options "-deprecation"
