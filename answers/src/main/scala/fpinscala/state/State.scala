@@ -72,7 +72,7 @@ object RNG {
   def ints2(count: Int)(rng: RNG): (List[Int], RNG) = {
     def go(count: Int, r: RNG, xs: List[Int]): (List[Int], RNG) =
       if (count == 0)
-        (xs, r)
+        (xs.reverse, r)
       else {
         val (x, r2) = r.nextInt
         go(count - 1, r2, x :: xs)
