@@ -184,7 +184,10 @@ object SimpleStreamTransducers {
         }
         case Emit(h, t) => Emit(h, go(t))
       }
-      go(this)
+      this match {
+        case Halt() => this
+        case _ => go(this)
+      }
     }
 
     def repeatN(n: Int): Process[I,O] = {
