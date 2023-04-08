@@ -16,27 +16,25 @@ object Task:
 
     /* 'Catches' exceptions in the given task and returns them as values. */
     def attempt: Task[Try[A]] =
-      IO.monad.map(self) {
+      IO.monad.map(self):
         case Failure(e) => Success(Failure(e))
         case Success(a) => Success(Success(a))
-      }
 
     def handleErrorWith(h: Throwable => Task[A]): Task[A] =
-      attempt.flatMap {
+      attempt.flatMap:
         case Failure(t) => h(t)
         case Success(a) => Task.now(a)
-      }
 
     def or[B >: A](t2: Task[B]): Task[B] =
-      IO.monad.flatMap(self) {
+      IO.monad.flatMap(self):
         case Failure(e) => t2
         case a => IO(a)
-      }
 
     def unsafeRunSync(es: ExecutorService): A = IO.unsafeRunSync(self)(es).get
 
     def unsafeAttemptRunSync(es: ExecutorService): Try[A] =
-      try IO.unsafeRunSync(self)(es) catch { case NonFatal(t) => Failure(t) }
+      try IO.unsafeRunSync(self)(es)
+      catch case NonFatal(t) => Failure(t)
 
   def apply[A](a: => A): Task[A] = IO(Try(a))
 
@@ -56,7 +54,6 @@ object Task:
     def unit[A](a: => A) = Task(a)
     extension [A](fa: Task[A])
       def flatMap[B](f: A => Task[B]): Task[B] =
-        IO.monad.flatMap(fa) {
+        IO.monad.flatMap(fa):
           case Failure(e) => IO(Failure(e))
           case Success(a) => f(a)
-        }

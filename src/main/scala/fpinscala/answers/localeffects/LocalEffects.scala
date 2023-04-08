@@ -57,11 +57,9 @@ object ST:
 
 final class STRef[S, A] private (private var cell: A):
   def read: ST[S,A] = ST(cell)
-  def write(a: => A): ST[S, Unit] = ST.lift[S, Unit] {
-    s =>
-      cell = a
-      ((), s)
-  }
+  def write(a: => A): ST[S, Unit] = ST.lift[S, Unit]: s =>
+    cell = a
+    ((), s)
 
 object STRef:
   def apply[S, A](a: A): ST[S, STRef[S,A]] =
@@ -72,11 +70,9 @@ final class STArray[S, A] private (private var value: Array[A]):
   def size: ST[S, Int] = ST(value.size)
 
   // Write a value at the give index of the array
-  def write(i: Int, a: A): ST[S, Unit] = ST.lift[S, Unit] {
-    s =>
-      value(i) = a
-      ((), s)
-  }
+  def write(i: Int, a: A): ST[S, Unit] = ST.lift[S, Unit]: s =>
+    value(i) = a
+    ((), s)
 
   // Read the value at the given index of the array
   def read(i: Int): ST[S, A] = ST(value(i))
@@ -85,9 +81,8 @@ final class STArray[S, A] private (private var value: Array[A]):
   def freeze: ST[S, List[A]] = ST(value.toList)
 
   def fill(xs: Map[Int, A]): ST[S, Unit] =
-    xs.foldRight(ST[S, Unit](())) {
+    xs.foldRight(ST[S, Unit](())):
       case ((k, v), st) => st.flatMap(_ => write(k, v))
-    }
 
   def swap(i: Int, j: Int): ST[S, Unit] =
     for

@@ -17,11 +17,10 @@ object Par:
     def cancel(evenIfRunning: Boolean): Boolean = false
 
   extension [A](pa: Par[A]) def map2[B, C](pb: Par[B])(f: (A, B) => C): Par[C] = // `map2` doesn't evaluate the call to `f` in a separate logical thread, in accord with our design choice of having `fork` be the sole function in the API for controlling parallelism. We can always do `fork(map2(a,b)(f))` if we want the evaluation of `f` to occur in a separate thread.
-    es => {
+    es =>
       val af = pa(es)
       val bf = pb(es)
       UnitFuture(f(af.get, bf.get)) // This implementation of `map2` does _not_ respect timeouts. It simply passes the `ExecutorService` on to both `Par` values, waits for the results of the Futures `af` and `bf`, applies `f` to them, and wraps them in a `UnitFuture`. In order to respect timeouts, we'd need a new `Future` implementation that records the amount of time spent evaluating `af`, then subtracts that time from the available time allocated for evaluating `bf`.
-    }
 
   extension [A](pa: Par[A]) def map2Timeouts[B, C](pb: Par[B])(f: (A, B) => C): Par[C] =
     es => new Future[C]:
@@ -85,16 +84,14 @@ object Par:
   def sequence[A](pas: List[Par[A]]): Par[List[A]] =
     sequenceBalanced(pas.toIndexedSeq).map(_.toList)
 
-  def parMap[A, B](ps: List[A])(f: A => B): Par[List[B]] = fork {
+  def parMap[A, B](ps: List[A])(f: A => B): Par[List[B]] = fork:
     val fbs: List[Par[B]] = ps.map(asyncF(f))
     sequence(fbs)
-  }
 
-  def parFilter[A](l: List[A])(f: A => Boolean): Par[List[A]] = fork {
+  def parFilter[A](l: List[A])(f: A => Boolean): Par[List[A]] = fork:
     val pars: List[Par[List[A]]] =
       l.map(asyncF(a => if f(a) then List(a) else List()))
     sequence(pars).map(_.flatten) // convenience method on `List` for concatenating a list of lists
-  }
 
   def equal[A](e: ExecutorService)(p: Par[A], p2: Par[A]): Boolean =
     p(e).get == p2(e).get
@@ -108,32 +105,28 @@ object Par:
       else f(es)
 
   def choiceN[A](n: Par[Int])(choices: List[Par[A]]): Par[A] =
-    es => {
+    es =>
       val ind = n.run(es).get // Full source files
       choices(ind).run(es)
-    }
 
   def choiceViaChoiceN[A](a: Par[Boolean])(ifTrue: Par[A], ifFalse: Par[A]): Par[A] =
     choiceN(a.map(b => if b then 0 else 1))(List(ifTrue, ifFalse))
 
   def choiceMap[K, V](key: Par[K])(choices: Map[K,Par[V]]): Par[V] =
-    es => {
+    es =>
       val k = key.run(es).get
       choices(k).run(es)
-    }
 
   extension [A](pa: Par[A]) def chooser[B](choices: A => Par[B]): Par[B] =
-    es => {
+    es =>
       val k = pa.run(es).get
       choices(k).run(es)
-    }
 
   /* `chooser` is usually called `flatMap` or `bind`. */
   extension [A](pa: Par[A]) def flatMap[B](choices: A => Par[B]): Par[B] =
-    es => {
+    es =>
       val k = pa.run(es).get
       choices(k).run(es)
-    }
 
   def choiceViaFlatMap[A](p: Par[Boolean])(f: Par[A], t: Par[A]): Par[A] =
     flatMap(p)(b => if b then t else f)

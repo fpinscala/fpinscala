@@ -17,149 +17,147 @@ import java.util.concurrent.*
 import scala.collection.immutable.Iterable
 
 class MonadSuite extends PropSuite:
-  test("genMonad")(genInt ** genString ** genRNG) { case n ** s ** rng =>
-    assertMonad[Gen](genMonad(rng), n, s)
-  }
+  test("genMonad")(genInt ** genString ** genRNG):
+    case n ** s ** rng =>
+      assertMonad[Gen](genMonad(rng), n, s)
 
-  test("parMonad")(genInt ** genString) { case n ** s =>
-    assertMonad[Par](parMonad, n, s)
-  }
+  test("parMonad")(genInt ** genString):
+    case n ** s =>
+      assertMonad[Par](parMonad, n, s)
 
-  test("parserMonad")(genInt ** genString) { case n ** s =>
-    assertMonad[Parser[_]](parserMonad(s), n, s)
-  }
+  test("parserMonad")(genInt ** genString):
+    case n ** s =>
+      assertMonad[Parser[_]](parserMonad(s), n, s)
 
-  test("optionMonad")(genInt ** genString) { case n ** s =>
-    assertMonad[Option[_]](optionMonad, n, s)
-  }
+  test("optionMonad")(genInt ** genString):
+    case n ** s =>
+      assertMonad[Option[_]](optionMonad, n, s)
 
-  test("lazyListMonad")(genInt ** genString) { case n ** s =>
-    assertMonad[LazyList[_]](lazyListMonad, n, s)
-  }
+  test("lazyListMonad")(genInt ** genString):
+    case n ** s =>
+      assertMonad[LazyList[_]](lazyListMonad, n, s)
 
-  test("listMonad")(genInt ** genString) { case n ** s =>
-    assertMonad[List[_]](listMonad, n, s)
-  }
+  test("listMonad")(genInt ** genString):
+    case n ** s =>
+      assertMonad[List[_]](listMonad, n, s)
 
-  test("Monad.sequence")(genIntList ** genRNG) { case intList ** rng =>
-    val tm = genMonad(rng)
-    import tm.*
-    val listMonad = monad.sequence(intList.map(Gen.unit))
-    assertFs(listMonad, pure(intList))
-  }
+  test("Monad.sequence")(genIntList ** genRNG):
+    case intList ** rng =>
+      val tm = genMonad(rng)
+      import tm.*
+      val listMonad = monad.sequence(intList.map(Gen.unit))
+      assertFs(listMonad, pure(intList))
 
-  test("Monad.traverse")(genIntList ** genRNG) { case intList ** rng =>
-    val tm = genMonad(rng)
-    import tm.*
-    val listMonad = monad.traverse(intList)(Gen.unit)
-    assertFs(listMonad, pure(intList))
-  }
+  test("Monad.traverse")(genIntList ** genRNG):
+    case intList ** rng =>
+      val tm = genMonad(rng)
+      import tm.*
+      val listMonad = monad.traverse(intList)(Gen.unit)
+      assertFs(listMonad, pure(intList))
 
   // ToDo: Uncomment after fpinscala.exercises.testing.GenSuite passing
 /*
-  test("Monad.replicateM")(genShortNumber ** genString ** genRNG) { case n ** s ** rng =>
-    val tm = genMonad(rng)
-    import tm.monad
-    val fa = Gen.choose(0, 1000)
-    val listMonad = monad.replicateM(n, fa)
-    val intList: List[Int] = listMonad.next(rng)._1
-    assertEquals(intList.length, n)
-    assert(intList.forall(i => 0 <= i && i <= 1000))
-  }
+  test("Monad.replicateM")(genShortNumber ** genString ** genRNG):
+    case n ** s ** rng =>
+      val tm = genMonad(rng)
+      import tm.monad
+      val fa = Gen.choose(0, 1000)
+      val listMonad = monad.replicateM(n, fa)
+      val intList: List[Int] = listMonad.next(rng)._1
+      assertEquals(intList.length, n)
+      assert(intList.forall(i => 0 <= i && i <= 1000))
 */
 
-  test("Monad.filterM")(genIntList ** genRNG) { case intList ** rng =>
-    val tm = genMonad(rng)
-    import tm.*
-    val filteredListM = monad.filterM(intList)(i => Gen.unit(i % 2 == 0))
-    assertFs(filteredListM, pure(intList.filter(_ % 2 == 0)))
-  }
+  test("Monad.filterM")(genIntList ** genRNG):
+    case intList ** rng =>
+      val tm = genMonad(rng)
+      import tm.*
+      val filteredListM = monad.filterM(intList)(i => Gen.unit(i % 2 == 0))
+      assertFs(filteredListM, pure(intList.filter(_ % 2 == 0)))
 
-  test("The associative law")(genIntList ** genString ** genRNG) { case intList ** s ** rng =>
-    assertAssociativeLaw[Gen](genMonad(rng), intList)
-    assertAssociativeLaw[Par](parMonad, intList)
-    assertAssociativeLaw[Parser[_]](parserMonad(s), intList)
-    assertAssociativeLaw[Option[_]](optionMonad, intList)
-    assertAssociativeLaw[LazyList[_]](lazyListMonad, intList)
-    assertAssociativeLaw[List[_]](listMonad, intList)
-  }
+  test("The associative law")(genIntList ** genString ** genRNG):
+    case intList ** s ** rng =>
+      assertAssociativeLaw[Gen](genMonad(rng), intList)
+      assertAssociativeLaw[Par](parMonad, intList)
+      assertAssociativeLaw[Parser[_]](parserMonad(s), intList)
+      assertAssociativeLaw[Option[_]](optionMonad, intList)
+      assertAssociativeLaw[LazyList[_]](lazyListMonad, intList)
+      assertAssociativeLaw[List[_]](listMonad, intList)
 
-  test("Monad.compose")(genIntList ** genString ** genRNG) { case intList ** s ** rng =>
-    val tm = genMonad(rng)
-    import tm.*
-    val fThenG = monad.compose(f, g)
-    assertFs(fThenG(intList), pure(intList.sum.toString))
-  }
+  test("Monad.compose")(genIntList ** genString ** genRNG):
+    case intList ** s ** rng =>
+      val tm = genMonad(rng)
+      import tm.*
+      val fThenG = monad.compose(f, g)
+      assertFs(fThenG(intList), pure(intList.sum.toString))
 
-  test("Monad.compose should be associative")(genIntList ** genString ** genRNG) { case intList ** s ** rng =>
-    assertAssociativeCompose[Gen](genMonad(rng), intList)
-    assertAssociativeCompose[Par](parMonad, intList)
-    assertAssociativeCompose[Parser[_]](parserMonad(s), intList)
-    assertAssociativeCompose[Option[_]](optionMonad, intList)
-    assertAssociativeCompose[LazyList[_]](lazyListMonad, intList)
-    assertAssociativeCompose[List[_]](listMonad, intList)
-  }
+  test("Monad.compose should be associative")(genIntList ** genString ** genRNG):
+    case intList ** s ** rng =>
+      assertAssociativeCompose[Gen](genMonad(rng), intList)
+      assertAssociativeCompose[Par](parMonad, intList)
+      assertAssociativeCompose[Parser[_]](parserMonad(s), intList)
+      assertAssociativeCompose[Option[_]](optionMonad, intList)
+      assertAssociativeCompose[LazyList[_]](lazyListMonad, intList)
+      assertAssociativeCompose[List[_]](listMonad, intList)
 
-  test("Monad.flatMapViaCompose")(genInt ** genRNG) { case n ** rng =>
-    val tm = genMonad(rng)
-    import tm.*
-    val mappedMonad = monad.flatMapViaCompose(pure(n))((i: Int) => pure(i % 2 == 0))
-    assertFs(mappedMonad, pure(n % 2 == 0))
-  }
+  test("Monad.flatMapViaCompose")(genInt ** genRNG):
+    case n ** rng =>
+      val tm = genMonad(rng)
+      import tm.*
+      val mappedMonad = monad.flatMapViaCompose(pure(n))((i: Int) => pure(i % 2 == 0))
+      assertFs(mappedMonad, pure(n % 2 == 0))
 
-  test("The identity law")(genIntList ** genString ** genRNG) { case intList ** s ** rng =>
-    assertIdentityLawForCompose[Gen](genMonad(rng), intList)
-    assertIdentityLawForCompose[Par](parMonad, intList)
-    assertIdentityLawForCompose[Parser[_]](parserMonad(s), intList)
-    assertIdentityLawForCompose[Option[_]](optionMonad, intList)
-    assertIdentityLawForCompose[LazyList[_]](lazyListMonad, intList)
-    assertIdentityLawForCompose[List[_]](listMonad, intList)
+  test("The identity law")(genIntList ** genString ** genRNG):
+    case intList ** s ** rng =>
+      assertIdentityLawForCompose[Gen](genMonad(rng), intList)
+      assertIdentityLawForCompose[Par](parMonad, intList)
+      assertIdentityLawForCompose[Parser[_]](parserMonad(s), intList)
+      assertIdentityLawForCompose[Option[_]](optionMonad, intList)
+      assertIdentityLawForCompose[LazyList[_]](lazyListMonad, intList)
+      assertIdentityLawForCompose[List[_]](listMonad, intList)
 
-    assertIdentityLawForFlatMap[Gen](genMonad(rng), intList)
-    assertIdentityLawForFlatMap[Par](parMonad, intList)
-    assertIdentityLawForFlatMap[Parser[_]](parserMonad(s), intList)
-    assertIdentityLawForFlatMap[Option[_]](optionMonad, intList)
-    assertIdentityLawForFlatMap[LazyList[_]](lazyListMonad, intList)
-    assertIdentityLawForFlatMap[List[_]](listMonad, intList)
-  }
+      assertIdentityLawForFlatMap[Gen](genMonad(rng), intList)
+      assertIdentityLawForFlatMap[Par](parMonad, intList)
+      assertIdentityLawForFlatMap[Parser[_]](parserMonad(s), intList)
+      assertIdentityLawForFlatMap[Option[_]](optionMonad, intList)
+      assertIdentityLawForFlatMap[LazyList[_]](lazyListMonad, intList)
+      assertIdentityLawForFlatMap[List[_]](listMonad, intList)
 
-  test("Monad.join")(genInt ** genRNG) { case n ** rng =>
-    val tm = genMonad(rng)
-    import tm.*
-    val ffa = monad.join(Gen.unit(Gen.unit(n)))
-    val fa = Gen.unit(n)
-    assertFs(ffa, fa)
-  }
+  test("Monad.join")(genInt ** genRNG):
+    case n ** rng =>
+      val tm = genMonad(rng)
+      import tm.*
+      val ffa = monad.join(Gen.unit(Gen.unit(n)))
+      val fa = Gen.unit(n)
+      assertFs(ffa, fa)
 
-  test("Monad.flatMapViaJoinAndMap")(genInt ** genRNG) { case n ** rng =>
-    val tm = genMonad(rng)
-    import tm.*
-    val mappedMonad = monad.flatMapViaJoinAndMap(pure(n))((i: Int) => pure(i % 2 == 0))
-    assertFs(mappedMonad, pure(n % 2 == 0))
-  }
+  test("Monad.flatMapViaJoinAndMap")(genInt ** genRNG):
+    case n ** rng =>
+      val tm = genMonad(rng)
+      import tm.*
+      val mappedMonad = monad.flatMapViaJoinAndMap(pure(n))((i: Int) => pure(i % 2 == 0))
+      assertFs(mappedMonad, pure(n % 2 == 0))
 
-  test("Monad.composeViaJoinAndMap")(genIntList ** genString ** genRNG) { case intList ** s ** rng =>
-    val tm = genMonad(rng)
-    import tm.*
-    val fThenG = monad.composeViaJoinAndMap(f, g)
-    assertFs(fThenG(intList), pure(intList.sum.toString))
-  }
+  test("Monad.composeViaJoinAndMap")(genIntList ** genString ** genRNG):
+    case intList ** s ** rng =>
+      val tm = genMonad(rng)
+      import tm.*
+      val fThenG = monad.composeViaJoinAndMap(f, g)
+      assertFs(fThenG(intList), pure(intList.sum.toString))
 
-  test("Id.map")(genIntList) { intList =>
+  test("Id.map")(genIntList): intList =>
     assertEquals(Id(intList).map(_.sum), Id(intList.sum))
-  }
 
-  test("Id.flatMap")(genIntList) { intList =>
+  test("Id.flatMap")(genIntList): intList =>
     assertEquals(Id(intList).flatMap(list => Id(list.sum)), Id(intList.sum))
-  }
 
-  test("idMonad")(genInt ** genString) { case n ** s =>
-    assertMonad[Id](idMonad, n, s)
-  }
+  test("idMonad")(genInt ** genString):
+    case n ** s =>
+      assertMonad[Id](idMonad, n, s)
 
-  test("readerMonad")(genInt ** genString) { case n ** s =>
-    assertMonad[Reader[Unit, _]](readerMonad, n, s)
-  }
+  test("readerMonad")(genInt ** genString):
+    case n ** s =>
+      assertMonad[Reader[Unit, _]](readerMonad, n, s)
 
   private def assertMonad[F[_]](tm: TestedMonad[F[_]], n: Int, s: String): Unit =
     assertUnit(tm, n)

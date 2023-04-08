@@ -98,50 +98,44 @@ enum LazyList[+A]:
     foldRight(empty[B])((a, acc) => f(a).append(acc))
 
   def mapViaUnfold[B](f: A => B): LazyList[B] =
-    unfold(this) {
+    unfold(this):
       case Cons(h, t) => Some((f(h()), t()))
       case _ => None
-    }
 
   def takeViaUnfold(n: Int): LazyList[A] =
-    unfold((this, n)) {
+    unfold((this, n)):
       case (Cons(h, t), 1) => Some((h(), (empty, 0)))
       case (Cons(h, t), n) if n > 1 => Some((h(), (t(), n-1)))
       case _ => None
-    }
 
   def takeWhileViaUnfold(f: A => Boolean): LazyList[A] =
-    unfold(this) {
+    unfold(this):
       case Cons(h, t) if f(h()) => Some((h(), t()))
       case _ => None
-    }
 
   def zipAll[B](that: LazyList[B]): LazyList[(Option[A], Option[B])] =
-    unfold((this, that)) {
+    unfold((this, that)):
       case (Empty, Empty) => None
       case (Cons(h1, t1), Empty) => Some((Some(h1()) -> None) -> (t1() -> Empty))
       case (Empty, Cons(h2, t2)) => Some((None -> Some(h2())) -> (Empty -> t2()))
       case (Cons(h1, t1), Cons(h2, t2)) => Some((Some(h1()) -> Some(h2())) -> (t1() -> t2()))
-    }
 
   def zipWith[B,C](that: LazyList[B])(f: (A,B) => C): LazyList[C] =
-    unfold((this, that)) {
+    unfold((this, that)):
       case (Cons(h1, t1), Cons(h2, t2)) =>
         Some((f(h1(), h2()), (t1(), t2())))
       case _ => None
-    }
 
   // special case of `zipWith`
   def zip[B](that: LazyList[B]): LazyList[(A,B)] =
     zipWith(that)((_,_))
 
   def zipWithAll[B, C](that: LazyList[B])(f: (Option[A], Option[B]) => C): LazyList[C] =
-    LazyList.unfold((this, that)) {
+    LazyList.unfold((this, that)):
       case (Empty, Empty) => None
       case (Cons(h, t), Empty) => Some(f(Some(h()), Option.empty[B]) -> (t(), empty[B]))
       case (Empty, Cons(h, t)) => Some(f(Option.empty[A], Some(h())) -> (empty[A] -> t()))
       case (Cons(h1, t1), Cons(h2, t2)) => Some(f(Some(h1()), Some(h2())) -> (t1() -> t2()))
-    }
 
   def zipAllViaZipWithAll[B](s2: LazyList[B]): LazyList[(Option[A],Option[B])] =
     zipWithAll(s2)((_,_))
@@ -150,16 +144,16 @@ enum LazyList[+A]:
   `s.startsWith(s2)` when corresponding elements of `s` and `s2` are all equal, until the point that `s2` is exhausted. If `s` is exhausted first, or we find an element that doesn't match, we terminate early. Using non-strictness, we can compose these three separate logical steps--the zipping, the termination when the second lazy list is exhausted, and the termination if a nonmatching element is found or the first lazy list is exhausted.
   */
   def startsWith[A](prefix: LazyList[A]): Boolean =
-    zipAll(prefix).takeWhile(_(1).isDefined).forAll { case (a1, a2) => a1 == a2 }
+    zipAll(prefix).takeWhile(_(1).isDefined).forAll((a1, a2) => a1 == a2)
 
   /*
   The last element of `tails` is always the empty `LazyList`, so we handle this as a special case, by appending it to the output.
   */
   def tails: LazyList[LazyList[A]] =
-    unfold(this) {
+    unfold(this):
       case Empty => None
       case Cons(h, t) => Some((Cons(h, t), t()))
-    }.append(LazyList(empty))
+    .append(LazyList(empty))
 
   def hasSubsequence[A](s: LazyList[A]): Boolean =
     tails.exists(_.startsWith(s))
@@ -170,12 +164,12 @@ enum LazyList[+A]:
   The implementation is just a `foldRight` that keeps the accumulated value and the lazy list of intermediate results, which we `cons` onto during each iteration. When writing folds, it's common to have more state in the fold than is needed to compute the result. Here, we simply extract the accumulated list once finished.
   */
   def scanRight[B](init: B)(f: (A, => B) => B): LazyList[B] =
-    foldRight(init -> LazyList(init)) { (a, b0) =>
+    foldRight(init -> LazyList(init)): (a, b0) =>
       // b0 is passed by-name and used in by-name args in f and cons. So use lazy val to ensure only one evaluation...
       lazy val b1 = b0
       val b2 = f(a, b1(0))
       (b2, cons(b2, b1(1)))
-    }(1)
+    ._2
 
   @annotation.tailrec
   final def find(f: A => Boolean): Option[A] = this match
@@ -228,9 +222,9 @@ object LazyList:
   Scala provides shorter syntax when the first action of a function literal is to match on an expression.  The function passed to `unfold` in `fibsViaUnfold` is equivalent to `p => p match { case (f0,f1) => ... }`, but we avoid having to choose a name for `p`, only to pattern match on it.
   */
   val fibsViaUnfold: LazyList[Int] =
-    unfold((0,1)) { case (current, next) =>
-      Some((current, (next, current + next)))
-    }
+    unfold((0,1)):
+      case (current, next) =>
+        Some((current, (next, current + next)))
 
   def fromViaUnfold(n: Int): LazyList[Int] =
     unfold(n)(n => Some((n, n + 1)))

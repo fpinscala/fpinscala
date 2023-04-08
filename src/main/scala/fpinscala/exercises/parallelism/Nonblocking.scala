@@ -44,23 +44,21 @@ object Nonblocking:
         ref.get // Once we've passed the latch, we know `ref` has been set, and return its value
 
       def map2[B, C](p2: Par[B])(f: (A, B) => C): Par[C] =
-        es => cb => {
+        es => cb =>
           var ar: Option[A] = None
           var br: Option[B] = None
           // this implementation is a little too liberal in forking of threads -
           // it forks a new logical thread for the actor and for stack-safety,
           // forks evaluation of the callback `cb`
-          val combiner = Actor[Either[A,B]](es) {
+          val combiner = Actor[Either[A,B]](es):
             case Left(a) =>
               if br.isDefined then eval(es)(cb(f(a, br.get)))
               else ar = Some(a)
             case Right(b) =>
               if ar.isDefined then eval(es)(cb(f(ar.get, b)))
               else br = Some(b)
-          }
           p(es)(a => combiner ! Left(a))
           p2(es)(b => combiner ! Right(b))
-        }
 
       def map[B](f: A => B): Par[B] =
         es => cb => p(es)(a => eval(es)(cb(f(a))))
@@ -81,13 +79,12 @@ object Nonblocking:
         case Nil => unit(Nil)
         case h :: t => h.map2(fork(sequence(t)))(_ :: _)
 
-    def sequenceBalanced[A](as: IndexedSeq[Par[A]]): Par[IndexedSeq[A]] = fork {
+    def sequenceBalanced[A](as: IndexedSeq[Par[A]]): Par[IndexedSeq[A]] = fork:
       if as.isEmpty then unit(Vector())
       else if as.length == 1 then map(as.head)(a => Vector(a))
       else
         val (l, r) = as.splitAt(as.length / 2)
         sequenceBalanced(l).map2(sequenceBalanced(r))(_ ++ _)
-    }
 
     def sequence[A](as: List[Par[A]]): Par[List[A]] =
       map(sequenceBalanced(as.toIndexedSeq))(_.toList)
@@ -115,10 +112,9 @@ object Nonblocking:
      * about `t(es)`? What about `t(es)(cb)`?
      */
     def choice[A](p: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
-      es => cb => p(es) { b =>
+      es => cb => p(es): b =>
         if b then eval(es)(t(es)(cb))
         else eval(es)(f(es)(cb))
-      }
 
     /* The code here is very similar. */
     def choiceN[A](p: Par[Int])(ps: List[Par[A]]): Par[A] =

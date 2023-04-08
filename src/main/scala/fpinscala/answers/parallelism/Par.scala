@@ -84,16 +84,14 @@ object Par:
   def sequence[A](pas: List[Par[A]]): Par[List[A]] =
     sequenceBalanced(pas.toIndexedSeq).map(_.toList)
 
-  def parMap[A, B](ps: List[A])(f: A => B): Par[List[B]] = fork {
+  def parMap[A, B](ps: List[A])(f: A => B): Par[List[B]] = fork:
     val fbs: List[Par[B]] = ps.map(asyncF(f))
     sequence(fbs)
-  }
 
-  def parFilter[A](l: List[A])(f: A => Boolean): Par[List[A]] = fork {
+  def parFilter[A](l: List[A])(f: A => Boolean): Par[List[A]] = fork:
     val pars: List[Par[List[A]]] =
       l.map(asyncF(a => if f(a) then List(a) else List()))
     sequence(pars).map(_.flatten) // convenience method on `List` for concatenating a list of lists
-  }
 
   def equal[A](e: ExecutorService)(p: Par[A], p2: Par[A]): Boolean =
     p(e).get == p2(e).get

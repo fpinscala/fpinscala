@@ -47,15 +47,14 @@ object Prop:
   def randomLazyList[A](g: Gen[A])(rng: RNG): LazyList[A] =
    LazyList.unfold(rng)(rng => Some(g.run(rng)))
 
-  def forAll[A](as: Gen[A])(f: A => Boolean): Prop = Prop {
-    (n, rng) => randomLazyList(as)(rng).zip(LazyList.from(0)).take(n).map {
+  def forAll[A](as: Gen[A])(f: A => Boolean): Prop = Prop:
+    (n, rng) => randomLazyList(as)(rng).zip(LazyList.from(0)).take(n).map:
       case (a, i) => 
         try
           if f(a) then Passed else Falsified(a.toString, i)
         catch
           case e: Exception => Falsified(buildMsg(a, e), i)
-    }.find(_.isFalsified).getOrElse(Passed)
-  }
+    .find(_.isFalsified).getOrElse(Passed)
 
   @targetName("forAllSized")
   def forAll[A](g: SGen[A])(f: A => Boolean): Prop =
@@ -124,28 +123,25 @@ object Prop:
   def verify(p: => Boolean): Prop = 
     (_, _, _) => if p then Passed else Falsified("()", 0)
 
-  val p2 = verify {
+  val p2 = verify:
     val p = Par.unit(1).map(_ + 1)
     val p2 = Par.unit(2)
     p.run(executor).get == p2.run(executor).get
-  }
 
   def equal[A](p: Par[A], p2: Par[A]): Par[Boolean] =
     p.map2(p2)(_ == _)
 
-  val p3 = verify {
+  val p3 = verify:
     equal(
       Par.unit(1).map(_ + 1),
       Par.unit(2)
     ).run(executor).get
-  }
 
-  val p4 = forAll(Gen.smallInt) { i =>
+  val p4 = forAll(Gen.smallInt): i =>
     equal(
       Par.unit(i).map(_ + 1),
       Par.unit(i + 1)
     ).run(executor).get
-  }
 
   val executors: Gen[ExecutorService] = weighted(
     choose(1,4).map(Executors.newFixedThreadPool) -> .75,
@@ -161,7 +157,8 @@ object Prop:
     forAll(executors ** g)((s, a) => f(a).run(s).get)
 
   def forAllPar3[A](g: Gen[A])(f: A => Par[Boolean]): Prop =
-    forAll(executors ** g) { case s ** a => f(a).run(s).get }
+    forAll(executors ** g):
+      case s ** a => f(a).run(s).get
 
   val gpy: Gen[Par[Int]] = Gen.choose(0, 10).map(Par.unit(_))
   val p5 = forAllPar(gpy)(py => equal(py.map(y => y), py))
@@ -273,21 +270,18 @@ object Gen:
 
   val smallInt = Gen.choose(-10, 10)
 
-  val maxProp = Prop.forAll(smallInt.list) { l =>
+  val maxProp = Prop.forAll(smallInt.list): l =>
     val max = l.max
     l.forall(_ <= max)
-  }
 
-  val maxProp1 = Prop.forAll(smallInt.nonEmptyList) { l =>
+  val maxProp1 = Prop.forAll(smallInt.nonEmptyList): l =>
     val max = l.max
     l.forall(_ <= max)
-  }
 
-  val sortedProp = Prop.forAll(smallInt.list) { l =>
+  val sortedProp = Prop.forAll(smallInt.list): l =>
     val ls = l.sorted
-    val ordered = l.isEmpty || ls.zip(ls.tail).forall { (a, b) => a <= b }
+    val ordered = l.isEmpty || ls.zip(ls.tail).forall((a, b) => a <= b)
     ordered && l.forall(ls.contains) && ls.forall(l.contains)
-  }
 
   object `**`:
     def unapply[A, B](p: (A, B)) = Some(p)
@@ -296,11 +290,10 @@ object Gen:
     g.map(i => s => i)
 
   def genStringFn[A](g: Gen[A]): Gen[String => A] =
-    State[RNG, String => A] { rng =>
+    State[RNG, String => A]: rng =>
       val (seed, rng2) = rng.nextInt // we still use `rng` to produce a seed, so we get a new function each time
       val f = (s: String) => g.run(RNG.Simple(seed.toLong ^ s.hashCode.toLong))._1
       (f, rng2) 
-    }
 
 end Gen
 
@@ -326,11 +319,10 @@ opaque type Cogen[-A] = (A, RNG) => RNG
 
 object Cogen:
   def fn[A, B](in: Cogen[A], out: Gen[B]): Gen[A => B] =
-    State[RNG, A => B] { rng =>
+    State[RNG, A => B]: rng =>
       val (seed, rng2) = rng.nextInt
       val f = (a: A) => out.run(in(a, rng2))._1
       (f, rng2)
-    }
 
   def cogenInt: Cogen[Int] = (i, rng) =>
     val (seed, rng2) = rng.nextInt

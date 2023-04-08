@@ -49,14 +49,13 @@ object Nonblocking:
         // this implementation is a little too liberal in forking of threads -
         // it forks a new logical thread for the actor and for stack-safety,
         // forks evaluation of the callback `cb`
-        val combiner = Actor[Either[A,B]](es) {
+        val combiner = Actor[Either[A,B]](es):
           case Left(a) =>
             if br.isDefined then Par.eval(es)(cb(f(a, br.get)))
             else ar = Some(a)
           case Right(b) =>
             if ar.isDefined then Par.eval(es)(cb(f(ar.get, b)))
             else br = Some(b)
-        }
         p(es)(a => combiner ! Left(a))
         p2(es)(b => combiner ! Right(b))
 
@@ -81,13 +80,12 @@ object Nonblocking:
         case Nil => unit(Nil)
         case h :: t => h.map2(fork(sequence(t)))(_ :: _)
 
-    def sequenceBalanced[A](as: IndexedSeq[Par[A]]): Par[IndexedSeq[A]] = fork {
+    def sequenceBalanced[A](as: IndexedSeq[Par[A]]): Par[IndexedSeq[A]] = fork:
       if as.isEmpty then unit(Vector())
       else if as.length == 1 then map(as.head)(a => Vector(a))
       else
         val (l, r) = as.splitAt(as.length / 2)
         sequenceBalanced(l).map2(sequenceBalanced(r))(_ ++ _)
-    }
 
     def sequence[A](as: List[Par[A]]): Par[List[A]] =
       map(sequenceBalanced(as.toIndexedSeq))(_.toList)
@@ -115,10 +113,9 @@ object Nonblocking:
      * about `t(es)`? What about `t(es)(cb)`?
      */
     def choice[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
-      es => cb => cond(es) { b =>
+      es => cb => cond(es): b =>
         if b then eval(es)(t(es)(cb))
         else eval(es)(f(es)(cb))
-      }
 
     /* The code here is very similar. */
     def choiceN[A](p: Par[Int])(ps: List[Par[A]]): Par[A] =

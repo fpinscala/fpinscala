@@ -70,12 +70,15 @@ object Monoid:
   import Gen.`**`
 
   def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Prop =
-    val associativity = Prop.forAll(gen ** gen ** gen) { case a ** b ** c =>
-      m.combine(a, m.combine(b, c)) == m.combine(m.combine(a, b), c)
-    }.tag("associativity")
-    val identity = Prop.forAll(gen) { a =>
-      m.combine(a, m.empty) == a && m.combine(m.empty, a) == a
-    }.tag("identity")
+    val associativity = Prop
+      .forAll(gen ** gen ** gen):
+        case a ** b ** c =>
+          m.combine(a, m.combine(b, c)) == m.combine(m.combine(a, b), c)
+      .tag("associativity")
+    val identity = Prop
+      .forAll(gen): a =>
+        m.combine(a, m.empty) == a && m.combine(m.empty, a) == a
+      .tag("identity")
     associativity && identity
 
   def combineAll[A](as: List[A], m: Monoid[A]): A =
@@ -118,9 +121,8 @@ object Monoid:
 
   // we perform the mapping and the reducing both in parallel
   def parFoldMap[A,B](as: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] =
-    Par.parMap(as)(f).flatMap { bs =>
+    Par.parMap(as)(f).flatMap: bs =>
       foldMapV(bs, par(m))(b => Par.lazyUnit(b))
-    }
 
   case class Interval(ordered: Boolean, min: Int, max: Int)
   val orderedMonoid: Monoid[Option[Interval]] = new:
@@ -197,10 +199,9 @@ object Monoid:
 
   given mapMergeMonoid[K, V](using mv: Monoid[V]): Monoid[Map[K, V]] with
     def combine(a: Map[K, V], b: Map[K, V]) =
-      (a.keySet ++ b.keySet).foldLeft(empty) { (acc,k) =>
+      (a.keySet ++ b.keySet).foldLeft(empty): (acc,k) =>
         acc.updated(k, mv.combine(a.getOrElse(k, mv.empty),
                                   b.getOrElse(k, mv.empty)))
-      }
     val empty = Map()
 
   given functionMonoid[A, B](using mb: Monoid[B]): Monoid[A => B] with

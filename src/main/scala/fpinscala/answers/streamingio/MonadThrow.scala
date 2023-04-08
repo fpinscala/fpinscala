@@ -10,10 +10,9 @@ trait MonadThrow[F[_]] extends Monad[F]:
   extension [A](fa: F[A])
     def attempt: F[Try[A]]
     def handleErrorWith(h: Throwable => F[A]): F[A] =
-      attempt.flatMap {
+      attempt.flatMap:
         case Failure(t) => h(t)
         case Success(a) => unit(a)
-      }
 
   def raiseError[A](t: Throwable): F[A]
 

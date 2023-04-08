@@ -29,18 +29,16 @@ object EffectfulPulls:
           source match
             case FlatMap(s2, g) =>
               s2.flatMap(x => g(x).flatMap(y => f(y))).step
-            case other => other.step.flatMap {
+            case other => other.step.flatMap:
               case Left(r) => f(r).step
               case Right((hd, tl)) => F.unit(Right((hd, tl.flatMap(f))))
-            }
 
     def fold[F2[x] >: F[x], R2 >: R, A](init: A)(f: (A, O) => A)(
       using F: Monad[F2]
     ): F2[(R2, A)] = 
-      step.flatMap {
+      step.flatMap:
         case Left(r) => F.unit((r, init))
         case Right((hd, tl)) => tl.fold(f(init, hd))(f)
-      }
 
     def toList[F2[x] >: F[x]: Monad, O2 >: O]: F2[List[O2]] =
       fold(List.newBuilder[O])((bldr, o) => bldr += o).map(_(1).result)
@@ -62,86 +60,61 @@ object EffectfulPulls:
 
     def take(n: Int): Pull[F, O, Option[R]] =
       if n <= 0 then Result(None)
-      else uncons.flatMap {
+      else uncons.flatMap:
         case Left(r) => Result(Some(r))
         case Right((hd, tl)) => Output(hd) >> tl.take(n - 1)
-      }
 
     def takeWhile(f: O => Boolean): Pull[F, O, Pull[F, O, R]] =
-      uncons.flatMap {
+      uncons.flatMap:
         case Left(r) => Result(Result(r))
         case Right((hd, tl)) =>
           if f(hd) then Output(hd) >> tl.takeWhile(f)
           else Result(Output(hd) >> tl)
-      }
 
     def dropWhile(f: O => Boolean): Pull[F, Nothing, Pull[F, O, R]] =
-      uncons.flatMap {
+      uncons.flatMap:
         case Left(r) => Result(Result(r))
         case Right((hd, tl)) =>
           if f(hd) then tl.dropWhile(f)
           else Result(Output(hd) >> tl)
-      }
 
     def mapOutput[O2](f: O => O2): Pull[F, O2, R] =
-      uncons.flatMap {
+      uncons.flatMap:
         case Left(r) => Result(r)
         case Right((hd, tl)) => Output(f(hd)) >> tl.mapOutput(f)
-      }
 
     def filter(p: O => Boolean): Pull[F, O, R] =
-      uncons.flatMap {
+      uncons.flatMap:
         case Left(r) => Result(r)
         case Right((hd, tl)) =>
           (if p(hd) then Output(hd) else Pull.done) >> tl.filter(p)
-      }
 
     def count: Pull[F, Int, R] =
       def go(total: Int, p: Pull[F, O, R]): Pull[F, Int, R] =
-        p.uncons.flatMap {
+        p.uncons.flatMap:
           case Left(r) => Result(r)
           case Right((_, tl)) =>
             val newTotal = total + 1
             Output(newTotal) >> go(newTotal, tl)
-        }
       Output(0) >> go(0, this)
 
     def tally[O2 >: O](using m: Monoid[O2]): Pull[F, O2, R] =
       def go(total: O2, p: Pull[F, O, R]): Pull[F, O2, R] =
-        p.uncons.flatMap {
+        p.uncons.flatMap:
           case Left(r) => Result(r)
           case Right((hd, tl)) =>
             val newTotal = m.combine(total, hd)
             Output(newTotal) >> go(newTotal, tl)
-        }
       Output(m.empty) >> go(m.empty, this)
 
     def mapAccumulate[S, O2](init: S)(f: (S, O) => (S, O2)): Pull[F, O2, (S, R)] =
-      uncons.flatMap {
+      uncons.flatMap:
         case Left(r) => Result((init, r))
         case Right((hd, tl)) =>
           val (s, out) = f(init, hd)
           Output(out) >> tl.mapAccumulate(s)(f)
-      }
 
   object Pull:
-
-    extension [F[_], O, R](self: Pull[F, O, R])
-      def stepViaExtension(using F: Monad[F]): F[Either[R, (O, Pull[F, O, R])]] =
-        self match
-          case Result(r) => F.unit(Left(r))
-          case Output(o) => F.unit(Right(o, Pull.done))
-          case Eval(action) => action.map(Left(_))
-          case Uncons(source) =>
-            source.stepViaExtension.map(Left(_))
-          case FlatMap(source, f) => 
-            source match
-              case FlatMap(s2, g) =>
-                s2.flatMap(x => g(x).flatMap(y => f(y))).stepViaExtension
-              case other => other.stepViaExtension.flatMap {
-                case Left(r) => f(r).stepViaExtension
-                case Right((hd, tl)) => F.unit(Right((hd, tl.flatMap(f))))
-              }
 
     val done: Pull[Nothing, Nothing, Unit] = Result(())
 
@@ -157,13 +130,12 @@ object EffectfulPulls:
     extension [F[_], R](self: Pull[F, Int, R])
       def slidingMean(n: Int): Pull[F, Double, R] =
         def go(window: collection.immutable.Queue[Int], p: Pull[F, Int, R]): Pull[F, Double, R] =
-          p.uncons.flatMap {
+          p.uncons.flatMap:
             case Left(r) => Result(r)
             case Right((hd, tl)) =>
               val newWindow = if window.size < n then window :+ hd else window.tail :+ hd
               val meanOfNewWindow = newWindow.sum / newWindow.size.toDouble
               Output(meanOfNewWindow) >> go(newWindow, tl)
-          }
         go(collection.immutable.Queue.empty, self)
 
     given [F[_], O]: Monad[[x] =>> Pull[F, O, x]] with
@@ -174,11 +146,10 @@ object EffectfulPulls:
 
     extension [F[_], O](self: Pull[F, O, Unit])
       def flatMapOutput[O2](f: O => Pull[F, O2, Unit]): Pull[F, O2, Unit] =
-        self.uncons.flatMap {
+        self.uncons.flatMap:
           case Left(()) => Result(())
           case Right((hd, tl)) =>
             f(hd) >> tl.flatMapOutput(f)
-        }
 
     extension [F[_], O](self: Pull[F, O, Unit])
       def toStream: Stream[F, O] = self

@@ -142,21 +142,19 @@ object Prop:
   def verify(p: => Boolean): Prop =
     (_, _, _) => Passed(Proven, 1)
 
-  val p2 = verify {
+  val p2 = verify:
     val p = Par.unit(1).map(_ + 1)
     val p2 = Par.unit(2)
     p.run(executor).get == p2.run(executor).get
-  }
 
   def equal[A](p: Par[A], p2: Par[A]): Par[Boolean] =
     p.map2(p2)(_ == _)
 
-  val p3 = verify {
+  val p3 = verify:
     equal(
       Par.unit(1).map(_ + 1),
       Par.unit(2)
     ).run(executor).get
-  }
 
   val executors: Gen[ExecutorService] = weighted(
     choose(1,4).map(Executors.newFixedThreadPool) -> .75,
@@ -172,7 +170,8 @@ object Prop:
     forAll(executors ** g)((s, a) => f(a).run(s).get)
 
   def forAllPar3[A](g: Gen[A])(f: A => Par[Boolean]): Prop =
-    forAll(executors ** g) { case s ** a => f(a).run(s).get }
+    forAll(executors ** g):
+      case s ** a => f(a).run(s).get
 
   val gpy: Gen[Par[Int]] = Gen.choose(0, 10).map(Par.unit(_))
   val p4 = forAllPar(gpy)(py => equal(py.map(y => y), py))
@@ -198,10 +197,10 @@ case class Gen[+A](sample: State[RNG, A], exhaustive: LazyList[Option[A]]):
 
   def flatMap[B](f: A => Gen[B]): Gen[B] =
     Gen(sample.flatMap(a => f(a).sample),
-        exhaustive.flatMap {
+        exhaustive.flatMap:
           case None => unbounded
           case Some(a) => f(a).exhaustive
-        })
+    )
 
   /* A method alias for the function we wrote earlier. */
   def listOfN(size: Int): Gen[List[A]] =
@@ -349,14 +348,14 @@ object Gen:
    * When either lazy list is exhausted, insert all remaining elements from the other lazy list.
    */
   def interleave[A](b: LazyList[Boolean], s1: LazyList[A], s2: LazyList[A]): LazyList[A] =
-    b.headOption.map { hd =>
+    b.headOption.map: hd =>
       if hd then s1 match
         case h #:: t => LazyList.cons(h, interleave(b drop 1, t, s2))
         case _ => s2
       else s2 match
         case h #:: t => LazyList.cons(h, interleave(b drop 1, s1, t))
         case _ => s1
-    }.getOrElse(LazyList.empty)
+    .getOrElse(LazyList.empty)
 
   /* Not the most efficient implementation, but it's simple.
    * This generates ASCII strings.
@@ -367,21 +366,18 @@ object Gen:
   def string: SGen[String] = SGen.Sized(stringN)
 
   val smallInt = Gen.choose(-10,10)
-  val maxProp = forAll(smallInt.list) { l =>
+  val maxProp = forAll(smallInt.list): l =>
     val max = l.max
     !l.exists(_ > max) // No value greater than `max` should exist in `l`
-  }
 
-  val maxProp1 = forAll(smallInt.nonEmptyList) { l =>
+  val maxProp1 = forAll(smallInt.nonEmptyList): l =>
     val max = l.max
     !l.exists(_ > max) // No value greater than `max` should exist in `l`
-  }
 
-  val sortedProp = Prop.forAll(smallInt.list) { l =>
+  val sortedProp = Prop.forAll(smallInt.list): l =>
     val ls = l.sorted
-    val ordered = l.isEmpty || ls.zip(ls.tail).forall { (a, b) => a <= b }
+    val ordered = l.isEmpty || ls.zip(ls.tail).forall((a, b) => a <= b)
     ordered && l.forall(ls.contains) && ls.forall(l.contains)
-  }
 
   object `**`:
     def unapply[A,B](p: (A,B)) = Some(p)
@@ -393,17 +389,16 @@ object Gen:
    */
   lazy val pint2: Gen[Par[Int]] = choose(-100,100).listOfN(choose(0,20)).map(l =>
     l.foldLeft(Par.unit(0))((p, i) =>
-      Par.fork { p.map2(Par.unit(i))(_ + _) }))
+      Par.fork(p.map2(Par.unit(i))(_ + _))))
 
   def genStringIntFn(g: Gen[Int]): Gen[String => Int] =
     g.map(i => (s => i))
 
   def genStringFn[A](g: Gen[A]): Gen[String => A] =
-    val sample = State[RNG, String => A] { rng =>
+    val sample = State[RNG, String => A]: rng =>
       val (seed, rng2) = rng.nextInt // we still use `rng` to produce a seed, so we get a new function each time
       val f = (s: String) => g.sample.run(RNG.Simple(seed.toLong ^ s.hashCode.toLong))._1
       (f, rng2)
-    }
     Gen(sample, unbounded)
 
 end Gen
@@ -429,11 +424,10 @@ opaque type Cogen[-A] = (A, RNG) => RNG
 object Cogen:
 
   def fn[A, B](in: Cogen[A], out: Gen[B]): Gen[A => B] =
-    val sample = State[RNG, A => B] { rng =>
+    val sample = State[RNG, A => B]: rng =>
       val (seed, rng2) = rng.nextInt
       val f = (a: A) => out.sample.run(in(a, rng2))._1
       (f, rng2)
-    }
     Gen(sample, unbounded)
 
   def cogenInt: Cogen[Int] = (i, rng) =>

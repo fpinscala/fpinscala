@@ -18,39 +18,37 @@ class GettingStartedSuite extends PropSuite:
     genList(genShortNumber).map(_.sorted.toArray)
 
   private val genUnsortedArray: Gen[Array[Int]] =
-    for {
+    for
       n <- Gen.choose(2, 20)
       list <- Gen.listOfN(n, genShortNumber)
-    } yield list.zipWithIndex.map { case (num, i) =>
-      if i % 2 == 0 then num + 100
-      else num - 100
-    }.toArray
+    yield
+      list.zipWithIndex.map:
+        case (num, i) =>
+          if i % 2 == 0 then num + 100
+          else num - 100
+      .toArray
 
-  test("MyProgram.factorial")(Gen.smallInt) { n =>
+  test("MyProgram.factorial")(Gen.smallInt): n =>
     assertEquals(factorial(n), (1 to n).product)
-  }
 
-  test("MyProgram.fib")(genLengthOfFibonacciSeq) { i =>
+  test("MyProgram.fib")(genLengthOfFibonacciSeq): i =>
     assertEquals(fib(i), theFirst21FibonacciNumbers(i))
-  }
 
-  test("PolymorphicFunctions.isSorted for sorted array case")(genSortedArray) { array =>
+  test("PolymorphicFunctions.isSorted for sorted array case")(genSortedArray): array =>
     assert(isSorted[Int](array, _ > _))
-  }
 
-  test("PolymorphicFunctions.isSorted for unsorted array case")(genUnsortedArray) { array =>
+  test("PolymorphicFunctions.isSorted for unsorted array case")(genUnsortedArray): array =>
     assert(!isSorted[Int](array, _ > _))
-  }
 
-  test("PolymorphicFunctions.curry")(Gen.int ** Gen.int) { case n ** m =>
-    assertEquals(mulCurry(n)(m), n * m)
-  }
+  test("PolymorphicFunctions.curry")(Gen.int ** Gen.int):
+    case n ** m =>
+      assertEquals(mulCurry(n)(m), n * m)
 
-  test("PolymorphicFunctions.uncurry")(Gen.int ** Gen.int) { case n ** m =>
-    assertEquals(mulUncurry(n, m), n * m)
-  }
+  test("PolymorphicFunctions.uncurry")(Gen.int ** Gen.int):
+    case n ** m =>
+      assertEquals(mulUncurry(n, m), n * m)
 
-  test("PolymorphicFunctions.compose")(Gen.int ** Gen.int) { case n ** m =>
-    def aToC = compose[Int, Int, Int]((b: Int) => n * b, (a: Int) => m * a)
-    assertEquals(aToC(1), n * m)
-  }
+  test("PolymorphicFunctions.compose")(Gen.int ** Gen.int):
+    case n ** m =>
+      def aToC = compose[Int, Int, Int]((b: Int) => n * b, (a: Int) => m * a)
+      assertEquals(aToC(1), n * m)

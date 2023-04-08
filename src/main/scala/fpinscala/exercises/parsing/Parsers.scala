@@ -1,15 +1,11 @@
 package fpinscala.exercises.parsing
 
-trait Parsers[Parser[+_]] { self => // so inner classes may call methods of trait
+trait Parsers[Parser[+_]]:
+  self => // so inner classes may call methods of trait
 
-  case class ParserOps[A](p: Parser[A]) {
+  case class ParserOps[A](p: Parser[A])
 
-
-  }
-
-  object Laws {
-  }
-}
+  object Laws
 
 case class Location(input: String, offset: Int = 0):
 

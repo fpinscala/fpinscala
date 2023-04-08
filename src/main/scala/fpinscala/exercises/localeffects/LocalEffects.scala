@@ -57,11 +57,10 @@ object ST:
 
 final class STRef[S, A] private (private var cell: A):
   def read: ST[S,A] = ST(cell)
-  def write(a: => A): ST[S, Unit] = ST.lift[S, Unit] {
+  def write(a: => A): ST[S, Unit] = ST.lift[S, Unit]:
     s =>
       cell = a
       ((), s)
-  }
 
 object STRef:
   def apply[S, A](a: A): ST[S, STRef[S,A]] =
@@ -72,11 +71,10 @@ final class STArray[S, A] private (private var value: Array[A]):
   def size: ST[S, Int] = ST(value.size)
 
   // Write a value at the give index of the array
-  def write(i: Int, a: A): ST[S, Unit] = ST.lift[S, Unit] {
+  def write(i: Int, a: A): ST[S, Unit] = ST.lift[S, Unit]:
     s =>
       value(i) = a
       ((), s)
-  }
 
   // Read the value at the given index of the array
   def read(i: Int): ST[S, A] = ST(value(i))
