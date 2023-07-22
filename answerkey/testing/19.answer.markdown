@@ -36,6 +36,16 @@ def genStringFn[A](g: Gen[A]): Gen[String => A] = Gen {
     (f, rng2)
   }
 }
+
+//or using randomStream
+def genStringFnWithStream[A](g: Gen[A]): Gen[String => A] = Gen {
+  State { rng => 
+    val (n, rng2) = rng.nextInt
+    val stream = randomStream(g)(rng)
+    val f = (s: String) => stream((n + s.hashCode) % 500)
+    (f, rng2)
+  }
+}
 ~~~
 
 More generally, any function which takes a `String` and an `RNG` and produces a new `RNG` could be used. Here, we're computing the `hashCode` of the `String` and then XOR'ing it with a seed value to produce a new `RNG`. We could just as easily take the length of the `String` and use this value to perturn our RNG state, or take the first 3 characters of the string. The choices affect what sort of function we are producing:
