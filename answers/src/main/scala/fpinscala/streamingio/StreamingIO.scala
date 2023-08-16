@@ -434,8 +434,9 @@ object SimpleStreamTransducers {
      * Like `takeWhile`, but includes the first element that tests
      * false.
      */
-    def takeThrough[I](f: I => Boolean): Process[I,I] =
-      takeWhile(f) ++ echo
+     def takeThrough[I](f: I => Boolean): Process[I, I] = await(i =>
+       if (f(i)) emit(i, takeThrough(f))
+       else      emit(i))
 
     /* Awaits then emits a single value, then halts. */
     def echo[I]: Process[I,I] = await(i => emit(i))
