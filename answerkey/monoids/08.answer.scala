@@ -9,5 +9,5 @@ def par[A](m: Monoid[A]): Monoid[Par[A]] = new Monoid[Par[A]] {
 // we perform the mapping and the reducing both in parallel
 def parFoldMap[A,B](v: IndexedSeq[A], m: Monoid[B])(f: A => B): Par[B] = 
   Par.parMap(v)(f).flatMap { bs => 
-    foldMapV(bs, par(m))(b => Par.async(b)) 
+    foldMapV(bs, par(m))(b => Par.lazyUnit(b)) 
   }
