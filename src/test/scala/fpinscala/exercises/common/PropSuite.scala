@@ -1,15 +1,13 @@
 package fpinscala.exercises.common
 
-import fpinscala.answers.state.RNG
 import fpinscala.answers.testing.exhaustive.*
 import fpinscala.answers.testing.exhaustive.Prop.*
 import fpinscala.answers.testing.exhaustive.Prop.Result.*
-import fpinscala.answers.testing.exhaustive.Prop.Status.*
 import munit.*
 import munit.internal.FutureCompat.*
 
 import scala.annotation.nowarn
-import scala.util.{Failure, Success, Try}
+import scala.util.{Success, Try}
 
 trait PropSuite extends FunSuite:
   def test[A](name: String)(a: Gen[A])(f: A => Unit)(implicit loc: Location): Unit =
