@@ -25,16 +25,6 @@ class LazyListSuite extends PropSuite:
           yield Cons(() => head, () => tail)
     loop()
 
-  test("LazyList.headOption")(genLazyList):
-    case Empty      => assert(Empty.headOption.isEmpty)
-    case Cons(h, t) => assert(Cons(h, t).headOption.contains(h()))
-
-  test("LazyList.cons")(
-    genLazyList.map(tail => (LazyList.cons(Random.nextInt, tail), Cons(Random.nextInt, () => tail)))
-  ): (smartConstructor, oldConstructor) =>
-    assertEquals(smartConstructor.headOption, smartConstructor.headOption)
-    assertNotEquals(oldConstructor.headOption, oldConstructor.headOption)
-
   test("LazyList.toList")(genIntList): list =>
     assertEquals(LazyList(list*).toList, list)
 
@@ -53,6 +43,25 @@ class LazyListSuite extends PropSuite:
   test("LazyList.forAll")(genSmallInt ** genLazyList):
     case n ** lazyList =>
       assertEquals(lazyList.forAll(_ != n), !lazyList.toList.contains(n))
+
+  test("LazyList.takeWhileViaFoldRight")(genSmallInt ** genLazyList):
+    case n ** lazyList =>
+      assertEquals(
+        lazyList.takeWhileViaFoldRight(_ != n).toList,
+        lazyList.toList.takeWhile(_ != n)
+      )
+
+  test("LazyList.headOption")(genLazyList):
+    case Empty => assert(Empty.headOption.isEmpty)
+    case Cons(h, t) => assert(Cons(h, t).headOption.contains(h()))
+
+  test("LazyList.cons")(
+    genLazyList.map(tail =>
+      (LazyList.cons(Random.nextInt, tail), Cons(Random.nextInt, () => tail))
+    )
+  ): (smartConstructor, oldConstructor) =>
+    assertEquals(smartConstructor.headOption, smartConstructor.headOption)
+    assertNotEquals(oldConstructor.headOption, oldConstructor.headOption)
 
   /*
   test("LazyList.map")(genSmallInt ** genLazyList):

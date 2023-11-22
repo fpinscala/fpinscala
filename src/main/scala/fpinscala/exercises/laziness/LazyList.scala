@@ -27,6 +27,8 @@ enum LazyList[+A]:
 
   def forAll(p: A => Boolean): Boolean = ???
 
+  def takeWhileViaFoldRight(p: A => Boolean): LazyList[A] = ???
+
   def headOption: Option[A] = ???
 
   // 5.7 map, filter, append, flatmap using foldRight. Part of the exercise is
