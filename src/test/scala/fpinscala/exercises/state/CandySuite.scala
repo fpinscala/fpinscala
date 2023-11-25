@@ -2,13 +2,12 @@ package fpinscala.exercises.state
 
 import fpinscala.answers.testing.exhaustive.*
 import fpinscala.answers.testing.exhaustive.Gen.`**`
-import fpinscala.answers.testing.exhaustive.Prop.*
 import fpinscala.exercises.common.Common.*
 import fpinscala.exercises.common.PropSuite
 import fpinscala.exercises.state.Candy.*
 import fpinscala.exercises.state.Input.*
+import fpinscala.exercises.state.State
 import fpinscala.exercises.state.State.*
-import fpinscala.exercises.state.{ Input, Machine, State }
 
 class CandySuite extends PropSuite:
   private val genPosInt: Gen[Int]    = Gen.choose(1, 1000)
