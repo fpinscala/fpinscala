@@ -1,7 +1,5 @@
 package fpinscala.exercises.state
 
-import fpinscala.answers.testing.exhaustive.*
-import fpinscala.answers.testing.exhaustive.Prop.*
 import fpinscala.exercises.common.Common.*
 import fpinscala.exercises.common.PropSuite
 import fpinscala.exercises.state.State
