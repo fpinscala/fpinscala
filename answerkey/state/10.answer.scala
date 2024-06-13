@@ -41,6 +41,18 @@ object State {
   def sequenceViaFoldLeft[S,A](l: List[State[S, A]]): State[S, List[A]] =
     l.reverse.foldLeft(unit[S, List[A]](List()))((acc, f) => f.map2(acc)( _ :: _ ))
 
+  // If the correctness expectation is that the State instances in l are run in order
+  // and the output list order matches the order of the States: 
+  // (out_0, s0) = l(0).run(s)
+  // (out_1, s1) = l(1).run(s0) 
+  // etc..
+  // then, sequence has to be run via foldLeft to ensure in-order execution of the States
+  // and we reverse the output at the very end to ensure that the output is in matching order
+  // as well. While RNG might not care about the order of execution, a state action sequence 
+  // like [ OpenAccount, AddMoney, TransferMoney, CloseAccount..] will very well do. 
+  def sequenceViaFoldLeftInOrder[S, A](l: List[State[S, A]]): State[S, List[A]] =
+    l.foldLeft(unit[S, List[A]](List()))((acc, f) => f.map2(acc)(_ :: _)).map(_.reverse)
+    
   def modify[S](f: S => S): State[S, Unit] = for {
     s <- get // Gets the current state and assigns it to `s`.
     _ <- set(f(s)) // Sets the new state to `f` applied to `s`.
