@@ -42,7 +42,7 @@ object MyModule {
   def fib(n: Int): Int = {
     @annotation.tailrec
     def loop(n: Int, prev: Int, cur: Int): Int =
-      if (n == 0) prev
+      if (n <= 0) prev // the passed n may be negative. just return the previous values, all negative n should be 0.
       else loop(n - 1, cur, prev + cur)
     loop(n, 0, 1)
   }
