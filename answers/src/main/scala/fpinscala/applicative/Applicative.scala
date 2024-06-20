@@ -16,7 +16,7 @@ trait Applicative[F[_]] extends Functor[F] {
   // `F[A]`, we get `F[B => C]`. Passing that to `apply` along with the
   // `F[B]` will give us the desired `F[C]`.
   def map2[A,B,C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C] =
-    apply(map(fa)(f.curried))(fb)
+    apply(map(fa)(f.curried): F [B => C])(fb)
 
   // We simply use `map2` to lift a function into `F` so we can apply it
   // to both `fab` and `fa`. The function being lifted here is `_(_)`,
