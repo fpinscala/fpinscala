@@ -123,14 +123,10 @@ object RNG {
   // In `sequence`, the base case of the fold is a `unit` action that returns
   // the empty list. At each step in the fold, we accumulate in `acc`
   // and `f` is the current element in the list.
-  // `map2(f, acc)(_ :: _)` results in a value of type `Rand[List[A]]`
-  // We map over that to prepend (cons) the element onto the accumulated list.
-  //
-  // We are using `foldRight`. If we used `foldLeft` then the values in the
-  // resulting list would appear in reverse order. It would be arguably better
-  // to use `foldLeft` followed by `reverse`. What do you think?
+  // `map2(acc, f)(_ :+ _)` results in a value of type `Rand[List[A]]`
+  // We map over that to append the element onto the accumulated list.
   def sequence[A](fs: List[Rand[A]]): Rand[List[A]] =
-    fs.foldRight(unit(List[A]()))((f, acc) => map2(f, acc)(_ :: _))
+    fs.foldLeft(unit(List[A]()))((acc, f) => map2(acc, f)(_ :+ _))
 
   // It's interesting that we never actually need to talk about the `RNG` value
   // in `sequence`. This is a strong hint that we could make this function
