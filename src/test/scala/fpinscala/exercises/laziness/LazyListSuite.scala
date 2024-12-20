@@ -48,7 +48,7 @@ class LazyListSuite extends PropSuite:
 
   test("LazyList.takeWhile")(genSmallInt ** genLazyList):
     case n ** lazyList =>
-      assertEquals(lazyList.takeWhile(_ != n).toList, lazyList.toList.takeWhile(_ != n))
+      assertEquals(lazyList.takeWhile(_ < n).toList, lazyList.toList.takeWhile(_ < n))
 
   test("LazyList.forAll")(genSmallInt ** genLazyList):
     case n ** lazyList =>
