@@ -1,13 +1,12 @@
 package fpinscala.exercises.errorhandling
 
 import fpinscala.answers.testing.exhaustive.*
-import fpinscala.answers.testing.exhaustive.Prop.*
 import fpinscala.exercises.common.Common.*
 import fpinscala.exercises.common.PropSuite
 import fpinscala.exercises.errorhandling.*
 import fpinscala.exercises.errorhandling.Option.*
 
-import scala.{Either as SEither, Left as SLeft, None as SNone, Option as SOption, Right as SRight, Some as SSome}
+import scala.{None as SNone, Some as SSome}
 
 class OptionSuite extends PropSuite:
   private val genIntOption: Gen[Option[Int]] =

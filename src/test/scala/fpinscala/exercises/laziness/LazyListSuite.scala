@@ -2,13 +2,11 @@ package fpinscala.exercises.laziness
 
 import fpinscala.answers.testing.exhaustive.*
 import fpinscala.answers.testing.exhaustive.Gen.`**`
-import fpinscala.answers.testing.exhaustive.Prop.*
 import fpinscala.exercises.common.Common.*
 import fpinscala.exercises.common.PropSuite
-import fpinscala.exercises.laziness.LazyList
 import fpinscala.exercises.laziness.LazyList.*
 
-import scala.util.{Random, Try}
+import scala.util.Random
 
 class LazyListSuite extends PropSuite:
   private val genSmallInt = Gen.choose(0, 10)

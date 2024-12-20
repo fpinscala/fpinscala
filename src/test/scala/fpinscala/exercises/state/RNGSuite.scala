@@ -2,9 +2,7 @@ package fpinscala.exercises.state
 
 import fpinscala.answers.testing.exhaustive.*
 import fpinscala.answers.testing.exhaustive.Gen.`**`
-import fpinscala.answers.testing.exhaustive.Prop.*
 import fpinscala.exercises.common.PropSuite
-import fpinscala.exercises.state.RNG
 import fpinscala.exercises.state.RNG.*
 
 import scala.annotation.tailrec
