@@ -41,6 +41,17 @@ enum LazyList[+A]:
       case Empty => buf.toList
     go(this)
 
+  def toListFastImmutable: List[A] = {
+    @annotation.tailrec
+    def go(cur: LazyList[A], f: List[A] => List[A]): List[A] =
+      cur match {
+        case Empty => f(Nil)
+        case Cons(h, t) => go(t(), list => f(h() :: list))
+      }
+
+    go(this, identity)
+  }
+
   /*
     Create a new LazyList[A] from taking the n first elements from this. We can achieve that by recursively
     calling take on the invoked tail of a cons cell. We make sure that the tail is not invoked unless
