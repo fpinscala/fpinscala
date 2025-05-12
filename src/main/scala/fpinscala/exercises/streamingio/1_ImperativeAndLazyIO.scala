@@ -13,8 +13,6 @@ object ImperativeAndLazyIO:
   into `IO`.
                              */
 
-  import java.io.*
-
   def linesGt40k(filename: String): IO[Boolean] = IO:
     // There are a number of convenience functions in scala.io.Source
     // for reading from external sources such as files.
