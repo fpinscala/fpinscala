@@ -171,9 +171,6 @@ object State:
   def sequence[S, A](actions: List[State[S, A]]): State[S, List[A]] =
     actions.foldRight(unit[S, List[A]](Nil))((f, acc) => f.map2(acc)(_ :: _))
 
-  def traverse[S, A, B](as: List[A])(f: A => State[S, B]): State[S, List[B]] =
-    as.foldRight(unit[S, List[B]](Nil))((a, acc) => f(a).map2(acc)(_ :: _))
-
   def modify[S](f: S => S): State[S, Unit] =
     for
       s <- get // Gets the current state and assigns it to `s`.
@@ -192,7 +189,7 @@ case class Machine(locked: Boolean, candies: Int, coins: Int)
 object Candy:
   def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = 
     for
-      _ <- State.traverse(inputs)(i => State.modify(update(i)))
+      _ <- State.sequence(inputs.map(update).map(State.modify))
       s <- State.get
     yield (s.coins, s.candies)
 
